@@ -1,0 +1,51 @@
+# Maintainer: Your Name <youremail@domain.com>
+pkgname=wk2gtkpdf
+pkgver=0.0.5
+pkgrel=3
+epoch=
+pkgdesc="wk2gtkpdf cpp library and command line interface"
+arch=(x86_64)
+url=""
+license=('GPL')
+groups=()
+depends=(webkit2gtk-4.1 systemd xorg-server-xvfb)
+makedepends=()
+checkdepends=()
+optdepends=()
+provides=()
+conflicts=(libicprint)
+replaces=()
+backup=()
+options=()
+install=wk2gtkpdf.install
+changelog=
+source=($pkgname-$pkgver.tar.gz)
+noextract=()
+sha256sums=('538afbc30385aef3d1d6457cf6e4c3667fa71e76681daabdc7865c2900df0116')
+
+
+build() {
+
+# Build the library
+	make -C ./src/wk2gtkpdf
+
+# Build the command line interface
+	USER_LIBDIR="-L${srcdir}/src/wk2gtkpdf -lwk2gtkpdf"
+	USER_INCDIR="-I${srcdir}/src"
+	make USER_LIBDIR="$USER_LIBDIR" USER_INCDIR="$USER_INCDIR" -C ./src/cli++
+
+}
+
+package() {
+
+	TEMPLATES='./templates/a4-portrait-pdf.css ./templates/a4-portrait-pdf.page'
+
+	make install -C "${srcdir}/src/cli++" DESTDIR="${pkgdir}"
+	make install -C "${srcdir}/src/wk2gtkpdf" DESTDIR="${pkgdir}"
+	install -Dm644 -t "$pkgdir/usr/lib/systemd/system" xvfb.service
+	install -Dm644 -t "$pkgdir/usr/share/polkit-1/rules.d" 50-wk2gtkpdf.rules
+	install -Dm644 -t "$pkgdir/usr/share/icprint/" $TEMPLATES
+	install -Dm644 -t "$pkgdir/usr/lib/pkgconfig" wk2gtkpdf.pc
+
+}
+

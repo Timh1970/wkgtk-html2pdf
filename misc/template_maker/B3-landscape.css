@@ -1,0 +1,82 @@
+/******************************************************************************/
+/*                                                                            */
+/*  PDF LAYOUT CONFIGURATION                                                  */
+/*  ------------------------                                                  */
+/*  The only setting that should be adjusted in this file is the page margin  */
+/*                                                                            */
+/*      - Sizes are in mm                                                     */
+/*      - If you require different margins then you should make copies of     */
+/*        this style sheet, retain them in this folder, and link them as      */
+/*        needed.                                                             */
+/*                                                                            */
+/******************************************************************************/
+
+:root {
+    --page-width: 500;
+    --page-height: 353;
+    --page-margin: 8;
+}
+
+@page {
+    size: var(--page-width)mm var(--page-height)mm;
+    margin: 0;
+}
+
+/* End of layout configuration */
+
+
+/******************************************************************************/
+/*                                                                            */
+/*  REQUIRED                                                                  */
+/*  --------                                                                  */
+/*  Only modify if you understand the implications                            */
+/*                                                                            */
+/******************************************************************************/
+html, body {
+    width: calc(var(--page-width) * 1mm);
+    height: calc((var(--page-height) * .999) * 1mm);
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: white;
+    font-family: Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.page {
+    height: calc((var(--page-height) * .999) * 1mm);
+    width: calc(var(--page-width) * 1mm);
+    padding: calc(var(--page-margin) * 1mm);
+    border: 0.5mm #D3D3D3 solid;
+    border-radius: 0;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.subpage {
+    /* show the margin (form design helper, not printed) */
+    border: .5mm red solid;
+    /* Height needs to be slightly shorter to prevent creation of a blank page */
+    height: calc(((var(--page-height) - (var(--page-margin) * 2)) *.999) * 1mm);
+    width: calc((var(--page-width) - (var(--page-margin) * 2)) * 1mm);
+}
+
+@media print {
+    .page {
+        margin: 0;
+        border: none;
+        box-shadow: none;
+        background: white;
+    }
+
+    .subpage {
+        /* Critical for correct page rendering - prevents extra blank pages */
+        border: .5mm white solid;
+    }
+}
+/* End of required section */
+

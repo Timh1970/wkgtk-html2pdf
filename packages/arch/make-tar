@@ -1,0 +1,26 @@
+#!/bin/bash
+conf_file="version.conf"
+
+# Source the file to load variables
+[[ -f "$conf_file" ]] && source "$conf_file"
+
+# Increment patch; reset if needed
+patch=$((patch + 1))
+# Example: Reset patch and increment minor
+# if (( patch > 9 )); then
+#   patch=0
+#   minor=$((minor + 1))
+# fi
+
+# Save updated values
+cat > "$conf_file" <<EOF
+major=$major
+minor=$minor
+patch=$patch
+EOF
+
+make clean -C ../../src/cli
+make clean -C ../../src/wk2gtkpdf
+tar -zcvf wk2gtkpdf-$major.$minor.$patch.tar.gz ../../src  ../../templates ../../50-wk2gtkpdf.rules ../../wk2gtkpdf.pc ../../xvfb.service
+
+echo "Version: $major.$minor.$patch"

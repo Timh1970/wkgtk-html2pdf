@@ -1,0 +1,22 @@
+[Unit]
+Description=Virtual Frame Buffer X Server
+After=network.target
+ConditionPathExists=!/tmp/.X11-unix/X0
+ConditionPathIsSymbolicLink=!/etc/systemd/system/display-manager.service
+
+[Service]
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix -noreset
+User=xvfb
+StandardOutput=journal
+StandardError=journal
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_UNIX
+Type=notify
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

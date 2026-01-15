@@ -1,0 +1,730 @@
+#include "ichtmltopdf++.h"
+#include "iclog.h"
+
+#include <X11/Xlib.h>
+#include <algorithm>
+#include <condition_variable>
+#include <fstream>
+#include <gtk/gtk.h>
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <random>
+#include <sstream>
+#include <stdio.h>
+#include <systemd/sd-bus.h>
+#include <thread>
+#include <wayland-client.h>
+#include <webkit2/webkit2.h>
+
+using std::string;
+
+/**
+ * @brief The WKGTK_init class
+ *
+ * Spawn thread with OUTER main loop - runs for lifetime of object
+ */
+WKGTK_init::WKGTK_init()
+    : glob_Thread([this]() {
+          loop = g_main_loop_new(nullptr, false);
+          {
+              std::lock_guard<std::mutex> lock(init_mutex);
+          }
+          init_cond.notify_one(); /**< Signal loop is ready */
+          g_main_loop_run(loop);
+      }) {
+    // Wait for loop to be initialized
+    std::unique_lock<std::mutex> lock(init_mutex);
+    init_cond.wait(lock, [this] { return loop != nullptr; });
+}
+
+WKGTK_init::~WKGTK_init() {
+    if (loop) {
+        g_main_loop_quit(loop);
+    }
+    if (glob_Thread.joinable()) {
+        glob_Thread.join();
+    }
+    if (loop) {
+        g_main_loop_unref(loop);
+    }
+    jlog << iclog::loglevel::info << iclog::category::CORE
+         << "GTK main loop exiting." << std::endl;
+}
+
+/**
+ * @brief pdf_init::pdf_init
+ * @param runMode - defaults to KEEP_RUNNING
+ *
+ * Check if the xvfb daemon is required and if so start it then
+ * initialise webktGTK.
+ *
+ * @note START_STOP run mode is primarily used for testing.
+ *
+ */
+icGTK::icGTK(XvfbMode runMode)
+    : tk(handle_xvfb_daemon()),
+      runMode(runMode) {
+    jlog << iclog::loglevel::warning << iclog::category::CORE
+         << "Inplicare initialising  WebKitGTK." << std::endl;
+}
+
+icGTK::~icGTK() {
+
+    if (runMode == XvfbMode::START_STOP) {
+        sd_bus *bus = nullptr;
+        if (sd_bus_open_system(&bus) >= 0) {
+            std::string state = check_xvfb(bus, "xvfb_2eservice");
+            if (state == "active") {
+                stop_service(bus);
+            }
+            sd_bus_unref(bus);
+        }
+    }
+}
+
+/**
+ * @brief icGTK_init::getInstance
+ * @param runMode
+ * @return single instance
+ *
+ * This uses the Myers singleton approach to ensure we can only call
+ * the class once.  It is genius, but I cannot claim credit for it.
+ */
+icGTK &icGTK::init(XvfbMode runMode) {
+    static icGTK instance(runMode);
+    return instance;
+}
+
+/**
+ * @brief pdf_init::handle_xvfb_daemon
+ * @return - A new instance of WKGTK_init
+ *
+ * Only start the xvfb daemon if necessary.
+ *
+ * @note  If for some reason starting webkit2GTK fails then
+ * this will exit the application entirely
+ */
+WKGTK_init icGTK::handle_xvfb_daemon() {
+
+    char *display  = getenv("DISPLAY");
+    char *wayland  = getenv("WAYLAND_DISPLAY");
+    bool  headless = false;
+    if ((XOpenDisplay(display) == nullptr) && (wl_display_connect(wayland) == nullptr)) {
+        headless = true;
+        jlog << iclog::loglevel::info << iclog::category::CORE
+             << "Preparing headless mode..." << std::endl;
+    }
+
+    sd_bus *bus = nullptr;
+
+    if (headless) {
+        if (sd_bus_open_system(&bus) < 0) {
+            jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+                 << "Failed to connect to system bus; "
+                 << "the application cannot continue and will now exit" << std::endl;
+            exit(1);
+        }
+
+        std::string unit  = "xvfb_2eservice"; // escaped 'xvfb.service'
+        std::string state = check_xvfb(bus, unit);
+
+        if (state != "active") {
+            jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+                 << unit << " not active, starting..." << std::endl;
+            if (EXIT_SUCCESS == start_service(bus)) {
+                jlog << iclog::loglevel::debug << iclog::category::CORE
+                     << " state: " << check_xvfb(bus, unit) << std::endl;
+
+                while (state != "active") {
+                    state = check_xvfb(bus, unit);
+                    jlog << iclog::loglevel::debug << iclog::category::CORE << unit
+                         << " state: " << state << std::endl;
+                    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                }
+            }
+        }
+
+        sd_bus_unref(bus);
+        setenv("DISPLAY", ":99", 1);
+    }
+
+    if (gtk_init_check(NULL, NULL)) {
+        jlog << iclog::loglevel::info << iclog::category::CORE
+             << "WEBKIT2GTK Initialised." << std::endl;
+    } else {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "GTK initialization failed; "
+             << "the application cannot continue and will now exit." << std::endl;
+        exit(1);
+    }
+
+    return (WKGTK_init());
+}
+
+/**
+ * @brief icGTK::check_xvfb
+ * @param bus
+ * @param service
+ * @return the current state string
+ *
+ * Check the status of the xvfb service and return one of the following:
+ *
+ * active:          Unit is running.
+ * reloading:       Unit is active and reloading configuration.
+ * inactive:        Unit is stopped, but last run was successful or never
+ * started. failed: Unit is stopped, and the last run failed.
+ * activating:      Unit is in the process of starting.
+ * deactivating:    Unit is in the process of stopping
+ */
+std::string icGTK::check_xvfb(sd_bus *bus, const std::string &service) {
+
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    char        *state = nullptr;
+    int          r     = sd_bus_get_property_string(
+        bus,
+        "org.freedesktop.systemd1",
+        ("/org/freedesktop/systemd1/unit/" + service).c_str(),
+        "org.freedesktop.systemd1.Unit",
+        "ActiveState",
+        nullptr,
+        &state
+    );
+    if (r < 0) {
+        if (strcmp(error.name, "org.freedesktop.DBus.Error.UnknownObject") == 0) {
+            std::cerr << "Service does not exist\n";
+        }
+        return "";
+    }
+    sd_bus_error_free(&error);
+    std::string result(state);
+    free(state);
+    return result;
+}
+
+/**
+ * @brief pdf_init::start_service
+ * @param bus
+ * @return
+ *
+ * Start the xfvb service.
+ */
+bool icGTK::start_service(sd_bus *bus) {
+    sd_bus_error    error = SD_BUS_ERROR_NULL;
+    sd_bus_message *reply = NULL;
+    const char     *job_path;
+    int             r = sd_bus_call_method(
+        bus,
+        "org.freedesktop.systemd1",         /**< service */
+        "/org/freedesktop/systemd1",        /**< object path */
+        "org.freedesktop.systemd1.Manager", /**< interface */
+        "StartUnit",                        /**< method */
+        &error,                             /**< error object */
+        &reply,                             /**< response object */
+        "ss",                               /**< we are passing 2 strings (the service name and "replace" */
+        "xvfb.service",                     /**< unit name */
+        "replace"                           /**< mode */
+    );
+
+    if (r < 0) {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "Failed to start unit: " << error.message << std::endl;
+    } else {
+        // Read the returned job path
+        r = sd_bus_message_read(reply, "o", &job_path);
+        if (r >= 0) {
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "Started job: " << job_path << std::endl;
+        }
+    }
+    sd_bus_message_unref(reply);
+    sd_bus_error_free(&error);
+    return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
+}
+
+/**
+ * @brief pdf_init::stop_service
+ * @param bus
+ * @return
+ *
+ * Stop the xfvb service.
+ *
+ * This is conditionally called in the destructor if
+ * START_STOP mode is selected.
+ *
+ * @warning START_STOP mode has the potential to be error prone
+ * in environments where mutiple applications may need the process.
+ *
+ * It is only recommended to use for testing rather than produciton
+ * environments where xvfb should be left running.
+ */
+bool icGTK::stop_service(sd_bus *bus) {
+    sd_bus_error    error = SD_BUS_ERROR_NULL;
+    sd_bus_message *reply = NULL;
+    const char     *job_path;
+    int             r = sd_bus_call_method(
+        bus,
+        "org.freedesktop.systemd1",         /**< service */
+        "/org/freedesktop/systemd1",        /**< object path */
+        "org.freedesktop.systemd1.Manager", /**< interface */
+        "StopUnit",                         /**< method */
+        &error,                             /**< error object */
+        &reply,                             /**< response object */
+        "ss",                               /**< we are passing 2 strings (the service name and "replace" */
+        "xvfb.service",                     /**< unit name */
+        "replace"                           /**< mode */
+    );
+
+    if (r < 0) {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "Failed to Stop unit: " << error.message << std::endl;
+    } else {
+        // Read the returned job path
+        r = sd_bus_message_read(reply, "o", &job_path);
+        if (r >= 0) {
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "Stopped job: " << job_path << std::endl;
+        }
+    }
+    sd_bus_message_unref(reply);
+    sd_bus_error_free(&error);
+    return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
+}
+
+struct WkGtkPrinterUserData {
+        GtkPrintSettings     *print_settings;
+        WebKitPrintOperation *print_operation;
+        GMainLoop            *main_loop;
+};
+
+/**
+ * @brief print_finished
+ * @param print_operation
+ * @param user_data
+ *
+ * Print finshed callback.
+ */
+static void print_finished(WebKitPrintOperation *print_operation __attribute__((unused)), void *user_data) {
+    g_main_loop_quit(((WkGtkPrinterUserData *)user_data)->main_loop);
+    jlog << iclog::loglevel::debug << iclog::category::CORE
+         << "Printing complte; quitting." << std::endl;
+}
+
+/**
+ * @brief web_view_load_changed
+ * @param web_view
+ * @param load_event
+ * @param user_data
+ *
+ * Web load monitor callback
+ */
+static void web_view_load_changed(WebKitWebView *web_view __attribute__((unused)), WebKitLoadEvent load_event, void *user_data) {
+
+    switch (load_event) {
+        case WEBKIT_LOAD_STARTED:
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "WEBKIT LOAD STARTED." << std::endl;
+            /* New load, we have now a provisional URI */
+            // printf("WEBKIT_LOAD_STARTED\n");
+
+            break;
+        case WEBKIT_LOAD_REDIRECTED:
+            break;
+        case WEBKIT_LOAD_COMMITTED:
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "The load is being performed. Current URI is the final one and it "
+                    "won't change unless a new "
+                 << "load is requested or a navigation within the same page is "
+                    "performed."
+                 << std::endl;
+            break;
+        case WEBKIT_LOAD_FINISHED:
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "printing pdf file: "
+                 << gtk_print_settings_get(
+                        ((WkGtkPrinterUserData *)user_data)->print_settings,
+                        GTK_PRINT_SETTINGS_OUTPUT_URI
+                    )
+                 << std::endl;
+            {
+
+                WebKitPrintOperation *print_operation = ((WkGtkPrinterUserData *)user_data)->print_operation;
+                webkit_print_operation_print(print_operation);
+            }
+            break;
+    }
+}
+
+/**
+ * @brief cb_worker
+ * @param p
+ * @return
+ *
+ * This is a callback for Webkit2GTK that actually generates the PDF
+ *
+ * @note It is **NOT** threadsafe as Webkit2GTK is event driven and handles
+ * calls in a queue.
+ */
+static int cb_worker(struct html2pdf_params *p) {
+    struct WkGtkPrinterUserData user_data;
+
+    jlog << iclog::loglevel::debug << iclog::category::CORE
+         << "Applying print settings" << std::endl;
+    GtkPrintSettings *print_settings = gtk_print_settings_new();
+    gtk_print_settings_set_printer(print_settings, "Print to File");
+    gtk_print_settings_set(print_settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
+
+    GtkPageSetup *page_setup = gtk_page_setup_new();
+
+    if (p->key_file_data != NULL) {
+
+        jlog << iclog::loglevel::debug << iclog::category::CORE
+             << "Applying page setup:\n"
+             << p->key_file_data << std::endl;
+        GKeyFile *key_file = g_key_file_new();
+        g_key_file_load_from_data(key_file, p->key_file_data, (gsize)-1, G_KEY_FILE_NONE, NULL);
+        gtk_page_setup_load_key_file(page_setup, key_file, NULL, NULL);
+        gtk_print_settings_load_key_file(print_settings, key_file, NULL, NULL);
+
+        g_key_file_free(key_file);
+    }
+
+    gtk_print_settings_set(print_settings, GTK_PRINT_SETTINGS_OUTPUT_URI, p->out_uri);
+
+    user_data.print_settings = print_settings;
+
+    WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
+    WebKitWebView            *web_view             = 0;
+    WebKitUserContentManager *user_content_manager = 0;
+    WebKitUserStyleSheet     *user_stylesheet      = 0;
+
+    web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
+
+    WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
+    webkit_settings_set_enable_javascript(view_settings, false);
+    webkit_settings_set_enable_page_cache(view_settings, false);
+    webkit_settings_set_enable_html5_database(view_settings, false);
+    webkit_settings_set_enable_html5_local_storage(view_settings, false);
+
+    if (p->default_stylesheet) {
+
+        jlog << iclog::loglevel::debug << iclog::category::CORE
+             << "Injecting style sheet:\n"
+             << p->default_stylesheet << std::endl;
+        user_content_manager = webkit_user_content_manager_new();
+        user_stylesheet      = webkit_user_style_sheet_new(
+            p->default_stylesheet,
+            WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
+            WEBKIT_USER_STYLE_LEVEL_USER,
+            NULL,
+            NULL
+        );
+        webkit_user_content_manager_add_style_sheet(user_content_manager, user_stylesheet);
+        g_object_set_property(G_OBJECT(web_view), "user-content-manager", (GValue *)(user_content_manager));
+    } else {
+        jlog << iclog::loglevel::debug << iclog::category::CORE
+             << "Injecting stylesheet: No explicit style sheet set; skipping:"
+             << std::endl;
+    }
+
+    g_object_ref_sink(G_OBJECT(web_view));
+
+    // WebKit2GTK print is async - schedules work and returns immediately
+    WebKitPrintOperation *print_operation = webkit_print_operation_new(web_view);
+    webkit_print_operation_set_print_settings(print_operation, print_settings);
+    webkit_print_operation_set_page_setup(print_operation, page_setup);
+    g_signal_connect(print_operation, "finished", G_CALLBACK(print_finished), &user_data);
+    user_data.print_operation = print_operation;
+
+    // INNER LOOP: Created here, runs until WebKit2GTK print completes
+    GMainLoop *main_loop = g_main_loop_new(nullptr, false);
+    user_data.main_loop  = main_loop;
+    g_signal_connect(web_view, "load-changed", G_CALLBACK(web_view_load_changed), &user_data);
+    if (p->in_uri == NULL) {
+        webkit_web_view_load_html(web_view, p->html_txt, "file:///tmp");
+        // webkit_web_view_load_html(web_view, p->html_txt, p->base_uri);
+
+    } else {
+        webkit_web_view_load_uri(web_view, p->in_uri);
+    }
+
+    // Run inner loop until print callback signals completion
+    g_main_loop_run(main_loop);
+
+    g_object_unref(G_OBJECT(print_operation));
+    g_object_unref(G_OBJECT(print_settings));
+    g_object_unref(G_OBJECT(page_setup));
+
+    if (p->default_stylesheet) {
+        g_object_unref(G_OBJECT(user_content_manager));
+        webkit_user_style_sheet_unref(user_stylesheet);
+    }
+
+    gtk_widget_destroy(GTK_WIDGET(web_view));
+    g_object_unref(G_OBJECT(web_view));
+    g_object_unref(G_OBJECT(web_context));
+    g_main_loop_unref(main_loop);
+
+    std::mutex              *wait_mutex = p->wait_mutex;
+    std::condition_variable *wait_cond  = p->wait_cond;
+    int                     *wait_data  = p->wait_data;
+
+    if (wait_mutex && wait_cond && wait_data) {
+        {
+            std::lock_guard<std::mutex> lock(*wait_mutex);
+            (*wait_data)++;
+        }
+        // Signal outer loop that we're done
+        wait_cond->notify_one(); // or notify_all()
+    }
+
+    return G_SOURCE_REMOVE;
+}
+
+/**
+ * @brief PDFprinter::PDFprinter
+ */
+PDFprinter::PDFprinter() {
+    in_uri             = nullptr;
+    html_txt           = nullptr;
+    base_uri           = nullptr;
+    out_uri            = nullptr;
+    key_file_data      = nullptr;
+    default_stylesheet = nullptr;
+    m_makeBlob         = false;
+}
+
+/**
+ * @brief PDFprinter::~PDFprinter
+ */
+PDFprinter::~PDFprinter() {
+
+    if (in_uri != nullptr)
+        delete[] in_uri;
+    if (html_txt != nullptr)
+        delete[] html_txt;
+    if (base_uri != nullptr)
+        delete[] base_uri;
+    if (out_uri != nullptr)
+        delete[] out_uri;
+    if (key_file_data != nullptr)
+        delete[] key_file_data;
+    if (default_stylesheet != nullptr)
+        delete[] default_stylesheet;
+}
+
+/**
+ * @brief PDFprinter::read_file
+ * @param fullPath
+ * @return The contents of the file
+ *
+ * This is just a utility funciton that takes in a path to a file and
+ * returns its contents.
+ */
+std::string PDFprinter::read_file(const std::string &fullPath) {
+    std::ifstream file(fullPath);
+    if (file.fail()) {
+        jlog << iclog::loglevel::debug << iclog::category::CORE
+             << "Cannot find the file specified: " << fullPath << std::endl;
+        return ("");
+    }
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+void PDFprinter::to_cstring(const std::string &str, char *&cstr) {
+    delete[] cstr;
+    size_t size = str.size() + 1; /**< +1 for null terminator */
+    cstr        = new char[size];
+    std::copy(str.data(), str.data() + str.size(), cstr);
+    cstr[str.size()] = '\0';
+};
+
+/**
+ * @brief PDFprinter::read_file_to_blob
+ *
+ * If the caller wishes to conduct post processing then we return a
+ * blob rather than a file.
+ *
+ * This method creates the Blob and then deletes the file.
+ *
+ */
+void PDFprinter::read_file_to_blob() {
+    std::ifstream file(out_uri, std::ios::binary);
+    if (!file) {
+        throw std::runtime_error("Failed to read PDF file");
+    }
+    m_binPDF.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+
+    std::remove(out_uri);
+}
+
+std::string PDFprinter::generate_uuid_string() {
+    static std::mt19937             gen(std::random_device{}());
+    std::uniform_int_distribution<> dis(0, 255);
+
+    std::vector<unsigned> sets{4, 2, 2, 2, 6};
+    std::stringstream     ss;
+    ss << std::hex << std::setfill('0');
+
+    for (size_t i = 0; i < sets.size(); ++i) {
+        for (unsigned j = 0; j < sets[i]; ++j) {
+            ss << std::setw(2) << dis(gen);
+        }
+        if (i < sets.size() - 1) {
+            ss << "-";
+        }
+    }
+
+    std::string uuid = ss.str();
+    jlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+         << "UUID generated: " << uuid << std::endl;
+
+    return uuid;
+}
+
+/**
+ * @brief Configure PDF generation with HTML, print settings, and output file.
+ *
+ * @param html Raw HTML content (not a file path).
+ * @param printSettings GTK print settings string (keyfile format).
+ * @param outFile Output file path where the PDF will be written.
+ *
+ * This is the primary method for generating PDFs with custom print settings.
+ *
+ * @note Internal C-strings are allocated by a lambda and automatically
+ * cleaned up in the destructor.
+ *
+ * @see layout() for custom page setup without print settings.
+ */
+void PDFprinter::set_param(std::string html, std::string printSettings, std::string outFile) {
+
+    to_cstring(html, html_txt);
+    to_cstring(printSettings, key_file_data);
+    to_cstring("file://" + outFile, out_uri);
+}
+
+/**
+ * @brief Configure PDF generation with HTML and output file (no print settings).
+ *
+ * @param html Raw HTML content (not a file path).
+ * @param outFile Output file path where the PDF will be written.
+ *
+ * Use this method when you need custom page setup via layout() instead of
+ * providing explicit print settings.
+ *
+ * @see layout() to configure page size, margins, and orientation.
+ * @see set_param(std::string, std::string, std::string) for print settings.
+ */
+void PDFprinter::set_param(std::string html, std::string outFile) {
+
+    to_cstring(html, html_txt);
+    to_cstring("file://" + outFile, out_uri);
+}
+
+/**
+ * @brief Configure PDF generation with HTML only (output as BLOB).
+ *
+ * @param html Raw HTML content (not a file path).
+ *
+ * Use this method when you want to retrieve the PDF as a binary blob
+ * instead of writing to a file. This allows post-processing (e.g., with
+ * ImageMagick) without intermediate file I/O.
+ *
+ * @note layout() must be called to configure page setup before generating
+ * the PDF.
+ *
+ * @return Call make_pdf() to create the PDF, then get_blob() to
+ * retrieve the binary data.
+ *
+ * @see layout() to configure page setup.
+ * @see make_pdf() to create the PDF.
+ * @see get_blob() to retrieve the PDF as a binary blob.
+ */
+void PDFprinter::set_param(std::string html) {
+
+    to_cstring("file:///tmp/" + generate_uuid_string(), out_uri);
+    to_cstring(html, html_txt);
+    m_makeBlob = true;
+}
+
+void PDFprinter::layout(std::string pageSize, std::string orientation) {
+
+    struct PaperSize sz{"A4", 210, 297};
+
+    for (const PaperSize &it : isoPaperSizes) {
+        if (it.sizeName.compare(pageSize) == 0) {
+            sz = it;
+            break;
+        }
+    }
+
+    // Make lower case
+    std::transform(orientation.begin(), orientation.end(), orientation.begin(), [](unsigned char c) { return std::tolower(c); });
+    string o = "portrait";
+    if (orientation.compare("landscape") == 0)
+        o = orientation;
+
+    std::string printSettings(
+        /* clang-format off */
+        "[Print Settings]\n"
+        "quality=high\n"
+        "resolution=300\n"
+        "output-file-format=pdf\n"
+        "printer=Print to File\n"
+        "page-set=all\n"
+        "[Page Setup]\n"
+        "PPDName=" + sz.sizeName + "\n"
+        "DisplayName=" + sz.sizeName + "\n"
+        "Width=" + std::to_string(sz.shortMM) + "\n"
+        "Height=" + std::to_string(sz.longMM) + "\n"
+        "MarginTop=0\n"
+        "MarginBottom=0\n"
+        "MarginLeft=0\n"
+        "MarginRight=0\n"
+        "Orientation=" + o + "\n"
+        /* clang-format on */
+    );
+
+    to_cstring(printSettings, key_file_data);
+}
+
+/**
+ * @brief PDFprinter::make_pdf
+ *
+ * Generate the pdf.
+ */
+void PDFprinter::make_pdf() {
+    std::thread t([this]() {
+        std::mutex              wait_mutex;
+        std::condition_variable wait_cond;
+        int                     wait_data = 0;
+
+        payload.out_uri            = out_uri;
+        payload.html_txt           = html_txt;
+        payload.key_file_data      = key_file_data;
+        payload.in_uri             = nullptr;
+        payload.base_uri           = nullptr;
+        payload.default_stylesheet = nullptr;
+        payload.wait_cond          = &wait_cond;
+        payload.wait_mutex         = &wait_mutex;
+        payload.wait_data          = &wait_data;
+        g_idle_add((GSourceFunc)cb_worker, &payload);
+
+        {
+            std::unique_lock<std::mutex> lock(wait_mutex);
+            wait_cond.wait(lock, [&wait_data] { return wait_data != 0; });
+        }
+    });
+
+    t.join();
+
+    if (m_makeBlob) {
+        read_file_to_blob();
+    }
+}
+
+const PDFprinter::blob &PDFprinter::get_blob() const { return m_binPDF; }
+
+PDFprinter::blob &&PDFprinter::get_blob() { return (std::move(m_binPDF)); }

@@ -1,0 +1,143 @@
+h1.doctitle {
+    vertical-align: middle;
+    padding-left: 25px;
+    display: inline;
+}
+
+img.logo {
+    vertical-align: middle;
+    width: auto;
+    height: auto;
+    max-width: 415px;
+    max-height: 72px;
+}
+
+h4.ref {
+    display: inline;
+    vertical-align: top;
+    horizontal-align: top;
+    position: absolute;
+    right: 0px;
+    font-size: 10px;
+    padding 20px;
+}
+
+th {
+    text-align: left;
+    line-height: .4cm;
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-style: normal;
+    font-family: "Arial";
+    color: white;
+    font-weight: bold;
+    padding-left: 16px;
+    border: solid plum 1px;
+    background-color: plum;
+}
+
+td.field {
+    height: 21px;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: normal;
+    font-family: "Liberation Mono";
+    padding-left: 16px;
+    padding-right: 16px;
+    text-align: left;
+    border: solid darkgrey 1px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+td.faultfield {
+    height: 33px;
+    line-height: 14px;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: normal;
+    font-family: "Liberation Mono";
+    padding-left: 16px;
+    padding-right: 16px;
+    text-align: left;
+    border: solid darkgrey 1px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+table.fixed {
+    table-layout: fixed;
+    letter-spacing: .25px;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.fixed td {
+    overflow: auto;
+}
+
+td.label {
+    height: 21px;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: bold;
+    font-family: "Times New Roman";
+    padding-left: 16px;
+    padding-right: 8px;
+    text-align: left;
+    border: solid 1px darkgrey;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    background-color: lightgrey;
+    vertical-align: top;
+}
+
+td.ssaverlabel {
+    height: 21px;
+    font-size: 13px;
+    font-style: normal;
+    font-weight: bold;
+    font-family: "Times New Roman";
+    padding-left: 4px;
+    padding-right: 4px;
+    text-align: left;
+    border: solid 1px darkgrey;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    background-color: lightgrey;
+    vertical-align: top;
+}
+
+td.ssaverfield {
+    height: 21px;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: normal;
+    font-family: monospace;
+    padding-left: 4px;
+    padding-right: 4px;
+    text-align: left;
+    border: solid darkgrey 1px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+.code {
+  font-family: "courier";
+  padding-left: 40px;
+  color: green;
+}
+
+.inline-code,
+inline-code {
+  font-family: "courier";
+  color: green;
+}
+
+.nested-code,
+nested-code {
+  display: block;
+  padding-left: 40px;
+  font-family: "courier";
+  color: green;
+}
