@@ -384,7 +384,7 @@ std::string webpage() {
     /**
      * Built in style for an ISO A4 page (see templates folder)
      * */
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wkgtkprinter/a4-portrait-pdf.css\"");
+    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
 
     /**
      * @brief f
