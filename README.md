@@ -91,7 +91,7 @@ int main() {
     WEBPAGE html("<!DOCTYPE html>");
     html_tree dom("html", html);
     html_tree *head = dom->new_node("head");
-    head->new_node("link", "rel=\"stylesheet\" href=\"/usr/share/html2pdf/A4-portrait.css\"");
+    head->new_node("link", "rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
     
     html_tree *body = dom.new_node("body");
     html_tree *page = body->new_node("div", "class=\"page\"");
@@ -108,6 +108,8 @@ int main() {
     return 0;
 }
 ```
+
+> **Note**: The PDF will be generated in the current working directory. Use an absolute path if you need output in a specific location.
 
 #### Building:
 
@@ -135,7 +137,6 @@ clean:
 	rm -f $(OBJECTS) hello
 ```
 
-> **Note**: The PDF will be generated in the current working directory. Use an absolute path if you need output in a specific location.
 
 ## Advanced Features
 
