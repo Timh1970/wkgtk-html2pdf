@@ -1,11 +1,11 @@
-# Maintainer: Your Name <youremail@domain.com>
-pkgname=wk2gtkpdf
-pkgver=0.0.7
-pkgrel=3
+# Maintainer: Inplico UK James@inplico.uk
+pkgname=wkgtk-html2pdf
+pkgver=0.0.8
+pkgrel=0
 epoch=
 pkgdesc="wk2gtkpdf cpp library and command line interface"
 arch=(x86_64)
-url=""
+url="https://github.com/yourusername/your-repo"
 license=('MIT')
 groups=()
 depends=(webkit2gtk-4.1 systemd xorg-server-xvfb)
@@ -19,32 +19,32 @@ backup=()
 options=()
 install=wk2gtkpdf.install
 changelog=
-source=($pkgname-$pkgver.tar.gz)
+source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Timh1970/wkgtk-html2pdf/archive/v${pkgver}.tar.gz")
 noextract=()
-sha256sums=('5b08dfa9f92d62aa320a974a899a0507feba4b778449c5dadedf70e051ebcd71')
+sha256sums=('5a793eaf01e23d91adce5697a2fe886a088b644892d4bd1b2ca3bd9122e35389')
 
 
 
 build() {
 
 # Build the library
-	make -C ./src/wk2gtkpdf
+	make -C ${srcdir}/wkgtk-html2pdf-0.0.8/src/wk2gtkpdf
 
 # Build the command line interface
-	USER_LIBDIR="-L${srcdir}/src/wk2gtkpdf -lwk2gtkpdf"
-	USER_INCDIR="-I${srcdir}/src"
-	make USER_LIBDIR="$USER_LIBDIR" USER_INCDIR="$USER_INCDIR" -C ./src/cli
+	USER_LIBDIR="-L${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf -lwk2gtkpdf"
+	USER_INCDIR="-I${srcdir}/${pkgname}-${pkgver}/src"
+	make USER_LIBDIR="$USER_LIBDIR" USER_INCDIR="$USER_INCDIR" -C ${srcdir}/wkgtk-html2pdf-0.0.8/src/cli
 
 }
 
 package() {
 
-	make install -C "${srcdir}/src/cli" DESTDIR="${pkgdir}"
-	make install -C "${srcdir}/src/wk2gtkpdf" DESTDIR="${pkgdir}"
-	install -Dm644 -t "$pkgdir/usr/lib/systemd/system" xvfb.service
-	install -Dm644 -t "$pkgdir/usr/share/polkit-1/rules.d" 50-wk2gtkpdf.rules
-	install -Dm644 -t "$pkgdir/usr/share/wk2gtkpdf/" ./templates/*.css
-	install -Dm644 -t "$pkgdir/usr/lib/pkgconfig" wk2gtkpdf.pc
+	make install -C "${srcdir}/${pkgname}-${pkgver}/src/cli" DESTDIR="${pkgdir}"
+	make install -C "${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf" DESTDIR="${pkgdir}"
+	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/lib/systemd/system" ${srcdir}/${pkgname}-${pkgver}/xvfb.service
+	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/share/polkit-1/rules.d" ${srcdir}/${pkgname}-${pkgver}/50-wk2gtkpdf.rules
+	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/share/wk2gtkpdf/" ${srcdir}/${pkgname}-${pkgver}/templates/*.css
+	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/lib/pkgconfig" ${srcdir}/${pkgname}-${pkgver}/wk2gtkpdf.pc
 
 }
 
