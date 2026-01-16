@@ -60,7 +60,7 @@ int main() {
      * An absolute link to one of the base stylesheets used to
      * format the page.
      */
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wkgtkprinter/a4-portrait-pdf.css\"");
+    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
 
     /**
      * @brief body
