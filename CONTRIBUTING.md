@@ -7,6 +7,7 @@ Thank you for considering contributing to wkgtk-html2pdf! We welcome contributio
 1. **Fork the repository** on GitHub
 2. **Create a new branch** for your changes
 3. **Make your changes** and ensure they work properly
+3. **Document your code** using doxygen style of existing comments
 4. **Submit a pull request** with a clear description of your changes
 
 ## Code Style

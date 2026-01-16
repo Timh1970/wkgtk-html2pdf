@@ -117,6 +117,21 @@ class PDF_API PDFprinter {
 
         typedef std::vector<unsigned char> blob;
 
+        /**
+         * @brief isoPaperSizes
+         *
+         * This is a list of standard well known page
+         * sizes (they are not all ISO)
+         *
+         * @todo remove this and maintain a hidden JSON
+         * file in the /usr/share/wk2gtkpdf to retain
+         * the template data.
+         *
+         * Parse that file instead of this struct to
+         * allow users to add custom paper sizes using
+         * the template_maker utility.
+         *
+         */
         const std::vector<PaperSize> isoPaperSizes = {
             {"A0",      841,  1189},
             {"A1",      594,  841 },

@@ -83,8 +83,8 @@ html2pdf -i infile.html -o outfile.pdf -O portrait -s A4
 ### C++ API
 
 ```cpp
-#include <wkgtkprinter++/ichtmltopdf++.h>
-#include <wkgtkprinter++/pretty_html.h>
+#include <wk2gtkpdf/ichtmltopdf++.h>
+#include <wk2gtkpdf/pretty_html.h>
 
 int main() {
     icGTK::init();
@@ -107,6 +107,32 @@ int main() {
     
     return 0;
 }
+```
+
+#### Building:
+
+```make
+SOURCES = $(wildcard *.cpp)
+HEADERS = $(wildcard *.h)
+OBJECTS = $(SOURCES:.cpp=.o)
+
+CXX = g++
+CXXFLAGS := -std=c++20 -Wall
+CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
+
+LDLIBS := -Wl,--start-group
+LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
+LDLIBS += -Wextra -O2  -m64 -pedantic-errors -Wl,--end-group
+
+
+hellopdf: $(OBJECTS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+
+%.o: %.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $<
+
+clean:
+	rm -f $(OBJECTS) hello
 ```
 
 > **Note**: The PDF will be generated in the current working directory. Use an absolute path if you need output in a specific location.
