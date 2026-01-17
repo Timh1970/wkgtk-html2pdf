@@ -1,6 +1,6 @@
 # Maintainer: Inplico UK James@inplico.uk
 pkgname=wkgtk-html2pdf
-pkgver=0.0.8
+pkgver=0.0.9
 pkgrel=0
 epoch=
 pkgdesc="wk2gtkpdf cpp library and command line interface"
@@ -21,19 +21,19 @@ install=wk2gtkpdf.install
 changelog=
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Timh1970/wkgtk-html2pdf/archive/v${pkgver}.tar.gz")
 noextract=()
-sha256sums=('5a793eaf01e23d91adce5697a2fe886a088b644892d4bd1b2ca3bd9122e35389')
+sha256sums=('6de3c98a7f586c7f612f63a0e7d1ea0c41c7b3f231ca53256ced11dbc568fde1')
 
 
 
 build() {
 
 # Build the library
-	make -C ${srcdir}/wkgtk-html2pdf-0.0.8/src/wk2gtkpdf
+	make -C ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf
 
 # Build the command line interface
 	USER_LIBDIR="-L${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf -lwk2gtkpdf"
 	USER_INCDIR="-I${srcdir}/${pkgname}-${pkgver}/src"
-	make USER_LIBDIR="$USER_LIBDIR" USER_INCDIR="$USER_INCDIR" -C ${srcdir}/wkgtk-html2pdf-0.0.8/src/cli
+	make USER_LIBDIR="$USER_LIBDIR" USER_INCDIR="$USER_INCDIR" -C ${srcdir}/${pkgname}-${pkgver}/src/cli
 
 }
 
