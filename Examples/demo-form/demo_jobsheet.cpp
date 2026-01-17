@@ -453,9 +453,9 @@ int main() {
     PDFprinter pdf;
     pdf.set_param(
         html,
-        PDFprinter::read_file("/usr/share/wkgtkprinter/a4-portrait-pdf.page"),
         std::filesystem::current_path().string() + "/demo-form.pdf"
     );
+    pdf.layout("A4", "portrait");
     pdf.make_pdf();
 
     // WRITE OUT THE HTML
