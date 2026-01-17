@@ -551,13 +551,27 @@ void PDFprinter::to_cstring(const std::string &str, char *&cstr) {
  *
  */
 void PDFprinter::read_file_to_blob() {
-    std::ifstream file(out_uri, std::ios::binary);
-    if (!file) {
-        throw std::runtime_error("Failed to read PDF file");
-    }
-    m_binPDF.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
-    std::remove(out_uri);
+    string path(out_uri);
+    path = path.substr(sizeof("file://") - 1, path.size());
+
+    std::ifstream file(path, std::ios::binary | std::ios::ate | std::ios::in);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open PDF file: " + string(path));
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    m_binPDF.resize(static_cast<size_t>(size));
+    file.read(reinterpret_cast<char *>(m_binPDF.data()), size);
+
+    if (!file) {
+        throw std::runtime_error("Error reading PDF file contents");
+    }
+
+    jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+         << "Generated BLOB: " << path << " size=" << m_binPDF.size() << std::endl;
 }
 
 std::string PDFprinter::generate_uuid_string() {
@@ -721,6 +735,8 @@ void PDFprinter::make_pdf() {
     t.join();
 
     if (m_makeBlob) {
+        jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+             << "Making BLOB" << std::endl;
         read_file_to_blob();
     }
 }

@@ -37,15 +37,17 @@ yay -S wkgtk-html2pdf
 
 #### Arch Linux (Direct Download)
 ```bash
-wget https://example.com/wkgtk-html2pdf-1.0.0-1-x86_64.pkg.tar.zst
-sudo pacman -U wkgtk-html2pdf-1.0.0-1-x86_64.pkg.tar.zst
+wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/arch/wk2gtkpdf-0.0.9-1-x86_64.pkg.tar.zst
+sudo pacman -U wk2gtkpdf-0.0.9-1-x86_64.pkg.tar.zst
 ```
 
 #### Debian/Ubuntu (Direct Download)
 ```bash
-wget https://example.com/wkgtk-html2pdf_1.0.0_amd64.deb
-sudo dpkg -i wkgtk-html2pdf_1.0.0_amd64.deb
+wgethttps://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Debian/wkgtk-html2pdf-0.0.9-1.deb
+sudo dpkg -i wkgtk-html2pdf-0.0.9-1.deb
 ```
+
+**Note:** The above is an example; ensure you download the latest version.
 
 > **Note**: Debian Trixie includes version 1.0.0; earlier versions may require the manual package installation above.
 
