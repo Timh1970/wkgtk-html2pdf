@@ -43,7 +43,7 @@ sudo pacman -U wk2gtkpdf-0.0.9-1-x86_64.pkg.tar.zst
 
 #### Debian/Ubuntu (Direct Download)
 ```bash
-wgethttps://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Debian/wkgtk-html2pdf-0.0.9-1.deb
+wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Debian/wkgtk-html2pdf-0.0.9-1.deb
 sudo dpkg -i wkgtk-html2pdf-0.0.9-1.deb
 ```
 
