@@ -65,10 +65,10 @@ Building from source requires manual configuration of:
 
 | Distribution | Version | Status |
 |--------------|---------|--------|
-| Arch Linux | 1.0.0+ | ✓ Fully supported (AUR + direct download) |
-| Debian Trixie | 1.0.0+ | ✓ Fully supported (direct download) |
-| Debian Bookworm | 1.0.0+ | ✓ Supported (direct download) |
-| Ubuntu 22.04+ | 1.0.0+ | ✓ Supported (direct download) |
+| Arch Linux | 0.0.10+ | ✓ Fully supported (AUR + direct download) |
+| Debian Trixie | 0.0.9+ | ✓ Fully supported (direct download) |
+| Debian Bookworm | 0.0.9+ | ✓ Supported (direct download) |
+| Ubuntu 22.04+ | 0.0.9+ | ✓ Supported (direct download) |
 
 ## Quick Start
 
@@ -79,7 +79,7 @@ For quick conversions without writing code:
 ```bash
 html2pdf -i infile.html -o outfile.pdf -O portrait -s A4
 ```
-
+For best results link to the appropriate page template; Place your content inside a **page** and **subpage** element and do not overflow the margins (See [Guided Templates](#Guided-Templates)).
 ### C++ API
 
 ```cpp
