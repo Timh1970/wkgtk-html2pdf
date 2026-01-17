@@ -171,6 +171,6 @@ Additional pages can be added with the declaration of more "page" and "subpage" 
 
 ## Support
 
-For issues or feature requests, please open an issue on [GitHub](https://github.com/your-repo/wkgtk-html2pdf).
+For issues or feature requests, please open an issue on [GitHub](https://github.com/Timh1970/wkgtk-html2pdf).
 
 > **Note**: The documentation assumes you have the necessary system dependencies installed. For a complete list of dependencies, please check the package metadata or the GitHub repository.
