@@ -1,4 +1,4 @@
-# wkgtk-html2pdf
+# wkgtk-html2pdf ![License: MIT License](https://img.shields.io/badge/License-mit-blue.svg)
 
 A lightweight C++ library for generating PDFs from HTML using WebKit2GTK.
 
@@ -174,3 +174,4 @@ Additional pages can be added with the declaration of more "page" and "subpage" 
 For issues or feature requests, please open an issue on [GitHub](https://github.com/Timh1970/wkgtk-html2pdf).
 
 > **Note**: The documentation assumes you have the necessary system dependencies installed. For a complete list of dependencies, please check the package metadata or the GitHub repository.
+

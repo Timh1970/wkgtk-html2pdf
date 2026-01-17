@@ -11,7 +11,7 @@ CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 APPLICATION=libwk2gtkpdf.so
 
 $(APPLICATION): $(OBJECTS)
-	$(CXX) -shared -o $@ $^
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 
 %.o: %.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
