@@ -37,8 +37,8 @@ yay -Syy wkgtk-html2pdf
 
 #### Arch Linux (Direct Download)
 ```bash
-wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Arch/wkgtk-html2pdf-0.0.10-0.zst
-sudo pacman -U wkgtk-html2pdf-1.0.0-1-x86_64.pkg.tar.zst
+wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/arch/wkgtk-html2pdf-0.0.10-0-x86_64.pkg.tar.zst
+sudo pacman -U wkgtk-html2pdf-0.0.10-0-x86_64.pkg.tar.zst
 ```
 
 #### Debian/Ubuntu (Direct Download)
