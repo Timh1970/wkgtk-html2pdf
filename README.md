@@ -1,10 +1,10 @@
-# wkgtk-html2pdf ![License: MIT License](https://img.shields.io/badge/License-mit-blue.svg)
+# wkgtk-html2pdf
 
 A lightweight C++ library for generating PDFs from HTML using WebKit2GTK.
 
 ## Key Features
 
-- **Tiny Footprint**: ~60KB binary, minimal dependencies
+- **Tiny Footprint**: Small binary, minimal dependencies
 - **Image Support**: Base64 encodes and inlines images automatically
 - **Smart CSS**: Built-in responsive layout system with visual margin guides
 - **Easy to Use**: Simple C++ API with comprehensive examples
@@ -32,22 +32,20 @@ We provide pre-built packages for Arch Linux and Debian. These include all neces
 
 #### Arch Linux (AUR)
 ```bash
-yay -S wkgtk-html2pdf
+yay -Syy wkgtk-html2pdf
 ```
 
 #### Arch Linux (Direct Download)
 ```bash
-wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/arch/wk2gtkpdf-0.0.9-1-x86_64.pkg.tar.zst
-sudo pacman -U wk2gtkpdf-0.0.9-1-x86_64.pkg.tar.zst
+wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Arch/wkgtk-html2pdf-0.0.10-0.zst
+sudo pacman -U wkgtk-html2pdf-1.0.0-1-x86_64.pkg.tar.zst
 ```
 
 #### Debian/Ubuntu (Direct Download)
 ```bash
 wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Debian/wkgtk-html2pdf-0.0.9-1.deb
-sudo dpkg -i wkgtk-html2pdf-0.0.9-1.deb
+sudo dpkg -i wkgtk-html2pdf_1.0.0_amd64.deb
 ```
-
-**Note:** The above is an example; ensure you download the latest version.
 
 > **Note**: Debian Trixie includes version 1.0.0; earlier versions may require the manual package installation above.
 
@@ -171,7 +169,6 @@ Additional pages can be added with the declaration of more "page" and "subpage" 
 
 ## Support
 
-For issues or feature requests, please open an issue on [GitHub](https://github.com/Timh1970/wkgtk-html2pdf).
+For issues or feature requests, please open an issue on [GitHub](https://github.com/your-repo/wkgtk-html2pdf).
 
 > **Note**: The documentation assumes you have the necessary system dependencies installed. For a complete list of dependencies, please check the package metadata or the GitHub repository.
-
