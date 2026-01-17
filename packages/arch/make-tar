@@ -21,6 +21,6 @@ EOF
 
 make clean -C ../../src/cli
 make clean -C ../../src/wk2gtkpdf
-tar -zcvf wk2gtkpdf-$major.$minor.$patch.tar.gz ../../src  ../../templates ../../50-wk2gtkpdf.rules ../../wk2gtkpdf.pc ../../xvfb.service
+tar -zcvf wk2gtkpdf-$major.$minor.$patch.tar.gz ../../src  ../../templates ../../50-wk2gtkpdf.rules ../../wk2gtkpdf.pc ../../xvfb.service ../../LICENSE
 
 echo "Version: $major.$minor.$patch"

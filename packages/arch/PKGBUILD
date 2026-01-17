@@ -45,6 +45,8 @@ package() {
 	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/share/polkit-1/rules.d" ${srcdir}/${pkgname}-${pkgver}/50-wk2gtkpdf.rules
 	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/share/wk2gtkpdf/" ${srcdir}/${pkgname}-${pkgver}/templates/*.css
 	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/lib/pkgconfig" ${srcdir}/${pkgname}-${pkgver}/wk2gtkpdf.pc
+	install -Dm644 -t "$pkgdir/${pkgname}-${pkgver}/usr/share/licenses/${pkgname}" ${srcdir}/${pkgname}-${pkgver}/LICENSE
+
 
 }
 
