@@ -1,11 +1,29 @@
 #include <curses.h>
 #include <filesystem>
+#include <getopt.h>
 #include <iostream>
 #include <systemd/sd-journal.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
 
 using std::string;
+std::string appname;
+
+void help() {
+    printf("\n");
+    printf("Usage:   %s [options]\n", appname.c_str());
+    printf("***************************************************************************\n");
+    printf("*                                                                         *\n");
+    printf("* Options:                                                                *\n");
+    printf("*    -h  --help                       Show this message                   *\n");
+    printf("*    -v  --verbose X                  Set log level (1 - 7)               *\n");
+    printf("*    -i  --infile myfile.html         name of source (HTML) file          *\n");
+    printf("*    -o  --outfile myfile.pdf         name of file to generate            *\n");
+    printf("*    -O  --orientation                \"portrait\" or \"landscape\"           *\n");
+    printf("*        --index                      create anchor points (experimental) *\n");
+    printf("*                                                                         *\n");
+    printf("***************************************************************************\n");
+}
 
 /**
  * @brief main
@@ -15,17 +33,51 @@ using std::string;
  */
 int main(int argc, char *argv[]) {
 
+    appname   = argv[0];
     // SET UP LOGGING (all logging to journal)
     LOG_LEVEL = LOG_INFO;
 
     // HANDLE COMMAND LINE ARGUMENTS
-    int    opt = 0;
     string infile;
     string outfile;
     string orientation;
     string pageSize;
-    while ((opt = getopt(argc, argv, "i:O:o:s:v:")) != -1) {
-        switch (opt) {
+    bool   index = false;
+
+    typedef enum {
+        DO_INDEX = 256
+
+    } longopt;
+    static struct option long_options[] = {
+        {"help",        no_argument,       0, 'h'              },
+        {"infile",      required_argument, 0, 'i'              },
+        {"outfile",     required_argument, 0, 'o'              },
+        {"orientation", required_argument, 0, 'O'              },
+        {"size",        required_argument, 0, 's'              },
+        {"verbose",     required_argument, 0, 'v'              },
+        {"index",       no_argument,       0, longopt::DO_INDEX},
+        {NULL,          0,                 0, 0                }
+    };
+    int value        = 0;
+    int option_index = 0;
+
+    // while ((opt = getopt(argc, argv, "i:O:o:s:v:")) != -1) {
+    //     switch (opt)
+
+    while ((value = getopt_long(
+                argc,
+                argv,
+                "i:O:o:s:v:",
+                long_options,
+                &option_index
+            ))
+           != -1) {
+
+        switch (value) {
+            case 'h':
+                help();
+                exit(0);
+                break;
             case 'i': // Input html
                 infile = std::filesystem::current_path().string() + "/" + string(optarg);
                 break;
@@ -44,6 +96,9 @@ int main(int argc, char *argv[]) {
                 if (optarg)
                     LOG_LEVEL = atoi(optarg);
                 break;
+            case longopt::DO_INDEX:
+                index = true;
+                break;
             default:
                 break;
         }
@@ -58,9 +113,7 @@ int main(int argc, char *argv[]) {
     icGTK::init();
 
     if (infile.empty() || outfile.empty()) {
-        std::cout << "USAGE: " << argv[0]
-                  << " -i infile.html -o outfile.pdf -O orientation -s page size -v (Log level 1 - 7)\n"
-                  << std::endl;
+        help();
         exit(0);
     }
 
@@ -84,7 +137,7 @@ int main(int argc, char *argv[]) {
     /**
      * If you are using a default page size
      */
-    pdf.set_param(PDFprinter::read_file(infile), outfile);
+    pdf.set_param(PDFprinter::read_file(infile), outfile, index);
 
     /**
      * If the pageSize and orintation are empty or invalid

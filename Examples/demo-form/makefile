@@ -6,9 +6,13 @@ CXX = g++
 CPPFLAGS += $(USER_INCDIR)
 CXXFLAGS := -std=c++20 -Wall
 CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
+CXXFLAGS += $(shell pkg-config --cflags libpodofo)
+CXXFLAGS += $(shell pkg-config --cflags json-c)
 
 LDLIBS := -Wl,--start-group
 LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
+LDLIBS += $(shell pkg-config --libs libpodofo)
+LDLIBS += $(shell pkg-config --libs json-c)
 LDLIBS += -Wextra -O2  -m64 -pedantic-errors -Wl,--end-group
 
 PREFIX ?= /usr

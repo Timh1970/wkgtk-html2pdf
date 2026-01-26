@@ -1,5 +1,6 @@
 #include "ichtmltopdf++.h"
 #include "iclog.h"
+#include "index_pdf.h"
 
 #include <X11/Xlib.h>
 #include <algorithm>
@@ -8,6 +9,7 @@
 #include <gtk/gtk.h>
 #include <iomanip>
 #include <iostream>
+#include <json-c/json.h>
 #include <mutex>
 #include <random>
 #include <sstream>
@@ -291,10 +293,12 @@ bool icGTK::stop_service(sd_bus *bus) {
     return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
-struct WkGtkPrinterUserData {
-        GtkPrintSettings     *print_settings;
-        WebKitPrintOperation *print_operation;
-        GMainLoop            *main_loop;
+struct PDFprinterUserData {
+        GtkPrintSettings                *print_settings;
+        WebKitPrintOperation            *print_operation;
+        GMainLoop                       *main_loop;
+        std::vector<PDFprinter::anchor> *linkData;
+        bool                             doIndex;
 };
 
 /**
@@ -305,10 +309,224 @@ struct WkGtkPrinterUserData {
  * Print finshed callback.
  */
 static void print_finished(WebKitPrintOperation *print_operation __attribute__((unused)), void *user_data) {
-    g_main_loop_quit(((WkGtkPrinterUserData *)user_data)->main_loop);
+    g_main_loop_quit(((PDFprinterUserData *)user_data)->main_loop);
     jlog << iclog::loglevel::debug << iclog::category::CORE
          << "Printing complte; quitting." << std::endl;
 }
+
+////////////////////////////////////////////////////////////////////////////////////
+/**
+ * @brief INDEXABLE PDF
+ */
+
+/**
+ * @brief js_code
+ *
+ * This is javascript to generate JSON that eventullly be used to overlay the pdf
+ * with anchor points and references as webkit2gtk cannot do this natively.
+ *
+ *
+ */
+
+// --- EXPERIMENTAL CODE START ---
+// Added JavaScript extraction for index and anchor positions
+// This code is experimental and may need refinement
+const char *js_code =
+    "window.indexPositions = {}; "
+    "window.anchorPositions = {}; "
+
+    "function getPageNumber(element) { "
+    "    let current = element; "
+    "    while (current) { "
+    "        if (current.classList && current.classList.contains('page')) { "
+    "            const allPages = document.querySelectorAll('.page'); "
+    "            for (let i = 0; i < allPages.length; i++) { "
+    "                if (allPages[i] === current) return i + 1; "
+    "            } "
+    "        } "
+    "        current = current.parentElement; "
+    "    } "
+    "    return 0; "
+    "} "
+
+    "function getClosestPageElement(element) { "
+    "    let current = element; "
+    "    while (current) { "
+    "        if (current.classList && current.classList.contains('page')) { "
+    "            return current; "
+    "        } "
+    "        current = current.parentElement; "
+    "    } "
+    "    return null; "
+    "} "
+
+    "document.querySelectorAll('.index-item').forEach(item => { "
+    "    const link = item.querySelector('a'); "
+    "    const href = link.getAttribute('href'); "
+    "    const id = href.substring(1); "
+    "    const rect = item.getBoundingClientRect(); "
+    "    const pageElement = getClosestPageElement(item); "
+    "    const pageRect = pageElement.getBoundingClientRect(); "
+    "    const x = rect.left - pageRect.left; "
+    "    const y = rect.top - pageRect.top; "
+    "    window.indexPositions[id] = { "
+    "        x: x, "
+    "        y: y, "
+    "        width: rect.width, "
+    "        height: rect.height, "
+    "        page: getPageNumber(item), "
+    "        page_width: pageRect.width, "
+    "        page_height: pageRect.height "
+    "    }; "
+    "}); "
+
+    "document.querySelectorAll('[id]').forEach(elt => { "
+    "    const id = elt.getAttribute('id'); "
+    "    const rect = elt.getBoundingClientRect(); "
+    "    const pageElement = getClosestPageElement(elt); "
+    "    const pageRect = pageElement.getBoundingClientRect(); "
+    "    const x = rect.left - pageRect.left; "
+    "    const y = rect.top - pageRect.top; "
+    "    window.anchorPositions[id] = { "
+    "        x: x, "
+    "        y: y, "
+    "        width: rect.width, "
+    "        height: rect.height, "
+    "        page: getPageNumber(elt), "
+    "        page_width: pageRect.width, "
+    "        page_height: pageRect.height "
+    "    }; "
+    "}); "
+
+    "JSON.stringify({ "
+    "    indexPositions: window.indexPositions, "
+    "    anchorPositions: window.anchorPositions "
+    "});";
+
+PDFprinter::anchor &get_anchor(std::vector<PDFprinter::anchor> &linkData, std::string key) {
+    for (PDFprinter::anchor &it : linkData) {
+        if (it.linkName.compare(key) == 0) {
+            return (it);
+        }
+    }
+    throw std::out_of_range("Key not found in linkData; this may not be an error.");
+}
+
+/**
+ * @brief javascript_callback
+ * @param web_view
+ * @param result
+ * @param user_data
+ *
+ * This is a callback used to grab the physical coordinates of of the
+ * anchors so that we can use them to create links.
+ */
+static void javascript_callback(
+    WebKitWebView *web_view,
+    GAsyncResult  *result,
+    gpointer       user_data
+) {
+    GError   *error     = NULL;
+    JSCValue *js_result = webkit_web_view_evaluate_javascript_finish(
+        web_view,
+        result,
+        &error
+    );
+
+    if (error) {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "JavaScript error: " << error->message << std::endl;
+        g_error_free(error);
+        return;
+    }
+
+    // Convert JSCValue to string
+    gchar *json_string = jsc_value_to_string(js_result);
+
+    if (!json_string) {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "Failed to convert JavaScript result to string" << std::endl;
+        g_object_unref(js_result);
+        return;
+    }
+
+    jlog << iclog::loglevel::debug << iclog::category::CORE
+         << "Extracted JSON: " << json_string << std::endl;
+
+    // Parse JSON with json-c
+    json_object *root = json_tokener_parse(json_string);
+    if (!root) {
+        jlog << iclog::loglevel::error << iclog::category::CORE
+             << "Failed to parse JSON" << std::endl;
+        g_free(json_string);
+        g_object_unref(js_result);
+        return;
+    }
+
+    // Extract indexPositions
+    json_object                     *index_positions = json_object_object_get(root, "indexPositions");
+    std::vector<PDFprinter::anchor> &linkData        = *((PDFprinterUserData *)user_data)->linkData;
+    if (index_positions) {
+        json_object_object_foreach(index_positions, key, val) {
+            double x      = json_object_get_double(json_object_object_get(val, "x"));
+            double y      = json_object_get_double(json_object_object_get(val, "y"));
+            double width  = json_object_get_double(json_object_object_get(val, "width"));
+            double height = json_object_get_double(json_object_object_get(val, "height"));
+            double pageW  = json_object_get_int(json_object_object_get(val, "page_width"));
+            double pageH  = json_object_get_int(json_object_object_get(val, "page_height"));
+            int    page   = json_object_get_int(json_object_object_get(val, "page"));
+            linkData.push_back({
+                key,
+                {x,    y,    width, height, pageW, pageH, page},
+                {0.0f, 0.0f, 0.0f,  0.0f,   0.0f,  0.0f,  0   }
+            });
+
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "Finding Index: " << key << " -> page: " << page
+                 << " pos: (" << x << "," << y << ")" << std::endl;
+        }
+    }
+
+    // Extract anchorPositions
+    json_object *anchor_positions = json_object_object_get(root, "anchorPositions");
+    if (anchor_positions) {
+        json_object_object_foreach(anchor_positions, key, val) {
+            try {
+                PDFprinter::anchor &cur = get_anchor(linkData, key);
+
+                cur.anchor = {
+                    json_object_get_double(json_object_object_get(val, "x")),
+                    json_object_get_double(json_object_object_get(val, "y")),
+                    json_object_get_double(json_object_object_get(val, "width")),
+                    json_object_get_double(json_object_object_get(val, "height")),
+                    json_object_get_double(json_object_object_get(val, "page_width")),
+                    json_object_get_double(json_object_object_get(val, "page_height")),
+                    json_object_get_int(json_object_object_get(val, "page"))
+                };
+
+                jlog << iclog::loglevel::debug << iclog::category::CORE
+                     << "\nIndex: " << cur.linkName << " -> page: " << cur.index.pageNo << " pos: (" << cur.index.xPos << "," << cur.index.yPos << ") size: (" << cur.index.w << "," << cur.index.h << ")\n"
+                     << "Anchor: " << cur.linkName << " -> page: " << cur.anchor.pageNo << " pos: (" << cur.anchor.xPos << "," << cur.anchor.yPos << ") size: (" << cur.anchor.w << "," << cur.anchor.h << ")"
+                     << std::endl;
+            } catch (std::out_of_range e) {
+                jlog << iclog::loglevel::warning << iclog::category::LIB
+                     << e.what()
+                     << std::endl;
+            }
+        }
+    }
+
+    // Cleanup
+    json_object_put(root);
+    g_free(json_string);
+    g_object_unref(js_result);
+
+    // After extraction, trigger print
+    WebKitPrintOperation *print_operation = ((PDFprinterUserData *)user_data)->print_operation;
+    webkit_print_operation_print(print_operation);
+}
+
+// --- EXPERIMENTAL CODE END ---
 
 /**
  * @brief web_view_load_changed
@@ -318,7 +536,7 @@ static void print_finished(WebKitPrintOperation *print_operation __attribute__((
  *
  * Web load monitor callback
  */
-static void web_view_load_changed(WebKitWebView *web_view __attribute__((unused)), WebKitLoadEvent load_event, void *user_data) {
+static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_event, void *user_data) {
 
     switch (load_event) {
         case WEBKIT_LOAD_STARTED:
@@ -338,22 +556,64 @@ static void web_view_load_changed(WebKitWebView *web_view __attribute__((unused)
                     "performed."
                  << std::endl;
             break;
+
+            // --- EXPERIMENTAL CODE START ---
+            // Added JavaScript extraction for index and anchor positions
+            // This code is experimental and may need refinement
+
+            // --- REMOVED ---
+            // case WEBKIT_LOAD_FINISHED:
+            //     jlog << iclog::loglevel::debug << iclog::category::CORE
+            //          << "printing pdf file: "
+            //          << gtk_print_settings_get(
+            //                 ((PDFprinterUserData *)user_data)->print_settings,
+            //                 GTK_PRINT_SETTINGS_OUTPUT_URI
+            //             )
+            //          << std::endl;
+            //     {
+
+            //         WebKitPrintOperation *print_operation = ((PDFprinterUserData *)user_data)->print_operation;
+            //         webkit_print_operation_print(print_operation);
+            //     }
+            //     break;
+
+            // --- ADDED ---
         case WEBKIT_LOAD_FINISHED:
             jlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "printing pdf file: "
-                 << gtk_print_settings_get(
-                        ((WkGtkPrinterUserData *)user_data)->print_settings,
-                        GTK_PRINT_SETTINGS_OUTPUT_URI
-                    )
-                 << std::endl;
-            {
+                 << "WEBKIT LOAD FINISHED - extracting positions" << std::endl;
 
-                WebKitPrintOperation *print_operation = ((WkGtkPrinterUserData *)user_data)->print_operation;
+            // Check if we need to extract positions (i.e., index generation)
+            if (((PDFprinterUserData *)user_data)->doIndex) {
+                // Enable JavaScript for extraction
+                WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
+                webkit_settings_set_enable_javascript(view_settings, true);
+
+                // Evaluate JS to extract positions
+                webkit_web_view_evaluate_javascript(
+                    web_view,
+                    js_code, // script
+                    -1,      // length (use -1 for null-terminated string)
+                    NULL,    // world_name
+                    NULL,    // source_uri
+                    NULL,    // cancellable
+                    (GAsyncReadyCallback)javascript_callback,
+                    user_data
+                );
+
+            } else {
+                // No extraction needed — proceed directly to print
+                jlog << iclog::loglevel::debug << iclog::category::CORE
+                     << "No index extraction required — printing directly" << std::endl;
+
+                WebKitPrintOperation *print_operation = ((PDFprinterUserData *)user_data)->print_operation;
                 webkit_print_operation_print(print_operation);
             }
             break;
+            // --- EXPERIMENTAL CODE END ---
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief cb_worker
@@ -366,7 +626,9 @@ static void web_view_load_changed(WebKitWebView *web_view __attribute__((unused)
  * calls in a queue.
  */
 static int cb_worker(struct html2pdf_params *p) {
-    struct WkGtkPrinterUserData user_data;
+    struct PDFprinterUserData user_data;
+    user_data.linkData = (std::vector<PDFprinter::anchor> *)p->indexData;
+    user_data.doIndex  = p->doIndex;
 
     jlog << iclog::loglevel::debug << iclog::category::CORE
          << "Applying print settings" << std::endl;
@@ -492,6 +754,7 @@ PDFprinter::PDFprinter() {
     key_file_data      = nullptr;
     default_stylesheet = nullptr;
     m_makeBlob         = false;
+    m_doIndex          = false;
 }
 
 /**
@@ -612,11 +875,11 @@ std::string PDFprinter::generate_uuid_string() {
  *
  * @see layout() for custom page setup without print settings.
  */
-void PDFprinter::set_param(std::string html, std::string printSettings, std::string outFile) {
-
+void PDFprinter::set_param(std::string html, std::string printSettings, std::string outFile, bool createIndex) {
+    m_doIndex = createIndex;
     to_cstring(html, html_txt);
+    m_destFile = outFile;
     to_cstring(printSettings, key_file_data);
-    to_cstring("file://" + outFile, out_uri);
 }
 
 /**
@@ -631,10 +894,10 @@ void PDFprinter::set_param(std::string html, std::string printSettings, std::str
  * @see layout() to configure page size, margins, and orientation.
  * @see set_param(std::string, std::string, std::string) for print settings.
  */
-void PDFprinter::set_param(std::string html, std::string outFile) {
-
+void PDFprinter::set_param(std::string html, std::string outFile, bool createIndex) {
+    m_doIndex  = createIndex;
+    m_destFile = outFile;
     to_cstring(html, html_txt);
-    to_cstring("file://" + outFile, out_uri);
 }
 
 /**
@@ -656,9 +919,8 @@ void PDFprinter::set_param(std::string html, std::string outFile) {
  * @see make_pdf() to create the PDF.
  * @see get_blob() to retrieve the PDF as a binary blob.
  */
-void PDFprinter::set_param(std::string html) {
-
-    to_cstring("file:///tmp/" + generate_uuid_string(), out_uri);
+void PDFprinter::set_param(std::string html, bool createIndex) {
+    m_doIndex = createIndex;
     to_cstring(html, html_txt);
     m_makeBlob = true;
 }
@@ -710,6 +972,18 @@ void PDFprinter::layout(std::string pageSize, std::string orientation) {
  * Generate the pdf.
  */
 void PDFprinter::make_pdf() {
+
+    // DIRECTLY CREATE THE PDF
+    if (!m_doIndex && !m_destFile.empty())
+        to_cstring("file://" + m_destFile, out_uri);
+
+    std::string tempFile = generate_uuid_string();
+
+    // POST PROCESS (index or create blob)
+    if (m_doIndex || m_makeBlob)
+        to_cstring("file:///tmp/" + tempFile, out_uri);
+
+    // MAKE THE PDF
     std::thread t([this]() {
         std::mutex              wait_mutex;
         std::condition_variable wait_cond;
@@ -724,6 +998,9 @@ void PDFprinter::make_pdf() {
         payload.wait_cond          = &wait_cond;
         payload.wait_mutex         = &wait_mutex;
         payload.wait_data          = &wait_data;
+        payload.indexData          = &m_indexData;
+        payload.doIndex            = m_doIndex;
+
         g_idle_add((GSourceFunc)cb_worker, &payload);
 
         {
@@ -733,7 +1010,13 @@ void PDFprinter::make_pdf() {
     });
 
     t.join();
+    // CREATE INDEX
+    if (m_doIndex) {
+        index_pdf idx(m_indexData);
+        idx.create_anchors("/tmp/" + tempFile, m_destFile);
+    }
 
+    // GENERATE BLOB
     if (m_makeBlob) {
         jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
              << "Making BLOB" << std::endl;
@@ -744,3 +1027,5 @@ void PDFprinter::make_pdf() {
 const PDFprinter::blob &PDFprinter::get_blob() const { return m_binPDF; }
 
 PDFprinter::blob &&PDFprinter::get_blob() { return (std::move(m_binPDF)); }
+
+std::vector<PDFprinter::anchor> &&PDFprinter::get_anchor_data() { return (std::move(m_indexData)); }
