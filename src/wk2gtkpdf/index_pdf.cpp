@@ -17,7 +17,6 @@ index_pdf::index_pdf(std::vector<PDFprinter::anchor> &links, bool debug)
 #include <vector>
 
 using namespace PoDoFo;
-#define PODOFO_010
 #ifdef PODOFO_010
 
 static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_px) {
@@ -111,6 +110,78 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
     }
 }
 
+static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
+    PdfPageCollection &pages     = doc.GetPages();
+    unsigned           pageCount = pages.GetCount();
+    jlog << iclog::loglevel::debug << iclog::category::LIB
+         << "Page count: " << pageCount
+         << std::endl;
+
+    for (unsigned p = 0; p < pageCount; ++p) {
+        PdfPage &page = pages.GetPageAt(p);
+        jlog << iclog::loglevel::debug << iclog::category::LIB
+             << "Checking page " << (p + 1)
+             << std::endl;
+
+        auto    &annots     = page.GetAnnotations();
+        unsigned annotCount = annots.GetCount();
+        for (unsigned ai = 0; ai < annotCount; ++ai) {
+            PdfAnnotation &annot = annots.GetAnnotAt(ai);
+            PdfObject     &obj   = annot.GetObject();
+
+            auto *stream = obj.GetStream();
+            if (stream) {
+                long len = -1;
+                try {
+                    len = static_cast<long>(stream->GetLength());
+                } catch (...) {
+                }
+                jlog << iclog::loglevel::debug << iclog::category::LIB
+                     << "Stream length: " << len
+                     << std::endl;
+                if (len == 0) {
+
+                    jlog << iclog::loglevel::error << iclog::category::LIB
+                         << "** EMPTY stream on annotation object **"
+                         << std::endl;
+                }
+            } else {
+                jlog << iclog::loglevel::debug << iclog::category::LIB
+                     << "no stream on this annotation object."
+                     << std::endl;
+            }
+
+            // Check for Type /Metadata (unlikely on annotation objects)
+            try {
+                if (obj.GetDictionary().HasKey(PdfName("Type"))) {
+                    PdfObject *typeObj = obj.GetDictionary().GetKey(PdfName("Type"));
+                    if (typeObj && typeObj->GetName() == "Metadata") {
+                        jlog << iclog::loglevel::debug << iclog::category::LIB
+                             << "-> annotation object typed as Metadata"
+                             << std::endl;
+                    }
+                }
+            } catch (...) {
+            }
+        }
+    }
+}
+
+void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
+    PdfMemDocument doc;
+    doc.Load(sourcePath);
+    do_annotation(doc);
+    debug_check_annotations_and_streams(doc);
+
+    jlog << iclog::loglevel::debug << iclog::category::LIB
+         << "Saving page"
+         << std::endl;
+    doc.Save(destPath, PoDoFo::PdfSaveOptions::Clean | PoDoFo::PdfSaveOptions::NoMetadataUpdate);
+    jlog << iclog::loglevel::debug << iclog::category::LIB
+         << destPath << " written"
+         << std::endl;
+}
+
 #else
 
 static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_px) {
@@ -185,75 +256,3 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
     }
 }
 #endif
-
-static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
-    PdfPageCollection &pages     = doc.GetPages();
-    unsigned           pageCount = pages.GetCount();
-    jlog << iclog::loglevel::debug << iclog::category::LIB
-         << "Page count: " << pageCount
-         << std::endl;
-
-    for (unsigned p = 0; p < pageCount; ++p) {
-        PdfPage &page = pages.GetPageAt(p);
-        jlog << iclog::loglevel::debug << iclog::category::LIB
-             << "Checking page " << (p + 1)
-             << std::endl;
-
-        auto    &annots     = page.GetAnnotations();
-        unsigned annotCount = annots.GetCount();
-        for (unsigned ai = 0; ai < annotCount; ++ai) {
-            PdfAnnotation &annot = annots.GetAnnotAt(ai);
-            PdfObject     &obj   = annot.GetObject();
-
-            auto *stream = obj.GetStream();
-            if (stream) {
-                long len = -1;
-                try {
-                    len = static_cast<long>(stream->GetLength());
-                } catch (...) {
-                }
-                jlog << iclog::loglevel::debug << iclog::category::LIB
-                     << "Stream length: " << len
-                     << std::endl;
-                if (len == 0) {
-
-                    jlog << iclog::loglevel::error << iclog::category::LIB
-                         << "** EMPTY stream on annotation object **"
-                         << std::endl;
-                }
-            } else {
-                jlog << iclog::loglevel::debug << iclog::category::LIB
-                     << "no stream on this annotation object."
-                     << std::endl;
-            }
-
-            // Check for Type /Metadata (unlikely on annotation objects)
-            try {
-                if (obj.GetDictionary().HasKey(PdfName("Type"))) {
-                    PdfObject *typeObj = obj.GetDictionary().GetKey(PdfName("Type"));
-                    if (typeObj && typeObj->GetName() == "Metadata") {
-                        jlog << iclog::loglevel::debug << iclog::category::LIB
-                             << "-> annotation object typed as Metadata"
-                             << std::endl;
-                    }
-                }
-            } catch (...) {
-            }
-        }
-    }
-}
-
-void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
-    PdfMemDocument doc;
-    doc.Load(sourcePath);
-    do_annotation(doc);
-    debug_check_annotations_and_streams(doc);
-
-    jlog << iclog::loglevel::debug << iclog::category::LIB
-         << "Saving page"
-         << std::endl;
-    doc.Save(destPath, PoDoFo::PdfSaveOptions::Clean | PoDoFo::PdfSaveOptions::NoMetadataUpdate);
-    jlog << iclog::loglevel::debug << iclog::category::LIB
-         << destPath << " written"
-         << std::endl;
-}
