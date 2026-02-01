@@ -977,11 +977,11 @@ void PDFprinter::make_pdf() {
     if (!m_doIndex && !m_destFile.empty())
         to_cstring("file://" + m_destFile, out_uri);
 
-    std::string tempFile = generate_uuid_string();
+    std::string tempFile = "/tmp/" + generate_uuid_string();
 
     // POST PROCESS (index or create blob)
     if (m_doIndex || m_makeBlob)
-        to_cstring("file:///tmp/" + tempFile, out_uri);
+        to_cstring("file://" + tempFile, out_uri);
 
     // MAKE THE PDF
     std::thread t([this]() {
@@ -1010,13 +1010,15 @@ void PDFprinter::make_pdf() {
     });
 
     t.join();
-    // CREATE INDEX
+
+    // CREATE INDEX (if requested)
     if (m_doIndex) {
         index_pdf idx(m_indexData);
-        idx.create_anchors("/tmp/" + tempFile, m_destFile);
+        idx.create_anchors(tempFile, m_destFile);
+        std::remove(tempFile.c_str());
     }
 
-    // GENERATE BLOB
+    // GENERATE BLOB (if requested)
     if (m_makeBlob) {
         jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
              << "Making BLOB" << std::endl;

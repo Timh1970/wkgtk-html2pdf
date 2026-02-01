@@ -15,6 +15,7 @@ index_pdf::index_pdf(std::vector<PDFprinter::anchor> &links, bool debug)
 // language: c++
 #include <iostream>
 #include <vector>
+#define PODOFO_010
 
 using namespace PoDoFo;
 #ifdef PODOFO_010
