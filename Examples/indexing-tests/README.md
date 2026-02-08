@@ -18,13 +18,31 @@ This has introduced a dependency of PoDoFo which has different versions across d
 
 Currently this is to be considered **experimental**
 
+
+## Modes
+### Classic mode:
+In classic mode wkgtk-html2pdf parses traditional anchors `<a>` and they work in the exact same manner as they would in html.
+
+**NOTE**: External links are not supported 
+
+### Enhanced
+In enhanced mode you need to wrap your anchors and anything else in a `<div class="index-item">` element.  This is useful if you wish to extend the clickable area beyond the `<a>` element.
+
+
 To utilise the built in indexing the source element must have a class name of "**index_item**" eg.
 
 ```
 div class="index-item"><a href="#anchor1">Anchor 1</a></div>
 ```
 
-It is also mandatory to use the `<div class="page">` element as this is needed by the javascript that gathers the coordinates. 
+**NOTE:** 
+- The modes should not be mixed.  If used in ***Classic*** mode all '<a href="#...' elements will be processed; `<div class="index-item">` elements will be ignored.
+- When used in enhanced mode any `<a>` elements that are not wrapped in a `<div class="index-item">` will be ignored.
+
+
+### Mandatory elements
+
+It is mandatory to use the `<div class="page">` element as this is needed by the javascript that gathers the coordinates relative to the page
 
 Have a look at testpage.html to see how to format compatible HTML.
 

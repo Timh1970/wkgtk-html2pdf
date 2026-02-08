@@ -153,38 +153,62 @@
             return null;
         }
 
-        // Extract index positions
-        document.querySelectorAll('.index-item').forEach(item => {
-            const link = item.querySelector('a');
-            const href = link.getAttribute('href');
-            const id = href.substring(1); // Remove the '#'
+        // Extract index positions (class index-item mode)
+        // document.querySelectorAll('.index-item').forEach(item => {
+        //     const link = item.querySelector('a');
+        //     const href = link.getAttribute('href');
+        //     const id = href.substring(1); // Remove the '#'
+        //
+        //     const rect = item.getBoundingClientRect();
+        //     const pageElement = getClosestPageElement(item);
+        //     const pageRect = pageElement.getBoundingClientRect();
+        //
+        //     // Debug information
+        //     console.log("Processing index item:", id);
+        //     console.log("  Item rect:", rect);
+        //     console.log("  Page rect:", pageRect);
+        //     console.log("  Page number:", getPageNumber(item));
+        //
+        //     // Calculate page-relative coordinates
+        //     const x = rect.left - pageRect.left;
+        //     const y = rect.top - pageRect.top;
+        //
+        //     window.indexPositions[id] = {
+        //         x: x,
+        //         y: y,
+        //         width: rect.width,
+        //         height: rect.height,
+        //         page: getPageNumber(item),
+        //         page_width: pageRect.width,
+        //         page_height: pageRect.height
+        //     };
+        //
+        //     console.log("  Index position:", window.indexPositions[id]);
+        // });
 
-            const rect = item.getBoundingClientRect();
-            const pageElement = getClosestPageElement(item);
-            const pageRect = pageElement.getBoundingClientRect();
-
-            // Debug information
-            console.log("Processing index item:", id);
-            console.log("  Item rect:", rect);
-            console.log("  Page rect:", pageRect);
-            console.log("  Page number:", getPageNumber(item));
-
-            // Calculate page-relative coordinates
-            const x = rect.left - pageRect.left;
-            const y = rect.top - pageRect.top;
-
-            window.indexPositions[id] = {
-                x: x,
-                y: y,
-                width: rect.width,
-                height: rect.height,
-                page: getPageNumber(item),
-                page_width: pageRect.width,
-                page_height: pageRect.height
-            };
-
-            console.log("  Index position:", window.indexPositions[id]);
+        // Extract inded positions (<a href=#... mode)
+        document.querySelectorAll('a').forEach(item => {
+            const href = item.getAttribute('href');
+            if (href.charAt(0) === '#') {
+                const id = href.substring(1); // Remove the '#'
+                const rect = item.getBoundingClientRect();
+                const pageElement = getClosestPageElement(item);
+                const pageRect = pageElement.getBoundingClientRect();
+                const x = rect.left - pageRect.left;
+                const y = rect.top - pageRect.top;
+                window.indexPositions[id] = {
+                    x: x,
+                    y: y,
+                    width: rect.width,
+                    height: rect.height,
+                    page: getPageNumber(item),
+                    page_width: pageRect.width,
+                    page_height: pageRect.height
+                };
+            }
         });
+
+
 
         // Extract anchor positions
         document.querySelectorAll('[id]').forEach(elt => {

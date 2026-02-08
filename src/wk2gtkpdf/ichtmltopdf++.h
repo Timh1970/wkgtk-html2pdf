@@ -69,6 +69,12 @@ class icGTK {
         PDF_API icGTK        &operator=(const icGTK &) = delete;
 };
 
+enum class index_mode {
+    OFF,
+    CLASSIC,
+    ENHANCED
+};
+
 /**
  * @brief The html2pdf_params class
  *
@@ -85,7 +91,7 @@ struct html2pdf_params {
         std::condition_variable *wait_cond;
         int                     *wait_data;
         void                    *indexData; /**< std::vector<PDFprinter::anchor> */
-        bool                     doIndex;
+        index_mode               doIndex;
 };
 
 /**
@@ -205,13 +211,14 @@ class PDF_API PDFprinter {
 
     private:
         char *in_uri;
-        char *html_txt;
-        char *base_uri;
-        char *out_uri;
-        char *key_file_data;
-        char *default_stylesheet;
-        bool  m_makeBlob;
-        bool  m_doIndex;
+
+        char      *html_txt;
+        char      *base_uri;
+        char      *out_uri;
+        char      *key_file_data;
+        char      *default_stylesheet;
+        bool       m_makeBlob;
+        index_mode m_doIndex;
 
         std::string m_destFile;
 
@@ -238,9 +245,9 @@ class PDF_API PDFprinter {
     public:
         PDFprinter();
         ~PDFprinter();
-        void set_param(std::string html, std::string printSettings, std::string outFile, bool createIndex = false);
-        void set_param(std::string html, std::string outFile, bool createIndex = false);
-        void set_param(std::string html, bool createIndex = false);
+        void set_param(std::string html, std::string printSettings, std::string outFile, index_mode createIndex = index_mode::OFF);
+        void set_param(std::string html, std::string outFile, index_mode createIndex = index_mode::OFF);
+        void set_param(std::string html, index_mode createIndex = index_mode::OFF);
         /**
          * @brief PDFprinter::make_pdf
          *

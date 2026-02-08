@@ -38,11 +38,11 @@ int main(int argc, char *argv[]) {
     LOG_LEVEL = LOG_INFO;
 
     // HANDLE COMMAND LINE ARGUMENTS
-    string infile;
-    string outfile;
-    string orientation;
-    string pageSize;
-    bool   index = false;
+    string     infile;
+    string     outfile;
+    string     orientation;
+    string     pageSize;
+    index_mode idxMode = index_mode::OFF;
 
     typedef enum {
         DO_INDEX = 256
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         {"orientation", required_argument, 0, 'O'              },
         {"size",        required_argument, 0, 's'              },
         {"verbose",     required_argument, 0, 'v'              },
-        {"index",       no_argument,       0, longopt::DO_INDEX},
+        {"index",       required_argument, 0, longopt::DO_INDEX},
         {NULL,          0,                 0, 0                }
     };
     int value        = 0;
@@ -96,9 +96,14 @@ int main(int argc, char *argv[]) {
                 if (optarg)
                     LOG_LEVEL = atoi(optarg);
                 break;
-            case longopt::DO_INDEX:
-                index = true;
+            case longopt::DO_INDEX: { /**< Index defaults to off */
+                string imode(optarg);
+                if (imode.compare("classic") == 0)
+                    idxMode = index_mode::CLASSIC;
+                if (imode.compare("enhanced") == 0)
+                    idxMode = index_mode::ENHANCED;
                 break;
+            }
             default:
                 break;
         }
@@ -137,7 +142,7 @@ int main(int argc, char *argv[]) {
     /**
      * If you are using a default page size
      */
-    pdf.set_param(PDFprinter::read_file(infile), outfile, index);
+    pdf.set_param(PDFprinter::read_file(infile), outfile, idxMode);
 
     /**
      * If the pageSize and orintation are empty or invalid

@@ -298,7 +298,7 @@ struct PDFprinterUserData {
         WebKitPrintOperation            *print_operation;
         GMainLoop                       *main_loop;
         std::vector<PDFprinter::anchor> *linkData;
-        bool                             doIndex;
+        index_mode                       doIndex;
 };
 
 /**
@@ -331,7 +331,100 @@ static void print_finished(WebKitPrintOperation *print_operation __attribute__((
 // --- EXPERIMENTAL CODE START ---
 // Added JavaScript extraction for index and anchor positions
 // This code is experimental and may need refinement
-const char *js_code =
+const char *js_code_classic =
+    "window.indexPositions = {}; "
+    "window.anchorPositions = {}; "
+
+    "function getPageNumber(element) { "
+    "    let current = element; "
+    "    while (current) { "
+    "        if (current.classList && current.classList.contains('page')) { "
+    "            const allPages = document.querySelectorAll('.page'); "
+    "            for (let i = 0; i < allPages.length; i++) { "
+    "                if (allPages[i] === current) return i + 1; "
+    "            } "
+    "        } "
+    "        current = current.parentElement; "
+    "    } "
+    "    return 0; "
+    "} "
+
+    "function getClosestPageElement(element) { "
+    "    let current = element; "
+    "    while (current) { "
+    "        if (current.classList && current.classList.contains('page')) { "
+    "            return current; "
+    "        } "
+    "        current = current.parentElement; "
+    "    } "
+    "    return null; "
+    "} "
+
+    // "document.querySelectorAll('.index-item').forEach(item => { "
+    // "    const link = item.querySelector('a'); "
+    // "    const href = link.getAttribute('href'); "
+    // "    const id = href.substring(1); "
+    // "    const rect = item.getBoundingClientRect(); "
+    // "    const pageElement = getClosestPageElement(item); "
+    // "    const pageRect = pageElement.getBoundingClientRect(); "
+    // "    const x = rect.left - pageRect.left; "
+    // "    const y = rect.top - pageRect.top; "
+    // "    window.indexPositions[id] = { "
+    // "        x: x, "
+    // "        y: y, "
+    // "        width: rect.width, "
+    // "        height: rect.height, "
+    // "        page: getPageNumber(item), "
+    // "        page_width: pageRect.width, "
+    // "        page_height: pageRect.height "
+    // "    }; "
+    // "}); "
+
+    "document.querySelectorAll('a').forEach(item => { "
+    "    const href = item.getAttribute('href'); "
+    "    if (href.charAt(0) === '#') { "
+    "        const id = href.substring(1); "
+    "        const rect = item.getBoundingClientRect(); "
+    "        const pageElement = getClosestPageElement(item); "
+    "        const pageRect = pageElement.getBoundingClientRect(); "
+    "        const x = rect.left - pageRect.left; "
+    "        const y = rect.top - pageRect.top; "
+    "        window.indexPositions[id] = { "
+    "            x: x, "
+    "            y: y, "
+    "            width: rect.width, "
+    "            height: rect.height, "
+    "            page: getPageNumber(item), "
+    "            page_width: pageRect.width, "
+    "            page_height: pageRect.height "
+    "        }; "
+    "    } "
+    "}); "
+
+    "document.querySelectorAll('[id]').forEach(elt => { "
+    "    const id = elt.getAttribute('id'); "
+    "    const rect = elt.getBoundingClientRect(); "
+    "    const pageElement = getClosestPageElement(elt); "
+    "    const pageRect = pageElement.getBoundingClientRect(); "
+    "    const x = rect.left - pageRect.left; "
+    "    const y = rect.top - pageRect.top; "
+    "    window.anchorPositions[id] = { "
+    "        x: x, "
+    "        y: y, "
+    "        width: rect.width, "
+    "        height: rect.height, "
+    "        page: getPageNumber(elt), "
+    "        page_width: pageRect.width, "
+    "        page_height: pageRect.height "
+    "    }; "
+    "}); "
+
+    "JSON.stringify({ "
+    "    indexPositions: window.indexPositions, "
+    "    anchorPositions: window.anchorPositions "
+    "});";
+
+const char *js_code_enhanced =
     "window.indexPositions = {}; "
     "window.anchorPositions = {}; "
 
@@ -426,7 +519,8 @@ static void javascript_callback(
     GAsyncResult  *result,
     gpointer       user_data
 ) {
-    GError   *error     = NULL;
+    GError *error = NULL;
+
     JSCValue *js_result = webkit_web_view_evaluate_javascript_finish(
         web_view,
         result,
@@ -583,7 +677,10 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
                  << "WEBKIT LOAD FINISHED - extracting positions" << std::endl;
 
             // Check if we need to extract positions (i.e., index generation)
-            if (((PDFprinterUserData *)user_data)->doIndex) {
+            if (
+                (((PDFprinterUserData *)user_data)->doIndex == index_mode::ENHANCED)
+                || (((PDFprinterUserData *)user_data)->doIndex == index_mode::CLASSIC)
+            ) {
                 // Enable JavaScript for extraction
                 WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
                 webkit_settings_set_enable_javascript(view_settings, true);
@@ -591,11 +688,18 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
                 // Evaluate JS to extract positions
                 webkit_web_view_evaluate_javascript(
                     web_view,
-                    js_code, // script
-                    -1,      // length (use -1 for null-terminated string)
-                    NULL,    // world_name
-                    NULL,    // source_uri
-                    NULL,    // cancellable
+                    [&user_data]() {
+                        return (
+                            ((PDFprinterUserData *)user_data)->doIndex
+                                    == index_mode::ENHANCED
+                                ? js_code_enhanced
+                                : js_code_classic
+                        );
+                    }(),  // script
+                    -1,   // length (use -1 for null-terminated string)
+                    NULL, // world_name
+                    NULL, // source_uri
+                    NULL, // cancellable
                     (GAsyncReadyCallback)javascript_callback,
                     user_data
                 );
@@ -754,7 +858,7 @@ PDFprinter::PDFprinter() {
     key_file_data      = nullptr;
     default_stylesheet = nullptr;
     m_makeBlob         = false;
-    m_doIndex          = false;
+    m_doIndex          = index_mode::OFF;
 }
 
 /**
@@ -875,7 +979,7 @@ std::string PDFprinter::generate_uuid_string() {
  *
  * @see layout() for custom page setup without print settings.
  */
-void PDFprinter::set_param(std::string html, std::string printSettings, std::string outFile, bool createIndex) {
+void PDFprinter::set_param(std::string html, std::string printSettings, std::string outFile, index_mode createIndex) {
     m_doIndex = createIndex;
     to_cstring(html, html_txt);
     m_destFile = outFile;
@@ -894,7 +998,7 @@ void PDFprinter::set_param(std::string html, std::string printSettings, std::str
  * @see layout() to configure page size, margins, and orientation.
  * @see set_param(std::string, std::string, std::string) for print settings.
  */
-void PDFprinter::set_param(std::string html, std::string outFile, bool createIndex) {
+void PDFprinter::set_param(std::string html, std::string outFile, index_mode createIndex) {
     m_doIndex  = createIndex;
     m_destFile = outFile;
     to_cstring(html, html_txt);
@@ -919,7 +1023,7 @@ void PDFprinter::set_param(std::string html, std::string outFile, bool createInd
  * @see make_pdf() to create the PDF.
  * @see get_blob() to retrieve the PDF as a binary blob.
  */
-void PDFprinter::set_param(std::string html, bool createIndex) {
+void PDFprinter::set_param(std::string html, index_mode createIndex) {
     m_doIndex = createIndex;
     to_cstring(html, html_txt);
     m_makeBlob = true;
@@ -974,13 +1078,13 @@ void PDFprinter::layout(std::string pageSize, std::string orientation) {
 void PDFprinter::make_pdf() {
 
     // DIRECTLY CREATE THE PDF
-    if (!m_doIndex && !m_destFile.empty())
+    if ((m_doIndex == index_mode::OFF) && !m_destFile.empty())
         to_cstring("file://" + m_destFile, out_uri);
 
     std::string tempFile = "/tmp/" + generate_uuid_string();
 
     // POST PROCESS (index or create blob)
-    if (m_doIndex || m_makeBlob)
+    if ((m_doIndex != index_mode::OFF) || m_makeBlob)
         to_cstring("file://" + tempFile, out_uri);
 
     // MAKE THE PDF
@@ -1012,7 +1116,7 @@ void PDFprinter::make_pdf() {
     t.join();
 
     // CREATE INDEX (if requested)
-    if (m_doIndex) {
+    if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
         index_pdf idx(m_indexData);
         idx.create_anchors(tempFile, m_destFile);
         std::remove(tempFile.c_str());

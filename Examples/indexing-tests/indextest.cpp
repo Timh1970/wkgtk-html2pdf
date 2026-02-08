@@ -87,7 +87,7 @@ int main(int argc __attribute__((unused)), char **argv) {
      *
      * Write the html to a plain html file (useful for testing)
      */
-    std::ofstream file(std::filesystem::current_path().string() + "/testpage.html");
+    std::ofstream file(std::filesystem::current_path().string() + "/testpage_anchor_only.html");
     if (file) {
         file << html;
         file.close();
