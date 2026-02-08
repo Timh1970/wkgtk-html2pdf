@@ -15,7 +15,7 @@ CXXFLAGS += $(shell pkg-config --cflags json-c)
 
 LDFLAGS += $(USER_LIBDIR)
 
-LDLIBS := -lwk2gtkpdf -lmupdf
+LDLIBS := -lwk2gtkpdf
 LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1)
 LDLIBS += $(shell pkg-config --libs libsystemd)
 LDLIBS += $(shell pkg-config --libs libpodofo)
