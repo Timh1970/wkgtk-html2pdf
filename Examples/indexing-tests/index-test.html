@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css">
+        <style>
+            .index-item {
+                border: 1px solid #000;
+                padding: 5px;
+                margin: 10px 0;
+                display: block;
+            }
+
+            .index-item a {
+                color: blue;
+                text-decoration: none;
+            }
+
+            .index-item a:hover {
+                text-decoration: underline;
+            }
+
+            .anchor {
+                border: 1px solid #000;
+                padding: 5px;
+                margin: 10px 0;
+                display: block;
+            }
+
+        </style>
+    </head>
+
+    <body>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Index Page</h2>
+                <div class="index-item"><a href="#anchor1">Anchor 1</a></div>
+                <div class="index-item"><a href="#anchor2">Anchor 2</a></div>
+                <div class="index-item"><a href="#anchor3">Anchor 3</a></div>
+                <div class="index-item"><a href="#anchor4">Anchor 4</a></div>
+                <div class="index-item"><a href="#anchor5">Anchor 5</a></div>
+                <div class="index-item"><a href="#anchor6">Anchor 6</a></div>
+                <div class="index-item"><a href="#anchor7">Anchor 7</a></div>
+                <div class="index-item"><a href="#anchor8">Anchor 8</a></div>
+                <div class="index-item"><a href="#anchor9">Anchor 9</a></div>
+                <div class="index-item"><a href="#anchor10">Anchor 10</a></div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 2</h2>
+                <div class="anchor" id="anchor1" style="margin-top:100px;">Anchor 1</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 3</h2>
+                <div class="anchor" id="anchor2" style="margin-top:110px;">Anchor 2</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 4</h2>
+                <div class="anchor" id="anchor3" style="margin-top:120px;">Anchor 3</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 5</h2>
+                <div class="anchor" id="anchor4" style="margin-top:130px;">Anchor 4</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 6</h2>
+                <div class="anchor" id="anchor5" style="margin-top:140px;">Anchor 5</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 7</h2>
+                <div class="anchor" id="anchor6" style="margin-top:150px;">Anchor 6</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 8</h2>
+                <div class="anchor" id="anchor7" style="margin-top:160px;">Anchor 7</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 9</h2>
+                <div class="anchor" id="anchor8" style="margin-top:170px;">Anchor 8</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 10</h2>
+                <div class="anchor" id="anchor9" style="margin-top:180px;">Anchor 9</div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2>Page 11</h2>
+                <div class="anchor" id="anchor10" style="margin-top:190px;">Anchor 10</div>
+            </div>
+        </div>
+
+    </body>
+    <script>
+        console.log("Starting JavaScript extraction");
+
+        // Initialize the global objects
+        window.indexPositions = {};
+        window.anchorPositions = {};
+
+        // Function to get page number
+        function getPageNumber(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    const allPages = document.querySelectorAll('.page');
+                    for (let i = 0; i < allPages.length; i++) {
+                        if (allPages[i] === current) return i + 1;
+                    }
+                }
+                current = current.parentElement;
+            }
+            return 0;
+        }
+
+        // Function to get the closest page element
+        function getClosestPageElement(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    return current;
+                }
+                current = current.parentElement;
+            }
+            return null;
+        }
+
+        // Extract index positions (class index-item mode)
+        // document.querySelectorAll('.index-item').forEach(item => {
+        //     const link = item.querySelector('a');
+        //     const href = link.getAttribute('href');
+        //     const id = href.substring(1); // Remove the '#'
+        //
+        //     const rect = item.getBoundingClientRect();
+        //     const pageElement = getClosestPageElement(item);
+        //     const pageRect = pageElement.getBoundingClientRect();
+        //
+        //     // Debug information
+        //     console.log("Processing index item:", id);
+        //     console.log("  Item rect:", rect);
+        //     console.log("  Page rect:", pageRect);
+        //     console.log("  Page number:", getPageNumber(item));
+        //
+        //     // Calculate page-relative coordinates
+        //     const x = rect.left - pageRect.left;
+        //     const y = rect.top - pageRect.top;
+        //
+        //     window.indexPositions[id] = {
+        //         x: x,
+        //         y: y,
+        //         width: rect.width,
+        //         height: rect.height,
+        //         page: getPageNumber(item),
+        //         page_width: pageRect.width,
+        //         page_height: pageRect.height
+        //     };
+        //
+        //     console.log("  Index position:", window.indexPositions[id]);
+        // });
+
+        // Extract inded positions (<a href=#... mode)
+        document.querySelectorAll('a').forEach(item => {
+            const href = item.getAttribute('href');
+            if (href.charAt(0) === '#') {
+                const id = href.substring(1); // Remove the '#'
+                const rect = item.getBoundingClientRect();
+                const pageElement = getClosestPageElement(item);
+                const pageRect = pageElement.getBoundingClientRect();
+                const x = rect.left - pageRect.left;
+                const y = rect.top - pageRect.top;
+                window.indexPositions[id] = {
+                    x: x,
+                    y: y,
+                    width: rect.width,
+                    height: rect.height,
+                    page: getPageNumber(item),
+                    page_width: pageRect.width,
+                    page_height: pageRect.height
+                };
+            }
+        });
+
+
+
+        // Extract anchor positions
+        document.querySelectorAll('[id]').forEach(elt => {
+            const id = elt.getAttribute('id');
+            const rect = elt.getBoundingClientRect();
+            const pageElement = getClosestPageElement(elt);
+            const pageRect = pageElement.getBoundingClientRect();
+
+            // Debug information
+            console.log("Processing anchor:", id);
+            console.log("  Anchor rect:", rect);
+            console.log("  Page rect:", pageRect);
+            console.log("  Page number:", getPageNumber(elt));
+
+            // Calculate page-relative coordinates
+            const x = rect.left - pageRect.left;
+            const y = rect.top - pageRect.top;
+
+            window.anchorPositions[id] = {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                page: getPageNumber(elt),
+                page_width: pageRect.width,
+                page_height: pageRect.height
+            };
+
+            console.log("  Anchor position:", window.anchorPositions[id]);
+        });
+
+        // Output the final JSON
+        console.log("Final JSON:", JSON.stringify({
+            indexPositions: window.indexPositions,
+            anchorPositions: window.anchorPositions
+        }));
+
+        // Log all page elements for debugging
+        console.log("All page elements:", document.querySelectorAll('.page'));
+
+    </script>
+
+</html>

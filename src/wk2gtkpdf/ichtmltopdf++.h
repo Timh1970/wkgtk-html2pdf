@@ -13,24 +13,6 @@
 #endif
 
 /**
- * @brief The html2pdf_params class
- *
- * A definition payload that is passed to the function that creates the pdf
- */
-struct html2pdf_params {
-        const char              *in_uri;
-        const char              *html_txt;
-        const char              *base_uri;
-        const char              *out_uri;
-        const char              *key_file_data;
-        const char              *default_stylesheet;
-        std::mutex              *wait_mutex;
-        std::condition_variable *wait_cond;
-        int                     *wait_data;
-        ;
-};
-
-/**
  * @brief The XvfbMode enum
  *
  * Modes to run xvfb in.
@@ -87,6 +69,31 @@ class icGTK {
         PDF_API icGTK        &operator=(const icGTK &) = delete;
 };
 
+enum class index_mode {
+    OFF,
+    CLASSIC,
+    ENHANCED
+};
+
+/**
+ * @brief The html2pdf_params class
+ *
+ * A definition payload that is passed to the function that creates the pdf
+ */
+struct html2pdf_params {
+        const char              *in_uri;
+        const char              *html_txt;
+        const char              *base_uri;
+        const char              *out_uri;
+        const char              *key_file_data;
+        const char              *default_stylesheet;
+        std::mutex              *wait_mutex;
+        std::condition_variable *wait_cond;
+        int                     *wait_data;
+        void                    *indexData; /**< std::vector<PDFprinter::anchor> */
+        index_mode               doIndex;
+};
+
 /**
  * @class PDFprinter
  * @brief HTML to PDF converter using WebKit2GTK.
@@ -113,6 +120,22 @@ class PDF_API PDFprinter {
                 std::string sizeName;
                 uint        shortMM;
                 uint        longMM;
+        };
+
+        struct linkData {
+                double xPos;
+                double yPos;
+                double w;
+                double h;
+                double page_width;
+                double page_height;
+                int    pageNo;
+        };
+
+        struct anchor {
+                std::string linkName;
+                linkData    index;
+                linkData    anchor;
         };
 
         typedef std::vector<unsigned char> blob;
@@ -188,12 +211,16 @@ class PDF_API PDFprinter {
 
     private:
         char *in_uri;
-        char *html_txt;
-        char *base_uri;
-        char *out_uri;
-        char *key_file_data;
-        char *default_stylesheet;
-        bool  m_makeBlob;
+
+        char      *html_txt;
+        char      *base_uri;
+        char      *out_uri;
+        char      *key_file_data;
+        char      *default_stylesheet;
+        bool       m_makeBlob;
+        index_mode m_doIndex;
+
+        std::string m_destFile;
 
         /**
          * @brief payload
@@ -204,6 +231,13 @@ class PDF_API PDFprinter {
 
         blob m_binPDF;
 
+        /**
+         * @brief m_indexData
+         *
+         * Coordinates for generating index and anchor points
+         */
+        std::vector<anchor> m_indexData;
+
         std::string generate_uuid_string();
         void        to_cstring(const std::string &str, char *&cstr);
         void        read_file_to_blob();
@@ -211,9 +245,9 @@ class PDF_API PDFprinter {
     public:
         PDFprinter();
         ~PDFprinter();
-        void set_param(std::string html, std::string printSettings, std::string outFile);
-        void set_param(std::string html, std::string outFile);
-        void set_param(std::string html);
+        void set_param(std::string html, std::string printSettings, std::string outFile, index_mode createIndex = index_mode::OFF);
+        void set_param(std::string html, std::string outFile, index_mode createIndex = index_mode::OFF);
+        void set_param(std::string html, index_mode createIndex = index_mode::OFF);
         /**
          * @brief PDFprinter::make_pdf
          *
@@ -244,6 +278,12 @@ class PDF_API PDFprinter {
          * @return - ownership of the BLOB
          */
         blob      &&get_blob();
+
+        /**
+         * @brief get_anchor_data
+         * @return - ownership of the index data array.
+         */
+        std::vector<PDFprinter::anchor> &&get_anchor_data();
 };
 
 #endif // GTKPRINT_H

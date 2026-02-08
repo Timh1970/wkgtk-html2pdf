@@ -7,6 +7,7 @@ USER_CXXFLAGS ?=
 CXXFLAGS += $(USER_CXXFLAGS)
 CXXFLAGS += -std=c++17 -fPIC -O2 -fvisibility=hidden
 CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
+CXXFLAGS += $(shell pkg-config --cflags libpodofo)
 
 APPLICATION=libwk2gtkpdf.so
 

@@ -1,9 +1,9 @@
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <string>
 #include <vector>
-
-void create_stylesheet(std::string name, int w, int h, std::string orientation);
+void create_stylesheet(std::string name, int w, int h, std::string orientation, int margin);
 
 /**
  * @brief main
@@ -11,7 +11,43 @@ void create_stylesheet(std::string name, int w, int h, std::string orientation);
  *
  * A quick utility to generate the css templates for use with wkgtkprinter
  */
-int main() {
+int main(int argc, char *argv[]) {
+
+    int margin       = 6;
+    int value        = 0;
+    int option_index = 0;
+
+    static struct option long_options[] = {
+        {"help",   no_argument,       0, 'h'},
+        {"margin", required_argument, 0, 'm'},
+        {NULL,     0,                 0, 0  }
+    };
+
+    while ((value = getopt_long(argc, argv, ":hm:", long_options, &option_index)) != -1) {
+        switch (value) {
+            case 'h':
+                std::cout << "USAGE: " << argv[0] << " [--margin (-m) X]" << std::endl;
+                exit(0);
+            case 'm': {
+                std::string v(optarg);
+                for (char c : v) {
+                    if (!std::isdigit(c)) {
+                        std::cout << "ERROR: Value is not numeric; USAGE: " << argv[0] << " --margin (-m) X" << std::endl;
+                        exit(1);
+                    }
+                }
+                margin = atoi(optarg);
+            } break;
+            case ':': // Missing argument
+                std::cout << "ERROR: Option -" << (char)optopt << " requires an argument." << std::endl;
+                std::cout << "USAGE: " << argv[0] << " [--margin (-m) X]" << std::endl;
+                exit(1);
+            case '?': // Unknown option
+                std::cout << "ERROR: Unknown option -" << (char)optopt << std::endl;
+                exit(1);
+        }
+    }
+
     struct PaperSize {
             std::string sizeName;
             uint        shortMM;
@@ -72,14 +108,16 @@ int main() {
         {"ArchE",   914,  1219}
     };
     for (const auto &size : isoPaperSizes) {
-        create_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait");
+        create_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait", margin);
     }
     for (const auto &size : isoPaperSizes) {
-        create_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape");
+        create_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape", margin);
     }
+
+    return (0);
 }
 
-void create_stylesheet(std::string name, int w, int h, std::string orientation) {
+void create_stylesheet(std::string name, int w, int h, std::string orientation, int margin) {
 
     std::cout << "Generating stylesheet for " << name << ": " << w << " x " << h << std::endl;
 
@@ -101,7 +139,8 @@ void create_stylesheet(std::string name, int w, int h, std::string orientation) 
                       + R"(;
     --page-height: )" + std::to_string(h)
                       + R"(;
-    --page-margin: 8;
+    --page-margin: )" + std::to_string(margin)
+                      + R"(;
 }
 
 @page {

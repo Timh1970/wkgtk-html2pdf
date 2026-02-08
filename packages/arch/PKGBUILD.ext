@@ -1,6 +1,6 @@
 # Maintainer: Inplico UK James@inplico.uk
 pkgname=wkgtk-html2pdf
-pkgver=0.0.10
+pkgver=0.0.11
 pkgrel=0
 epoch=
 pkgdesc="wk2gtkpdf cpp library and command line interface"
@@ -8,7 +8,7 @@ arch=(x86_64)
 url="https://github.com/yourusername/your-repo"
 license=('MIT')
 groups=()
-depends=(webkit2gtk-4.1 systemd xorg-server-xvfb)
+depends=('podofo>=0.10' webkit2gtk-4.1 systemd xorg-server-xvfb)
 makedepends=()
 checkdepends=()
 optdepends=()
@@ -28,7 +28,7 @@ sha256sums=('a9b840a1aca075362c570d1e69f772893b62de5f5976426adc8e8f610701b1dd')
 build() {
 
 # Build the library
-	make -C ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf
+	make -C ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf USER_CXXFLAGS="-DPODOFO_010"
 
 # Build the command line interface
 	USER_LIBDIR="-L${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf -lwk2gtkpdf"
