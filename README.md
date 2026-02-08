@@ -36,14 +36,21 @@ yay -Syy wkgtk-html2pdf
 ```
 
 #### Arch Linux (Direct Download)
+Binaries are here https://git.inplico.uk/releases/wkgtk-html2pdf/Arch/
+
+Install example:
+
 ```bash
-wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/arch/wkgtk-html2pdf-0.0.10-0-x86_64.pkg.tar.zst
 sudo pacman -U wkgtk-html2pdf-0.0.10-0-x86_64.pkg.tar.zst
 ```
 
 #### Debian/Ubuntu (Direct Download)
+
+Binaries are here https://git.inplico.uk/releases/wkgtk-html2pdf/Deb/
+
+Install example:
+
 ```bash
-wget https://github.com/Timh1970/wkgtk-html2pdf/blob/main/packages/Debian/wkgtk-html2pdf-0.0.9-1.deb
 sudo dpkg -i wkgtk-html2pdf_1.0.0_amd64.deb
 ```
 
