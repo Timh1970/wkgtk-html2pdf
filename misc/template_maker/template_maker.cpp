@@ -20,36 +20,31 @@ int main(int argc, char *argv[]) {
     static struct option long_options[] = {
         {"help",   no_argument,       0, 'h'},
         {"margin", required_argument, 0, 'm'},
+        {NULL,     0,                 0, 0  }
     };
 
-    while ((value = getopt_long(
-                argc,
-                argv,
-                "h",
-                long_options,
-                &option_index
-            ))
-           != -1) {
+    while ((value = getopt_long(argc, argv, ":hm:", long_options, &option_index)) != -1) {
         switch (value) {
-            case 'h': {
-                std::cout << "USAGE: " << argv[0] << " --margin (-m) X" << std::endl;
+            case 'h':
+                std::cout << "USAGE: " << argv[0] << " [--margin (-m) X]" << std::endl;
                 exit(0);
-            }
             case 'm': {
                 std::string v(optarg);
-                if (v.empty()) {
-                    std::cout << "ERROR: No value set; USAGE: " << argv[0] << " --margin (-m) X" << std::endl;
-                    exit(0);
-                }
                 for (char c : v) {
                     if (!std::isdigit(c)) {
                         std::cout << "ERROR: Value is not numeric; USAGE: " << argv[0] << " --margin (-m) X" << std::endl;
-                        exit(0);
+                        exit(1);
                     }
                 }
-
                 margin = atoi(optarg);
-            }
+            } break;
+            case ':': // Missing argument
+                std::cout << "ERROR: Option -" << (char)optopt << " requires an argument." << std::endl;
+                std::cout << "USAGE: " << argv[0] << " [--margin (-m) X]" << std::endl;
+                exit(1);
+            case '?': // Unknown option
+                std::cout << "ERROR: Unknown option -" << (char)optopt << std::endl;
+                exit(1);
         }
     }
 
