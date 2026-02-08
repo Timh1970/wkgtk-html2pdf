@@ -255,4 +255,20 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
         // Otherwise call srcPage->AddAnnotation(pAnnot); depending on your PoDoFo version.
     }
 }
+
+void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
+    PdfMemDocument doc;
+    doc.Load(sourcePath.c_str());
+    do_annotation(doc);
+
+    jlog << iclog::loglevel::debug << iclog::category::LIB
+         << "Saving page"
+         << std::endl;
+
+    doc.Write(destPath.c_str());
+    jlog << iclog::loglevel::debug << iclog::category::LIB
+         << destPath << " written"
+         << std::endl;
+}
+
 #endif
