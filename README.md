@@ -87,6 +87,10 @@ For quick conversions without writing code:
 html2pdf -i infile.html -o outfile.pdf -O portrait -s A4
 ```
 For best results link to the appropriate page template; Place your content inside a **page** and **subpage** element and do not overflow the margins (See [Guided Templates](#Guided-Templates)).
+
+### Further documentation
+Currently a work in progress, our PDF manual developed entirely with the tools that make up this project is available here https://git.inplico.uk/releases/wkgtk-html2pdf/manual.pdf.  Please note however that our Debian release is behind the Arch release due to having to backport the PoDoFo 0.10 code to work with PoDoFo 0.9.
+
 ### C++ API
 
 ```cpp
