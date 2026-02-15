@@ -1,74 +1,134 @@
 <!DOCTYPE html>
 <html>
+
 	<head>
 		<style>
+			.container {
+				display: flex !important;
+				flex-direction: row !important;
+				flex-wrap: wrap !important;
+				gap: 30px !important;
+			}
 
-		.container {
-		display: flex !important;
-		flex-direction: row !important;
-		flex-wrap: wrap !important;
-		gap: 30px !important;
-		}
-.index-item {
-  width: 160px; /* Set a fixed or percentage width */
-  height: 80px;
-  background-color: #f0f0f0;
-  border: 1px solid #ccc;
-/*    margin: 10px 0;*/
-/*    display: block;*/
-}
- a {
-      color: blue;
-          text-decoration: none;
-}
-.index-item a:hover {
-      text-decoration: underline;
-}
-.anchor {
-    border: 1px solid #000;
-    padding: 5px;
-    margin: 10px 0;
-    display: block;
-}
+			.index-item {
+				width: 160px;
+				/* Set a fixed or percentage width */
+				height: 80px;
+				background-color: #f0f0f0;
+				border: 1px solid #ccc;
+				/*    margin: 10px 0;*/
+				/*    display: block;*/
+			}
+
+			a {
+				color: blue;
+				text-decoration: none;
+			}
+
+			.index-item a:hover {
+				text-decoration: underline;
+			}
+
+			.anchor {
+				border: 1px solid #000;
+				padding: 5px;
+				margin: 10px 0;
+				display: block;
+			}
 
 		</style>
 		<link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css">
 	</head>
+
 	<body>
-		<div class="page">
+		<div class="page" toc>
 			<div class="subpage">
 				<h2>Index Page</h2>
 				<div class="container">
-				<div class="index-item">
-					<a href="#anchor1">Anchor 1</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor2">Anchor 2</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor3">Anchor 3</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor4">Anchor 4</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor5">Anchor 5</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor6">Anchor 6</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor7">Anchor 7</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor8">Anchor 8</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor9">Anchor 9</a>
-				</div>
-				<div class="index-item">
-					<a href="#anchor10">Anchor 10</a>
-				</div>
+					<div class="index-item">
+						<a href="#anchor1">1.1 Anchor</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor2">1.2 Anchor</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor3">Anchor 3</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor4">Anchor 4</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor5">Anchor 5</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor6">Anchor 6</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor7">Anchor 7</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor8">Anchor 8</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor9">Anchor 9</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
+					<div class="index-item">
+						<a href="#anchor10">Anchor 10</a>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -76,7 +136,7 @@
 			<div class="subpage">
 				<h2>Page 2</h2>
 				<div class="anchor" id="anchor1" style="margin-top:100px;">
-					Anchor 1
+					1.1 Anchor
 				</div>
 			</div>
 		</div>
@@ -84,7 +144,10 @@
 			<div class="subpage">
 				<h2>Page 3</h2>
 				<div class="anchor" id="anchor2" style="margin-top:110px;">
-					Anchor 2
+					1.2 Anchor
+				</div>
+				<div class="anchor" style="margin-top:110px;">
+					Here is some text in a class="anchor" but it it does not have an anchor point
 				</div>
 			</div>
 		</div>
@@ -92,7 +155,7 @@
 			<div class="subpage">
 				<h2>Page 4</h2>
 				<div class="anchor" id="anchor3" style="margin-top:120px;">
-					Anchor 3
+					1.2.1 Anchor
 				</div>
 			</div>
 		</div>
@@ -100,7 +163,7 @@
 			<div class="subpage">
 				<h2>Page 5</h2>
 				<div class="anchor" id="anchor4" style="margin-top:130px;">
-					Anchor 4
+					1.2.2 Anchor
 				</div>
 			</div>
 		</div>
@@ -108,7 +171,7 @@
 			<div class="subpage">
 				<h2>Page 6</h2>
 				<div class="anchor" id="anchor5" style="margin-top:140px;">
-					Anchor 5
+					1.2.3 Anchor
 				</div>
 			</div>
 		</div>
@@ -116,7 +179,7 @@
 			<div class="subpage">
 				<h2>Page 7</h2>
 				<div class="anchor" id="anchor6" style="margin-top:150px;">
-					Anchor 6
+					2 Anchor
 				</div>
 			</div>
 		</div>
@@ -124,7 +187,7 @@
 			<div class="subpage">
 				<h2>Page 8</h2>
 				<div class="anchor" id="anchor7" style="margin-top:160px;">
-					Anchor 7
+					1 Anchor out of order
 				</div>
 			</div>
 		</div>
@@ -153,4 +216,18 @@
 			</div>
 		</div>
 	</body>
+	<script>
+		// CHECK OVERFLOW
+		const observer = new ResizeObserver(() => {
+			const subpage = document.querySelector('.subpage');
+			if (subpage.scrollHeight > subpage.clientHeight || subpage.scrollWidth > subpage.clientWidth) {
+				// alert('Content exceeds margins!');
+				subpage.style.border = "2px solid red";
+			}
+		});
+
+		observer.observe(document.querySelector('.subpage'));
+
+	</script>
+
 </html>

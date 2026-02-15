@@ -20,7 +20,8 @@ void help() {
     printf("*    -i  --infile myfile.html         name of source (HTML) file          *\n");
     printf("*    -o  --outfile myfile.pdf         name of file to generate            *\n");
     printf("*    -O  --orientation                \"portrait\" or \"landscape\"           *\n");
-    printf("*        --index                      create anchor points (experimental) *\n");
+    printf("*        --index                      create anchor points                *\n");
+    printf("*                                       \"classic\" or \"enhanced\"           *\n");
     printf("*                                                                         *\n");
     printf("***************************************************************************\n");
 }
@@ -40,9 +41,9 @@ int main(int argc, char *argv[]) {
     // HANDLE COMMAND LINE ARGUMENTS
     string     infile;
     string     outfile;
-    string     orientation;
-    string     pageSize;
-    index_mode idxMode = index_mode::OFF;
+    string     orientation = "portrait";
+    string     pageSize    = "A4";
+    index_mode idxMode     = index_mode::OFF;
 
     typedef enum {
         DO_INDEX = 256

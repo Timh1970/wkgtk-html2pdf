@@ -298,6 +298,7 @@ struct PDFprinterUserData {
         WebKitPrintOperation            *print_operation;
         GMainLoop                       *main_loop;
         std::vector<PDFprinter::anchor> *linkData;
+        int                             *tocPage;
         index_mode                       doIndex;
 };
 
@@ -332,8 +333,17 @@ static void print_finished(WebKitPrintOperation *print_operation __attribute__((
 // Added JavaScript extraction for index and anchor positions
 // This code is experimental and may need refinement
 const char *js_code_classic =
-    "window.indexPositions = {}; "
-    "window.anchorPositions = {}; "
+    "window.indexPositions = []; "
+    "window.targetData = {}; "
+    "window.tocPage; "
+
+    "let pages = document.querySelectorAll('.page'); "
+    "   for (let i = 0; i < pages.length; i++) { "
+    "       if (pages[i].hasAttribute(\"toc\")) { "
+    "           window.tocPage = { page: i }; "
+    "           break; "
+    "       } "
+    "   } "
 
     "function getPageNumber(element) { "
     "    let current = element; "
@@ -381,34 +391,44 @@ const char *js_code_classic =
     // "}); "
 
     "document.querySelectorAll('a').forEach(item => { "
-    "    const href = item.getAttribute('href'); "
-    "    if (href.charAt(0) === '#') { "
-    "        const id = href.substring(1); "
-    "        const rect = item.getBoundingClientRect(); "
-    "        const pageElement = getClosestPageElement(item); "
-    "        const pageRect = pageElement.getBoundingClientRect(); "
-    "        const x = rect.left - pageRect.left; "
-    "        const y = rect.top - pageRect.top; "
-    "        window.indexPositions[id] = { "
-    "            x: x, "
-    "            y: y, "
-    "            width: rect.width, "
-    "            height: rect.height, "
-    "            page: getPageNumber(item), "
-    "            page_width: pageRect.width, "
-    "            page_height: pageRect.height "
+    "    if (item.hasAttribute('href'))  { "
+    "        const href = item.getAttribute('href'); "
+    "        if (href.charAt(0) === '#') { "
+    "            const id = href.substring(1); "
+    "            const rect = item.getBoundingClientRect(); "
+    "            const pageElement = getClosestPageElement(item); "
+    "            if (!pageElement) { "
+    "                return; "
+    "            } "
+    "            const pageRect = pageElement.getBoundingClientRect(); "
+    "            const x = rect.left - pageRect.left; "
+    "            const y = rect.top - pageRect.top; "
+    "            window.indexPositions.push ({ "
+    "                id: id, "
+    "                x: x, "
+    "                y: y, "
+    "                width: rect.width, "
+    "                height: rect.height, "
+    "                page: getPageNumber(item), "
+    "                page_width: pageRect.width, "
+    "                page_height: pageRect.height "
+    "            }); "
     "        }; "
-    "    } "
+    "    }; "
     "}); "
 
     "document.querySelectorAll('[id]').forEach(elt => { "
     "    const id = elt.getAttribute('id'); "
     "    const rect = elt.getBoundingClientRect(); "
     "    const pageElement = getClosestPageElement(elt); "
+    "    if (!pageElement) { "
+    "        return; "
+    "    } "
     "    const pageRect = pageElement.getBoundingClientRect(); "
     "    const x = rect.left - pageRect.left; "
     "    const y = rect.top - pageRect.top; "
-    "    window.anchorPositions[id] = { "
+    "    window.targetData[id] = { "
+    "        title: elt.innerText, "
     "        x: x, "
     "        y: y, "
     "        width: rect.width, "
@@ -420,13 +440,23 @@ const char *js_code_classic =
     "}); "
 
     "JSON.stringify({ "
+    "    toc: window.tocPage, "
     "    indexPositions: window.indexPositions, "
-    "    anchorPositions: window.anchorPositions "
+    "    targetData: window.targetData "
     "});";
 
 const char *js_code_enhanced =
-    "window.indexPositions = {}; "
-    "window.anchorPositions = {}; "
+    "window.indexPositions = []; "
+    "window.targetData = {}; "
+    "window.tocPage; "
+
+    "let pages = document.querySelectorAll('.page'); "
+    "   for (let i = 0; i < pages.length; i++) { "
+    "       if (pages[i].hasAttribute(\"toc\")) { "
+    "           window.tocPage = { page: i }; "
+    "           break; "
+    "       } "
+    "   } "
 
     "function getPageNumber(element) { "
     "    let current = element; "
@@ -455,21 +485,29 @@ const char *js_code_enhanced =
 
     "document.querySelectorAll('.index-item').forEach(item => { "
     "    const link = item.querySelector('a'); "
-    "    const href = link.getAttribute('href'); "
-    "    const id = href.substring(1); "
-    "    const rect = item.getBoundingClientRect(); "
-    "    const pageElement = getClosestPageElement(item); "
-    "    const pageRect = pageElement.getBoundingClientRect(); "
-    "    const x = rect.left - pageRect.left; "
-    "    const y = rect.top - pageRect.top; "
-    "    window.indexPositions[id] = { "
-    "        x: x, "
-    "        y: y, "
-    "        width: rect.width, "
-    "        height: rect.height, "
-    "        page: getPageNumber(item), "
-    "        page_width: pageRect.width, "
-    "        page_height: pageRect.height "
+    "    if(link) { "
+    "        if (link.hasAttribute('href'))  { "
+    "            const href = link.getAttribute('href'); "
+    "            const id = href.substring(1); "
+    "            const rect = item.getBoundingClientRect(); "
+    "            const pageElement = getClosestPageElement(item); "
+    "                if (!pageElement) { "
+    "                    return; "
+    "                } "
+    "            const pageRect = pageElement.getBoundingClientRect(); "
+    "            const x = rect.left - pageRect.left; "
+    "            const y = rect.top - pageRect.top; "
+    "            window.indexPositions.push ({ "
+    "                id: id, "
+    "                x: x, "
+    "                y: y, "
+    "                width: rect.width, "
+    "                height: rect.height, "
+    "                page: getPageNumber(item), "
+    "                page_width: pageRect.width, "
+    "                page_height: pageRect.height "
+    "            }); "
+    "        }; "
     "    }; "
     "}); "
 
@@ -477,10 +515,14 @@ const char *js_code_enhanced =
     "    const id = elt.getAttribute('id'); "
     "    const rect = elt.getBoundingClientRect(); "
     "    const pageElement = getClosestPageElement(elt); "
+    "    if (!pageElement) { "
+    "        return; "
+    "    } "
     "    const pageRect = pageElement.getBoundingClientRect(); "
     "    const x = rect.left - pageRect.left; "
     "    const y = rect.top - pageRect.top; "
-    "    window.anchorPositions[id] = { "
+    "    window.targetData[id] = { "
+    "        title: elt.innerText, "
     "        x: x, "
     "        y: y, "
     "        width: rect.width, "
@@ -492,8 +534,9 @@ const char *js_code_enhanced =
     "}); "
 
     "JSON.stringify({ "
+    "    toc: window.tocPage, "
     "    indexPositions: window.indexPositions, "
-    "    anchorPositions: window.anchorPositions "
+    "    targetData: window.targetData "
     "});";
 
 PDFprinter::anchor &get_anchor(std::vector<PDFprinter::anchor> &linkData, std::string key) {
@@ -557,54 +600,102 @@ static void javascript_callback(
         return;
     }
 
-    // Extract indexPositions
-    json_object                     *index_positions = json_object_object_get(root, "indexPositions");
-    std::vector<PDFprinter::anchor> &linkData        = *((PDFprinterUserData *)user_data)->linkData;
-    if (index_positions) {
-        json_object_object_foreach(index_positions, key, val) {
-            double x      = json_object_get_double(json_object_object_get(val, "x"));
-            double y      = json_object_get_double(json_object_object_get(val, "y"));
-            double width  = json_object_get_double(json_object_object_get(val, "width"));
-            double height = json_object_get_double(json_object_object_get(val, "height"));
-            double pageW  = json_object_get_int(json_object_object_get(val, "page_width"));
-            double pageH  = json_object_get_int(json_object_object_get(val, "page_height"));
-            int    page   = json_object_get_int(json_object_object_get(val, "page"));
-            linkData.push_back({
-                key,
-                {x,    y,    width, height, pageW, pageH, page},
-                {0.0f, 0.0f, 0.0f,  0.0f,   0.0f,  0.0f,  0   }
-            });
-
-            jlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "Finding Index: " << key << " -> page: " << page
-                 << " pos: (" << x << "," << y << ")" << std::endl;
+    json_object *toc_obj, *page_obj;
+    if (json_object_object_get_ex(root, "toc", &toc_obj)) {
+        if (json_object_object_get_ex(toc_obj, "page", &page_obj)) {
+            (*((PDFprinterUserData *)user_data)->tocPage) = json_object_get_int(page_obj);
         }
     }
 
-    // Extract anchorPositions
-    json_object *anchor_positions = json_object_object_get(root, "anchorPositions");
-    if (anchor_positions) {
-        json_object_object_foreach(anchor_positions, key, val) {
+    // Extract indexPositions (the <a> tags)
+    // json_object                     *indexPositions = json_object_object_get(root, "indexPositions");
+    // std::vector<PDFprinter::anchor> &linkData       = *((PDFprinterUserData *)user_data)->linkData;
+    // if (indexPositions) {
+    //     json_object_object_foreach(indexPositions, key, val) {
+    //         double x      = json_object_get_double(json_object_object_get(val, "x"));
+    //         double y      = json_object_get_double(json_object_object_get(val, "y"));
+    //         double width  = json_object_get_double(json_object_object_get(val, "width"));
+    //         double height = json_object_get_double(json_object_object_get(val, "height"));
+    //         double pageW  = json_object_get_int(json_object_object_get(val, "page_width"));
+    //         double pageH  = json_object_get_int(json_object_object_get(val, "page_height"));
+    //         int    page   = json_object_get_int(json_object_object_get(val, "page"));
+    //         linkData.push_back({
+    //             key,
+    //             {string(), x,    y,    width, height, pageW, pageH, page},
+    //             {string(), 0.0f, 0.0f, 0.0f,  0.0f,   0.0f,  0.0f,  0   }
+    //         });
+
+    //         jlog << iclog::loglevel::debug << iclog::category::CORE
+    //              << "Finding Index: " << key << " -> page: " << page
+    //              << " pos: (" << x << "," << y << ")" << std::endl;
+    //     }
+    // }
+    // NEW JSON ITERATOR FOR SOURCE (Index) POSITIONS
+    json_object                     *indexPositions = json_object_object_get(root, "indexPositions");
+    std::vector<PDFprinter::anchor> &linkData       = *((PDFprinterUserData *)user_data)->linkData;
+
+    if (indexPositions && json_object_get_type(indexPositions) == json_type_array) {
+        size_t len = json_object_array_length(indexPositions);
+        for (size_t i = 0; i < len; ++i) {
+            json_object *val = json_object_array_get_idx(indexPositions, i);
+
+            const char *id     = json_object_get_string(json_object_object_get(val, "id"));
+            double      x      = json_object_get_double(json_object_object_get(val, "x"));
+            double      y      = json_object_get_double(json_object_object_get(val, "y"));
+            double      width  = json_object_get_double(json_object_object_get(val, "width"));
+            double      height = json_object_get_double(json_object_object_get(val, "height"));
+            double      pageW  = json_object_get_double(json_object_object_get(val, "page_width"));
+            double      pageH  = json_object_get_double(json_object_object_get(val, "page_height"));
+            int         page   = json_object_get_int(json_object_object_get(val, "page"));
+
+            linkData.push_back({
+                id ? std::string(id) : std::string(),
+                {std::string(), x,    y,    width, height, pageW, pageH, page},
+                {std::string(), 0.0f, 0.0f, 0.0f,  0.0f,   0.0f,  0.0f,  0   }
+            });
+
+            jlog << iclog::loglevel::debug << iclog::category::CORE
+                 << "Finding Index: " << (id ? id : "null") << " -> page: " << page
+                 << " pos: (" << x << "," << y << ")" << std::endl;
+        }
+    }
+    // END
+
+    // Extract targetData (the target id)
+    json_object *targets = json_object_object_get(root, "targetData");
+
+    std::vector<std::pair<std::string, PDFprinter::linkData>> tData;
+    if (targets) {
+        json_object_object_foreach(targets, key, val) {
             try {
-                PDFprinter::anchor &cur = get_anchor(linkData, key);
 
-                cur.anchor = {
-                    json_object_get_double(json_object_object_get(val, "x")),
-                    json_object_get_double(json_object_object_get(val, "y")),
-                    json_object_get_double(json_object_object_get(val, "width")),
-                    json_object_get_double(json_object_object_get(val, "height")),
-                    json_object_get_double(json_object_object_get(val, "page_width")),
-                    json_object_get_double(json_object_object_get(val, "page_height")),
-                    json_object_get_int(json_object_object_get(val, "page"))
-                };
+                tData.push_back({
+                    key,
+                    {json_object_get_string(json_object_object_get(val, "title")),
+                      json_object_get_double(json_object_object_get(val, "x")),
+                      json_object_get_double(json_object_object_get(val, "y")),
+                      json_object_get_double(json_object_object_get(val, "width")),
+                      json_object_get_double(json_object_object_get(val, "height")),
+                      json_object_get_double(json_object_object_get(val, "page_width")),
+                      json_object_get_double(json_object_object_get(val, "page_height")),
+                      json_object_get_int(json_object_object_get(val, "page"))}
+                });
 
-                jlog << iclog::loglevel::debug << iclog::category::CORE
-                     << "\nIndex: " << cur.linkName << " -> page: " << cur.index.pageNo << " pos: (" << cur.index.xPos << "," << cur.index.yPos << ") size: (" << cur.index.w << "," << cur.index.h << ")\n"
-                     << "Anchor: " << cur.linkName << " -> page: " << cur.anchor.pageNo << " pos: (" << cur.anchor.xPos << "," << cur.anchor.yPos << ") size: (" << cur.anchor.w << "," << cur.anchor.h << ")"
-                     << std::endl;
             } catch (std::out_of_range e) {
                 jlog << iclog::loglevel::warning << iclog::category::LIB
                      << e.what()
+                     << std::endl;
+            }
+        }
+    }
+
+    for (PDFprinter::anchor &s : linkData) {
+        for (std::pair<std::string, PDFprinter::linkData> t : tData) {
+            if (s.linkName.compare(t.first) == 0) {
+                s.target = t.second;
+                jlog << iclog::loglevel::debug << iclog::category::CORE
+                     << "\nIndex: " << s.linkName << " -> page: " << s.index.pageNo << " pos: (" << s.index.xPos << "," << s.index.yPos << ") size: (" << s.index.w << "," << s.index.h << ")\n"
+                     << "Target: " << s.linkName << " -> title: " << s.target.title << " -> page: " << s.target.pageNo << " pos: (" << s.target.xPos << "," << s.target.yPos << ") size: (" << s.target.w << "," << s.target.h << ")"
                      << std::endl;
             }
         }
@@ -676,6 +767,15 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
             jlog << iclog::loglevel::debug << iclog::category::CORE
                  << "WEBKIT LOAD FINISHED - extracting positions" << std::endl;
 
+            auto js = [&user_data]() {
+                return (
+                    ((PDFprinterUserData *)user_data)->doIndex
+                            == index_mode::ENHANCED
+                        ? js_code_enhanced
+                        : js_code_classic
+                );
+            };
+
             // Check if we need to extract positions (i.e., index generation)
             if (
                 (((PDFprinterUserData *)user_data)->doIndex == index_mode::ENHANCED)
@@ -684,18 +784,14 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
                 // Enable JavaScript for extraction
                 WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
                 webkit_settings_set_enable_javascript(view_settings, true);
-
+                jlog << iclog::loglevel::debug << iclog::category::CORE
+                     << "Extracting coordinates using:\n"
+                     << js()
+                     << std::endl;
                 // Evaluate JS to extract positions
                 webkit_web_view_evaluate_javascript(
                     web_view,
-                    [&user_data]() {
-                        return (
-                            ((PDFprinterUserData *)user_data)->doIndex
-                                    == index_mode::ENHANCED
-                                ? js_code_enhanced
-                                : js_code_classic
-                        );
-                    }(),  // script
+                    js(), // script
                     -1,   // length (use -1 for null-terminated string)
                     NULL, // world_name
                     NULL, // source_uri
@@ -733,6 +829,7 @@ static int cb_worker(struct html2pdf_params *p) {
     struct PDFprinterUserData user_data;
     user_data.linkData = (std::vector<PDFprinter::anchor> *)p->indexData;
     user_data.doIndex  = p->doIndex;
+    user_data.tocPage  = p->tocPage;
 
     jlog << iclog::loglevel::debug << iclog::category::CORE
          << "Applying print settings" << std::endl;
@@ -807,9 +904,9 @@ static int cb_worker(struct html2pdf_params *p) {
     user_data.main_loop  = main_loop;
     g_signal_connect(web_view, "load-changed", G_CALLBACK(web_view_load_changed), &user_data);
     if (p->in_uri == NULL) {
-        webkit_web_view_load_html(web_view, p->html_txt, "file:///tmp");
+        // webkit_web_view_load_html(web_view, p->html_txt, "file:///tmp");
+        webkit_web_view_load_html(web_view, p->html_txt, "file:///");
         // webkit_web_view_load_html(web_view, p->html_txt, p->base_uri);
-
     } else {
         webkit_web_view_load_uri(web_view, p->in_uri);
     }
@@ -859,6 +956,7 @@ PDFprinter::PDFprinter() {
     default_stylesheet = nullptr;
     m_makeBlob         = false;
     m_doIndex          = index_mode::OFF;
+    m_tocPage          = index_pdf::UNSET;
 }
 
 /**
@@ -1104,6 +1202,7 @@ void PDFprinter::make_pdf() {
         payload.wait_data          = &wait_data;
         payload.indexData          = &m_indexData;
         payload.doIndex            = m_doIndex;
+        payload.tocPage            = &m_tocPage;
 
         g_idle_add((GSourceFunc)cb_worker, &payload);
 
@@ -1117,7 +1216,8 @@ void PDFprinter::make_pdf() {
 
     // CREATE INDEX (if requested)
     if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
-        index_pdf idx(m_indexData);
+
+        index_pdf idx(m_indexData, m_tocPage);
         idx.create_anchors(tempFile, m_destFile);
         std::remove(tempFile.c_str());
     }

@@ -45,20 +45,21 @@
                 <div class="index-item"><a href="#anchor8">Anchor 8</a></div>
                 <div class="index-item"><a href="#anchor9">Anchor 9</a></div>
                 <div class="index-item"><a href="#anchor10">Anchor 10</a></div>
+
             </div>
         </div>
 
         <div class="page">
             <div class="subpage">
                 <h2>Page 2</h2>
-                <div class="anchor" id="anchor1" style="margin-top:100px;">Anchor 1</div>
+                <div class="anchor" id="anchor1" style="margin-top:100px;">1.1 Anchor point</div>
             </div>
         </div>
 
         <div class="page">
             <div class="subpage">
                 <h2>Page 3</h2>
-                <div class="anchor" id="anchor2" style="margin-top:110px;">Anchor 2</div>
+                <div class="anchor" id="anchor2" style="margin-top:110px;">1.2 Anchor point</div>
             </div>
         </div>
 
@@ -228,6 +229,7 @@
             const y = rect.top - pageRect.top;
 
             window.anchorPositions[id] = {
+                title: elt.innerText,
                 x: x,
                 y: y,
                 width: rect.width,
@@ -248,6 +250,9 @@
 
         // Log all page elements for debugging
         console.log("All page elements:", document.querySelectorAll('.page'));
+
+
+
 
     </script>
 

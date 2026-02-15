@@ -92,6 +92,7 @@ struct html2pdf_params {
         int                     *wait_data;
         void                    *indexData; /**< std::vector<PDFprinter::anchor> */
         index_mode               doIndex;
+        int                     *tocPage;
 };
 
 /**
@@ -123,19 +124,20 @@ class PDF_API PDFprinter {
         };
 
         struct linkData {
-                double xPos;
-                double yPos;
-                double w;
-                double h;
-                double page_width;
-                double page_height;
-                int    pageNo;
+                std::string title;
+                double      xPos;
+                double      yPos;
+                double      w;
+                double      h;
+                double      page_width;
+                double      page_height;
+                int         pageNo;
         };
 
         struct anchor {
                 std::string linkName;
                 linkData    index;
-                linkData    anchor;
+                linkData    target;
         };
 
         typedef std::vector<unsigned char> blob;
@@ -237,6 +239,7 @@ class PDF_API PDFprinter {
          * Coordinates for generating index and anchor points
          */
         std::vector<anchor> m_indexData;
+        int                 m_tocPage;
 
         std::string generate_uuid_string();
         void        to_cstring(const std::string &str, char *&cstr);

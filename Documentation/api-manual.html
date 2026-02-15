@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css">
+        <link rel="stylesheet" href="/home/tim/Documents/Development/wkgtk-html2pdf/Documentation/manual.css">
+    </head>
+
+    <body>
+        <div class="page">
+            <div class="subpage">
+                <h1 class="title">wkgtk-html2pdf c++ API manual</h1>
+                <hr class="frontpage">
+                <h2>rev V0.0.13.20260212_01</h2>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page i - Index Page                                                     -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page" toc>
+            <div class="subpage">
+                <h1>Index</h1>
+                <ol class="index">
+                    <li class="header index-item"><a href="#introduction">INTRODUCTION</a></li>
+                    <ul class="leaders index">
+                        <li class="index-item"><a href="#introduction"> <span>Introduction</span><span>1.0</span></a></li>
+                        <li class="index-item"><a href="#review-manual"> <span>Reading this manual</span><span>1.1</span></a></li>
+                    </ul>
+
+                    <li class="header index-item"><a href="#cli">COMMAND LINE INTERFACE:</a></li>
+                    <ul class="leaders index">
+                        <li class="index-item"> <a href="#basic-usage"> <span>Basic usage</span> <span>2.1</span></a> </li>
+                        <li class="index-item"> <a href="#cli-options"> <span>Command line options</span> <span>2.2</span></a> </li>
+                    </ul>
+
+                    <li class="header index-item"><a href="#optimising-html">OPTIMISING HTML:</a></li>
+                    <ul class="leaders index">
+                        <li class="index-item"> <a href="#key-principles"> <span>Key principles</span> <span>3.1</span></a> </li>
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#stylesheet-use"> <span>Stylesheet utilisation</span> <span>3.1.1</span></a> </li>
+                            <li class="index-item"> <a href="#class-use"> <span>Page declaration</span> <span>3.1.2</span></a> </li>
+                            <li class="index-item"> <a href="#monitor-overflow"> <span>Overflow monitoring utility</span> <span>3.1.3</span></a> </li>
+                            <li class="index-item"> <a href="#avoid-common-issues"> <span>Avoid Common Issues</span> <span>3.1.4</span></a> </li>
+                        </ul>
+                        <li class="index-item"> <a href="#example-a4-template"> <span>Example A4 page</span> <span>3.2</span></a> </li>
+                    </ul>
+
+                    <li class="header index-item"><a href="#anchors">LINKS/ANCHORS:</a></li>
+                    <ul class="leaders index">
+                        <li class="index-item"> <a href="#anchor-classic"> <span>Classic anchors</span> <span>4.1</span></a> </li>
+                        <li class="index-item"> <a href="#anchor-enhanced"> <span>Enhanced anchors</span> <span>4.2</span></a> </li>
+                        <li class="index-item"> <a href="#sidebar-indexing"> <span>Sidebar Indexing</span> <span>4.2</span></a> </li>
+
+                    </ul>
+                    <li class="header">TEMPLLATE:</li>
+                    <ul class="leaders index">
+                        <li class="index-item"> <a href="#backgroundoverview"> <span>Template</span> <span>4.1</span></a> </li>
+                    </ul>
+                </ol>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 1 - INTRODUCTION                                                   -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h1 id="introduction">1. Introduction</h1>
+                <p>
+                    <b>wkgtk-html2pdf</b> is a powerful and easy-to-use API for converting HTML content into high-quality PDF documents using WebKitGTK. Developed as a modern alternative to legacy tools like wkhtmltopdf—which has been archived since
+                    2023—this project fills the gap for reliable, up-to-date HTML-to-PDF conversion. It provides a clean, intuitive C++ API that simplifies HTML generation by eliminating the need for string literals and explicit closing tags, making
+                    it ideal for embedding in applications. The tool supports advanced features such as internal anchors, links, and nested sidebar indexing, enabling the creation of structured, navigable PDFs. A simple command-line interface is also
+                    available for quick, one-off conversions. With its focus on maintainability and modern development practices, wkgtk-html2pdf is designed to be a reliable choice for developers seeking a dependable solution for PDF generation.
+                </p>
+                <p>
+                    wkgtk-html2pdf includes a set of built-in, pre-configured CSS templates for all standard ISO and US paper sizes, ensuring compatibility and consistency across different regions and use cases. These templates are designed to
+                    prevent
+                    the generation of extraneous blank pages by precisely defining page dimensions, margins, and layout constraints using CSS custom properties.
+                </p>
+
+                <p>
+                    Each template uses a clean, modular structure with variables for page width, height, and margin, allowing for easy customization while maintaining reliable output. A lightweight JavaScript utility is included to monitor content
+                    overflow in real time—when content exceeds the available space, the subpage border turns red; when it fits perfectly, the border turns green. This visual feedback helps you quickly identify and resolve layout issues before
+                    conversion.
+                </p>
+
+                <p>The templates also include print-specific CSS rules that ensure clean, artifact-free output when the HTML is rendered to PDF, while maintaining visual guides during development for easier debugging and refinement.</p>
+                <h2 id="review-manual">1.1 Reading this manual</h2>
+                <p>
+                    This manual is a self fulfilling prophecy as it is developed entirely using wkgtk-html2pdf so the layout the code that is used to write it is in itself a tutorial. If you are uncertain about how something is done then is worth
+                    reviewing the HTML and CSS used to generate it.
+                </p>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 2 - CLI                                                            -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h1 id="cli">2. Command line interface (CLI)</h1>
+                <p>The CLI is the simplest way to get started with wkgtk-html2pdf. It allows you to convert HTML files into PDFs with minimal setup.</p>
+                <h2 id="basic-usage">2.1 Basic Usage </h2>
+                <p>To generate a PDF using the default settings use the following command:
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>html2pdf -i input.html -o output.pdf</code></pre>
+
+                    </div>
+                </div>
+                <h2 id="cli-options">2.2 Command line options</h2>
+                <p>The following options are available for the cli.</p>
+                <table class=fixed>
+                    <col width="150px">
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                    </tr>
+
+                    <tr>
+                        <td class="field">-h, --help</td>
+                        <td class="field">Display the help message with all available options</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field">-v, --verbose </td>
+                        <td class="field">Set the log level (1-7), with higher values providing more detailed output. Logs are written to the system journal</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-i, --infile</td>
+                        <td class="field">Specify the source HTML file to convert</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-o, --outfile</td>
+                        <td class="field">Specify the output PDF file name</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-O, --orientation</td>
+                        <td class="field">Set page orientation: portrait or landscape</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field" style="border-bottom:none;">-s, --size</td>
+                        <td class="field">Set the page size (Default A4)</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (A):</b> A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (B):</b> B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (C):</b> C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- US:</b> Letter, Legal, Tabloid</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- ANSI:</b> ANSIA, ANSIB, ANSIC, ANSID, ANSIE</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- Architectural:</b> ArchA, ArchB, ArchC, ArchD, ArchE</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- Other:</b> SRA0, SRA1, SRA2, SRA3, SRA4</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field">--index</td>
+                        <td class="field">Create anchor points for indexing:
+                            <pre><code>classic</code></pre> or
+                            <pre><code>enhanced</code></pre> for nested sidebar indexing
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+        </div>
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 3 - HTML OPTIMISATION                                              -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h1 id="optimising-html">3. Optimising HTML</h1>
+                <p>
+                    To generate a clean, professional PDF, you must optimize your HTML to ensure it aligns with the desired page size and layout. The output is entirely governed by the CSS and HTML structure, so the quality of the final PDF depends
+                    on how well your content is designed.
+                </p>
+                <h3 id="key-principles">3.1 Key Principles</h3>
+                <h4 id="stylesheet-use">3.1.1 Use the correct stylesheet</h4>
+                <ol>
+                    <li class="box">Each stylesheet is named according to the page size and orientation it supports (e.g., A4-portrait.css, ANSIA-landscape.css).</li>
+                    <li class="box">Link to the appropriate stylesheet in your HTML:</li>
+
+                </ol>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css"&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Applying the Style Sheet for A4 portrait.</div>
+
+                <h4 id="class-use">3.1.2 Use the correct classes</h4>
+                <ol>
+                    <li class="box">Use the <b>.page</b> class to define the overall page</li>
+                    <li class="box">Use the <b>.subpage</b> class to define content areas.</li>
+                </ol>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;div class="page"&gt;
+    &lt;div class="subpage"&gt;
+        &lt;!-- Your page content here --&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Initialising page boundaries</div>
+                <h4 id="monitor-overflow">3.1.3 Monitor the overflow</h4>
+                <ol>
+                    <li class="box">Include the JavaScript utility to monitor content overflow.</li>
+                    <li class="box">If overflow is detected the margin turns red.</li>
+                </ol>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 4 - HTML OPTIMISATION (cont.)                                      -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <p>This script provides real-time feedback, helping you identify and fix layout issues before conversion.</p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;script src="/usr/share/wkgtkpdf/overflow-monitor.js&gt;&lt;script&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Declaring the javascript to monitor the overflow.</div>
+
+                <h4 id="avoid-common-issues">3.1.4 Avoid common issues</h4>
+                <p>
+                    By designing your HTML and CSS carefully, you have full control over the final PDF output. Avoid common issues: Mismatched stylesheets, incorrect classes, or content overflow can lead to blank pages, cut-off content, or incorrect
+                    scaling.
+                </p>
+                <p>
+                    The overflow detection script helps you identify and fix layout issues before conversion.
+                </p>
+
+                <h4>3.1.5 Best Practices</h4>
+                <ol>
+                    <li class="box"><b>Always test the layout</b> - Use the overflow detection script to ensure content fits within the page.
+                        Adjust the CSS or content as needed to avoid overflow.
+                    <li class="box"><b>Use the correct stylesheet</b> - Ensure the stylesheet matches the CLI arguments (page size and orientation).
+                    <li class="box"><b>Keep it consistent</b> - Use the same page size and orientation in both the CSS and CLI arguments.</li>
+                </ol>
+
+                <h3 id="example-a4-template">3.2 Example: A4 Portrait Layout</h3>
+                <p>Below is a minimal example that will create a single page PDF and utilise a compact bult in javascript function to monitor and warn of overflow.
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;!DOCTYPE html>
+&lt;html&gt;
+&lt;head&gt;
+    &lt;link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="page"&gt;
+        &lt;div class="subpage"&gt;
+            &lt;h1&gt;My Document&lt;/h1&gt;
+            &lt;p&gt;This content will be rendered in A4 portrait format.&lt;/p&gt;
+        &lt;/div>
+    &lt;/div>
+&lt;/body>
+&lt;script src="/usr/share/wkgtkpdf/overflow-monitor.js&gt;&lt;script&gt;
+&lt;/html&gt;
+</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Minimal single page example.</div>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 5 - ANCHORS                                                        -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    Each declaration of a <b>.page</b> and <b>.subpage</b> container will create a new page. Blank pages can also be inserted by declaring a <b>.page</b> and <b>.subpage</b> container.
+                </p>
+                <h1 id="anchors">4. Anchors</h4>
+                    <p>
+                        When generating PDFs with wkgtk-html2pdf, you can choose between two indexing modes: classic and enhanced. The difference lies in which elements are included in the index.
+                    </p>
+
+                    <h2 id="anchor-classic">4.1 Classic model</h2>
+                    <p>
+                        In classic mode, all internal links (<b>&lt;a&gt;</b> tags with href starting with <b>#</b>) are automatically included in the index, regardless of their container or structure.
+                    </p>
+                    <h5>Example:</h5>
+                    <div class="code-container">
+                        <div class="code-container-sub">
+                            <pre><code>&lt;li>&lt;a href="#reference">Reference&lt;/a>&lt;/li>
+&lt;p>&lt;a href="#section1"&gt;Section 1&lt;/a&gt;&lt;/p&gt;
+&lt;div&gt;&lt;a href="#appendix"&gt;Appendix&lt;/a&gt;&lt;/div&gt;</code></pre>
+                        </div>
+                    </div>
+                    <div class="code-caption">All these anchors are valid.</div>
+                    <h2 id="anchor-enhanced">4.2 Enhanced mode</h2>
+                    <p>
+                        Enhanced mode (--index enhanced) is an advanced feature that allows you to selectively control which links appear in the PDF index. It only indexes elements with the <b>class="index-item"</b> class, giving you fine-grained
+                        control over the index. </p>
+                    <h5>Example:</h5>
+
+                    <div class="code-container">
+                        <div class="code-container-sub">
+                            <pre><code>&lt;!-- This will be included --&gt;
+&lt;li class="index-item"&gt;
+    &lt;a href="#reference"&gt;
+        &lt;span&gt;Reference&lt;/span&gt;
+        &lt;span&gt;A1&lt;/span&gt;
+    &lt;/a&gt;
+&lt;/li&gt;
+
+&lt;!-- This will be ignored --&gt;
+&lt;p&gt;&lt;a href="#section1"&gt;Section 1&lt;/a&gt;&lt;/p&gt;
+
+&lt;!-- This will be included (container type doesn't matter) --&gt;
+&lt;div class="index-item"&gt;
+    &lt;a href="#appendix"&gt;Appendix&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+                        </div>
+                    </div>
+                    <div class="code-caption">Enhanced anchor declarations.</div>
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 6 - ANCHORS - INDEXING                                             -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    In this example only the first and third elements will be included in the index. While this feature may not be essential for most users, it could be useful in specific scenarios where you want to:
+                </p>
+
+                <ol>
+                    <li class="box">Exclude certain internal links from the index.</li>
+                    <li class="box">Create a more structured or semantic index.</li>
+                </ol>
+                <p>
+                    For most users, the classic mode is sufficient and recommended.
+                </p>
+                <ul class="leaders index" style="margin-right: 24px">
+                    <li class="index-item" id="demo_enhanced" style="background:#e6e6e6;"> <a href="#demo_classic"> <span style="background:#e6e6e6">Enhanced mode</span> <span style="background:#e6e6e6">4.1</span></a> </li>
+                    <li style="margin-top: 6px;margin-bottom: 6px;font-size: 14px;" id="demo_classic"> <a href="#demo_enhanced"> <span style="background:#e6e6e6">Classic Mode</span> <span>4.1</span></a> </li>
+                </ul>
+                <div class="code-caption">Clickable areas marked in grey.</div>
+
+                <p>
+                    Save for the styling the difference is
+                </p>
+
+                <h5>Enhanced: </h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;li class="index-item"&gt; &lt;a href="#ref"&gt; &lt;span&gt; Enhanced mode &lt;/span&gt; &lt;span&gt; 4.1 &lt;/span&gt; &lt;/a&gt; &lt;/li&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">A typical enhanced mode link.</div>
+
+                <h5>Classic: </h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;li&gt; &lt;a href="#ref"&gt; &lt;span&gt; Enhanced mode &lt;/span&gt; &lt;span&gt; 4.1 &lt;/span&gt; &lt;/a&gt; &lt;/li&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">A typical demo_classic mode link.</div>
+
+                <p>
+                    As you can see from the code, theoretically the link should work across the entire line, even in classic mode but it doesn't (even in HTML). Ordinarily when you convert your link to a you lose right right hand side part of the
+                    anchor
+                    unless you enable enhanced mode
+                </p>
+                <h2 id="sidebar-indexing">4.3 Sidebar indexing</h2>
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+            </div>
+        </div>
+
+
+        <!-- <script src="../overflow-monitor.js">
+        </script> -->
+
+    </body>
+
+
+    <!-- <script>
+        console.log("Starting JavaScript extraction");
+
+        // Initialize the global objects
+        window.indexPositions = {};
+        window.anchorPositions = {};
+        window.tocPage;
+
+        let pages = document.querySelectorAll('.page');
+        for (let i = 0; i < pages.length; i++) {
+            if (pages[i].hasAttribute("toc")) {
+                console.log(`T.O.C. Found on page ${i}`);
+                window.tocPage = { page: i };
+                break;
+            }
+        }
+
+
+
+        // Function to get page number
+        function getPageNumber(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    const allPages = document.querySelectorAll('.page');
+                    for (let i = 0; i < allPages.length; i++) {
+                        if (allPages[i] === current) return i + 1;
+                    }
+                }
+                current = current.parentElement;
+            }
+            return 0;
+        }
+
+        // Function to get the closest page element
+        function getClosestPageElement(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    return current;
+                }
+                current = current.parentElement;
+            }
+            return null;
+        }
+
+        //Extract index positions (class index-item mode)
+        document.querySelectorAll('.index-item').forEach(item => {
+            const link = item.querySelector('a');
+            const href = link.getAttribute('href');
+            const id = href.substring(1); // Remove the '#'
+
+            const rect = item.getBoundingClientRect();
+            const pageElement = getClosestPageElement(item);
+            const pageRect = pageElement.getBoundingClientRect();
+
+            // Debug information
+            console.log("Processing index item:", id);
+            console.log("  Item rect:", rect);
+            console.log("  Page rect:", pageRect);
+            console.log("  Page number:", getPageNumber(item));
+
+            // Calculate page-relative coordinates
+            const x = rect.left - pageRect.left;
+            const y = rect.top - pageRect.top;
+
+            window.indexPositions[id] = {
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                page: getPageNumber(item),
+                page_width: pageRect.width,
+                page_height: pageRect.height
+            };
+
+            console.log("  Index position:", window.indexPositions[id]);
+        });
+
+        // Extract index positions (<a href=#... mode)
+        // document.querySelectorAll('a').forEach(item => {
+        //     if (item.hasAttribute('href')) {
+        //         const href = item.getAttribute('href');
+        //
+        //         if (href.charAt(0) === '#') {
+        //             const id = href.substring(1); // Remove the '#'
+        //             const rect = item.getBoundingClientRect();
+        //             const pageElement = getClosestPageElement(item);
+        //             if (!pageElement) {
+        //                 return;
+        //             }
+        //             const pageRect = pageElement.getBoundingClientRect();
+        //             const x = rect.left - pageRect.left;
+        //             const y = rect.top - pageRect.top;
+        //             window.indexPositions[id] = {
+        //                 x: x,
+        //                 y: y,
+        //                 width: rect.width,
+        //                 height: rect.height,
+        //                 page: getPageNumber(item),
+        //                 page_width: pageRect.width,
+        //                 page_height: pageRect.height
+        //             };
+        //         }
+        //     }
+        // });
+
+        // Extract anchor positions
+        document.querySelectorAll('[id]').forEach(elt => {
+            const id = elt.getAttribute('id');
+            const rect = elt.getBoundingClientRect();
+            const pageElement = getClosestPageElement(elt);
+            if (!pageElement) {
+                return;
+            }
+            const pageRect = pageElement.getBoundingClientRect();
+
+            // Debug information
+            console.log("Processing anchor:", id);
+            console.log("  Anchor rect:", rect);
+            console.log("  Page rect:", pageRect);
+            console.log("  Page number:", getPageNumber(elt));
+
+            // Calculate page-relative coordinates
+            const x = rect.left - pageRect.left;
+            const y = rect.top - pageRect.top;
+
+            window.anchorPositions[id] = {
+                title: elt.innerText,
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                page: getPageNumber(elt),
+                page_width: pageRect.width,
+                page_height: pageRect.height
+            };
+
+            console.log("  Anchor position:", window.anchorPositions[id]);
+        });
+
+        // Output the final JSON
+        console.log("Final JSON:", JSON.stringify({
+            toc: window.tocPage,
+            indexPositions: window.indexPositions,
+            anchorPositions: window.anchorPositions
+        }));
+
+        // Log all page elements for debugging
+        // console.log("All page elements:", document.querySelectorAll('.page'));
+
+    </script> -->
+
+    <script>
+        window.indexPositions = [];
+        window.anchorPositions = {};
+        window.tocPage;
+        let pages = document.querySelectorAll('.page');
+        for (let i = 0; i < pages.length; i++) {
+            if (pages[i].hasAttribute("toc")) {
+                window.tocPage = {
+                    page: i
+                };
+                break;
+            }
+        }
+
+        function getPageNumber(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    const allPages = document.querySelectorAll('.page');
+                    for (let i = 0; i < allPages.length; i++) {
+                        if (allPages[i] === current) return i + 1;
+                    }
+                }
+                current = current.parentElement;
+            }
+            return 0;
+        }
+
+        function getClosestPageElement(element) {
+            let current = element;
+            while (current) {
+                if (current.classList && current.classList.contains('page')) {
+                    return current;
+                }
+                current = current.parentElement;
+            }
+            return null;
+        }
+        document.querySelectorAll('a').forEach(item => {
+            if (item.hasAttribute('href')) {
+                const href = item.getAttribute('href');
+                if (href.charAt(0) === '#') {
+                    const id = href.substring(1);
+                    const rect = item.getBoundingClientRect();
+                    const pageElement = getClosestPageElement(item);
+                    if (!pageElement) return;
+                    const pageRect = pageElement.getBoundingClientRect();
+                    const x = rect.left - pageRect.left;
+                    const y = rect.top - pageRect.top;
+
+                    window.indexPositions.push({
+                        id: id,
+                        x: x,
+                        y: y,
+                        width: rect.width,
+                        height: rect.height,
+                        page: getPageNumber(item),
+                        page_width: pageRect.width,
+                        page_height: pageRect.height
+                    });
+                }
+            }
+        });
+        document.querySelectorAll('[id]').forEach(elt => {
+            const id = elt.getAttribute('id');
+            const rect = elt.getBoundingClientRect();
+            const pageElement = getClosestPageElement(elt);
+            if (!pageElement) {
+                return;
+            }
+            const pageRect = pageElement.getBoundingClientRect();
+            const x = rect.left - pageRect.left;
+            const y = rect.top - pageRect.top;
+            window.anchorPositions[id] = {
+                title: elt.innerText,
+                x: x,
+                y: y,
+                width: rect.width,
+                height: rect.height,
+                page: getPageNumber(elt),
+                page_width: pageRect.width,
+                page_height: pageRect.height
+            };
+        });
+        JSON.stringify({
+            toc: window.tocPage,
+            indexPositions: window.indexPositions,
+            anchorPositions: window.anchorPositions
+        });
+
+        console.log("Final JSON:", JSON.stringify({
+            toc: window.tocPage,
+            indexPositions: window.indexPositions,
+            anchorPositions: window.anchorPositions
+        }));
+
+    </script>
+
+</html>
