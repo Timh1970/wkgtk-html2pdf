@@ -70,3 +70,5 @@ Testing/
 
 # Files used for testing local builds etc.
 *.local
+
+Documentation/
