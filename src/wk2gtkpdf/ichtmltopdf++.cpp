@@ -903,9 +903,12 @@ static int cb_worker(struct html2pdf_params *p) {
     GMainLoop *main_loop = g_main_loop_new(nullptr, false);
     user_data.main_loop  = main_loop;
     g_signal_connect(web_view, "load-changed", G_CALLBACK(web_view_load_changed), &user_data);
-    if (p->in_uri == NULL) {
+    if (p->html_txt != NULL) {
         // webkit_web_view_load_html(web_view, p->html_txt, "file:///tmp");
-        webkit_web_view_load_html(web_view, p->html_txt, "file:///");
+        jlog << iclog::loglevel::debug << iclog::category::CORE
+             << "Setting base URI: " << p->in_uri
+             << std::endl;
+        webkit_web_view_load_html(web_view, p->html_txt, p->in_uri);
         // webkit_web_view_load_html(web_view, p->html_txt, p->base_uri);
     } else {
         webkit_web_view_load_uri(web_view, p->in_uri);
@@ -944,11 +947,15 @@ static int cb_worker(struct html2pdf_params *p) {
     return G_SOURCE_REMOVE;
 }
 
+/**************************************/
+/*  PDFprinter CLASS                  */
+/**************************************/
 /**
  * @brief PDFprinter::PDFprinter
  */
-PDFprinter::PDFprinter() {
-    in_uri             = nullptr;
+PDFprinter::PDFprinter(std::string baseURI) {
+    in_uri = nullptr;
+    to_cstring(baseURI, in_uri);
     html_txt           = nullptr;
     base_uri           = nullptr;
     out_uri            = nullptr;
@@ -1194,7 +1201,7 @@ void PDFprinter::make_pdf() {
         payload.out_uri            = out_uri;
         payload.html_txt           = html_txt;
         payload.key_file_data      = key_file_data;
-        payload.in_uri             = nullptr;
+        payload.in_uri             = in_uri;
         payload.base_uri           = nullptr;
         payload.default_stylesheet = nullptr;
         payload.wait_cond          = &wait_cond;

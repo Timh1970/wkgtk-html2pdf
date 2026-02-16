@@ -22,6 +22,7 @@ void help() {
     printf("*    -O  --orientation                \"portrait\" or \"landscape\"           *\n");
     printf("*        --index                      create anchor points                *\n");
     printf("*                                       \"classic\" or \"enhanced\"           *\n");
+    printf("*    -r --relative-uri                look for assets in current folder   *\n");
     printf("*                                                                         *\n");
     printf("***************************************************************************\n");
 }
@@ -44,20 +45,22 @@ int main(int argc, char *argv[]) {
     string     orientation = "portrait";
     string     pageSize    = "A4";
     index_mode idxMode     = index_mode::OFF;
+    string     baseURI     = "file:///";
 
     typedef enum {
         DO_INDEX = 256
 
     } longopt;
     static struct option long_options[] = {
-        {"help",        no_argument,       0, 'h'              },
-        {"infile",      required_argument, 0, 'i'              },
-        {"outfile",     required_argument, 0, 'o'              },
-        {"orientation", required_argument, 0, 'O'              },
-        {"size",        required_argument, 0, 's'              },
-        {"verbose",     required_argument, 0, 'v'              },
-        {"index",       required_argument, 0, longopt::DO_INDEX},
-        {NULL,          0,                 0, 0                }
+        {"help",         no_argument,       0, 'h'              },
+        {"infile",       required_argument, 0, 'i'              },
+        {"outfile",      required_argument, 0, 'o'              },
+        {"orientation",  required_argument, 0, 'O'              },
+        {"relative-uri", required_argument, 0, 'r'              },
+        {"size",         required_argument, 0, 's'              },
+        {"verbose",      required_argument, 0, 'v'              },
+        {"index",        required_argument, 0, longopt::DO_INDEX},
+        {NULL,           0,                 0, 0                }
     };
     int value        = 0;
     int option_index = 0;
@@ -68,7 +71,7 @@ int main(int argc, char *argv[]) {
     while ((value = getopt_long(
                 argc,
                 argv,
-                "i:O:o:s:v:",
+                "i:O:o:s:v:r",
                 long_options,
                 &option_index
             ))
@@ -88,6 +91,9 @@ int main(int argc, char *argv[]) {
             case 'O': /**< Orientation (invalid defaults to portrait) */
                 if (optarg)
                     orientation = string(optarg);
+                break;
+            case 'r': /**< Orientation (invalid defaults to portrait) */
+                baseURI = "file://" + std::filesystem::current_path().string() + "/";
                 break;
             case 's': /**< Page Size (invlid defaults to A4) */
                 if (optarg)
@@ -131,7 +137,7 @@ int main(int argc, char *argv[]) {
          << "\nProcessing HTML: " << infile << "\nOrientation: " << orientation
          << "\nSize: " << pageSize << std::endl;
 
-    PDFprinter pdf;
+    PDFprinter pdf(baseURI);
     // OPTION 1
     // pdf.set_param(
     //     PDFprinter::read_file(infile),

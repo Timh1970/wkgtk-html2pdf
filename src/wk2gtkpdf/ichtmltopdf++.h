@@ -212,8 +212,7 @@ class PDF_API PDFprinter {
         };
 
     private:
-        char *in_uri;
-
+        char      *in_uri;
         char      *html_txt;
         char      *base_uri;
         char      *out_uri;
@@ -246,7 +245,7 @@ class PDF_API PDFprinter {
         void        read_file_to_blob();
 
     public:
-        PDFprinter();
+        PDFprinter(std::string baseURI = "file:///");
         ~PDFprinter();
         void set_param(std::string html, std::string printSettings, std::string outFile, index_mode createIndex = index_mode::OFF);
         void set_param(std::string html, std::string outFile, index_mode createIndex = index_mode::OFF);
