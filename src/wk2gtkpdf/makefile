@@ -30,7 +30,7 @@ $(FULLNAME): $(OBJECTS)
 %.o: %.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
-.PHONY: insatll
+.PHONY: install
 install:
 	# install the real file
 	install -Dm755 -t $(DESTDIR)/usr/lib/ $(FULLNAME)
