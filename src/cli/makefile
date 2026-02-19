@@ -6,16 +6,18 @@ USER_INCDIR ?= -I/usr/include/wk2gtkpdf
 USER_LIBDIR ?=
 
 CXX = g++
+
 CXXFLAGS := -std=c++20 -Wall -Wextra -O2  -m64 -pedantic-errors
-CXXFLAGS += $(USER_INCDIR)
-CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
-CXXFLAGS += $(shell pkg-config --cflags libsystemd)
-CXXFLAGS += $(shell pkg-config --cflags libpodofo)
-CXXFLAGS += $(shell pkg-config --cflags json-c)
 
-LDFLAGS += $(USER_LIBDIR)
+CPPFLAGS += $(USER_INCDIR)
+CPPFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
+CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
+CPPFLAGS += $(shell pkg-config --cflags libsystemd)
+CPPFLAGS += $(shell pkg-config --cflags libpodofo)
+CPPFLAGS += $(shell pkg-config --cflags json-c)
 
-LDLIBS := -lwk2gtkpdf
+LDLIBS += $(USER_LIBDIR)
+LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
 LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1)
 LDLIBS += $(shell pkg-config --libs libsystemd)
 LDLIBS += $(shell pkg-config --libs libpodofo)
@@ -25,7 +27,7 @@ PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin
 
 html2pdf: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $<

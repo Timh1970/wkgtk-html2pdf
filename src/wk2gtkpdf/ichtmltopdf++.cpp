@@ -67,7 +67,7 @@ WKGTK_init::~WKGTK_init() {
 icGTK::icGTK(XvfbMode runMode)
     : tk(handle_xvfb_daemon()),
       runMode(runMode) {
-    jlog << iclog::loglevel::warning << iclog::category::CORE
+    jlog << iclog::loglevel::info << iclog::category::CORE
          << "Inplicare initialising  WebKitGTK." << std::endl;
 }
 

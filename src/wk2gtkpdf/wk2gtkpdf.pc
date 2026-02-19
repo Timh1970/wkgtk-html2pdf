@@ -5,8 +5,8 @@ includedir=${prefix}/include
 
 Name: wk2gtkpdf
 Description: wk2gtkpdf is a library for creating portable document format (pdf) files from html.
-Requires: webkit2gtk-4.1 libsystemd
-Version: 0.1.1
+Version: 0.0.14
 Conflicts:
-Libs: -lwk2gtkpdf
+Libs: -L${libdir} -lwk2gtkpdf
 Cflags: -I${includedir}
+Requires: webkit2gtk-4.1 libsystemd
