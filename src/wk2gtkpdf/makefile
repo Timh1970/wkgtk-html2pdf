@@ -40,7 +40,7 @@ install:
 	# headers
 	install -Dm644 -t $(DESTDIR)/usr/include/wk2gtkpdf/ *.h
 	# install pkg-config file if present
-	install -Dm644 -t $(DESTDIR)/usr/lib/pkgconfig icprint.pc || true
+	install -Dm644 -t $(DESTDIR)/usr/lib/pkgconfig wk2gtkpdf.pc || true
 
 .PHONY: smoke-install
 smoke-install:
