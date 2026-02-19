@@ -59,7 +59,7 @@ body {
 
 .subpage {
     /* show the margin (form design helper, not printed) */
-    border: .5mm red solid;
+    border: .5mm blue solid;
     /* Height needs to be slightly shorter to prevent creation of a blank page */
     height: calc(((var(--page-height) - (var(--page-margin) * 2)) *.999) * 1mm);
     width: calc((var(--page-width) - (var(--page-margin) * 2)) * 1mm);
