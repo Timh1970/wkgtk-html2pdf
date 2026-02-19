@@ -30,7 +30,7 @@ html2pdf: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
 
 clean:
 	rm -f $(OBJECTS) html2pdf
