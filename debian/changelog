@@ -1,0 +1,8 @@
+wkgtk-html2pdf (0.0.16-1) unstable; urgency=medium
+
+  * Initial release to Debian. (Closes: #<ITP-BUG-NUMBER>)
+  * Modern GTK-based replacement for wkhtmltopdf.
+  * Supports headless PDF generation via Xvfb and systemd.
+
+ -- James Hothersall <james@inplico.uk>  Sat, 21 Feb 2026 11:45:00 +0000
+

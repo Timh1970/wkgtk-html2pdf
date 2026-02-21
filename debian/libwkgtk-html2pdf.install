@@ -1,0 +1,3 @@
+usr/lib/lib*.so.*
+usr/include/wk2gtkpdf/*.h
+usr/lib/pkgconfig/*.pc

@@ -36,7 +36,7 @@ clean:
 	rm -f $(OBJECTS) html2pdf
 
 install:
-	install -Dm755 -t $(DESTDIR)$(BINDIR) html2pdf
+	install -Dm755 -t $(DESTDIR)$(BINDIR) wkgtk-html2pdf
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/html2pdf
