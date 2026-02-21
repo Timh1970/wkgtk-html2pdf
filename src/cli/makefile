@@ -26,7 +26,7 @@ LDLIBS += $(shell pkg-config --libs json-c)
 PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin
 
-html2pdf: $(OBJECTS)
+wkgtk-html2pdf: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 %.o: %.cpp
