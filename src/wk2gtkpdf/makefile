@@ -20,9 +20,12 @@ CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
 
+LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1 libpodofo json-c)
+
+LIBDIR ?= /usr/lib
 
 $(FULLNAME): $(OBJECTS)
-	$(CXX) -shared -Wl,-soname,$(SONAME) -o $@ $^
+	$(CXX) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDLIBS)
 	ln -sfT $(FULLNAME) $(SONAME)
 	ln -sfT $(SONAME) $(APPLICATION)
 
@@ -32,10 +35,10 @@ $(FULLNAME): $(OBJECTS)
 .PHONY: install
 install:
 	# Shared Library
-	install -d $(DESTDIR)/usr/lib
-	install -m 755 $(FULLNAME) $(DESTDIR)/usr/lib/$(FULLNAME)
-	ln -sfT $(FULLNAME) $(DESTDIR)/usr/lib/$(SONAME)
-	ln -sfT $(SONAME)   $(DESTDIR)/usr/lib/$(APPLICATION)
+	install -d $(DESTDIR)$(LIBDIR)
+	install -m 755 $(FULLNAME) $(DESTDIR)$(LIBDIR)/$(FULLNAME)
+	ln -sfT $(FULLNAME) $(DESTDIR)$(LIBDIR)/$(SONAME)
+	ln -sfT $(SONAME)   $(DESTDIR)$(LIBDIR)/$(APPLICATION)
 
 	# Headers
 	install -d $(DESTDIR)/usr/include/wk2gtkpdf
@@ -47,31 +50,20 @@ install:
 	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
 
 	# Pkg-config
-	install -d $(DESTDIR)/usr/lib/pkgconfig
-	install -m 644 wk2gtkpdf.pc $(DESTDIR)/usr/lib/pkgconfig/
-
-
-# install:
-# 	# install the real file
-# 	install -Dm755 -t $(DESTDIR)/usr/lib/ $(FULLNAME)
-# 	# create symlinks explicitly in DESTDIR (safer for packaging scripts)
-# 	ln -sfT $(FULLNAME) $(DESTDIR)/usr/lib/$(SONAME)
-# 	ln -sfT $(SONAME)   $(DESTDIR)/usr/lib/$(APPLICATION)
-# 	# headers
-# 	install -Dm644 -t $(DESTDIR)/usr/include/wk2gtkpdf/ *.h
-# 	# install pkg-config file if present
-# 	install -Dm644 -t $(DESTDIR)/usr/lib/pkgconfig wk2gtkpdf.pc || true
+	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
+	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
+	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
 
 .PHONY: smoke-install
 smoke-install:
 	@stagedir=$$(mktemp -d /tmp/icframework-stage.XXXXXX); \
 	echo "Using staging dir: $$stagedir"; \
 	$(MAKE) install DESTDIR=$$stagedir || { echo "install failed"; rm -rf $$stagedir; exit 1; }; \
-	echo "Installed files:"; ls -l $$stagedir/usr/lib/${APPLICATION}* || true; \
-	if [ -f $$stagedir/usr/lib/$(FULLNAME) ]; then \
-	  readelf -d $$stagedir/usr/lib/$(FULLNAME) | grep -F SONAME || true; \
+	echo "Installed files:"; ls -l $$stagedir$(LIBDIR)/${APPLICATION}* || true; \
+	if [ -f $$stagedir$(LIBDIR)/$(FULLNAME) ]; then \
+	  readelf -d $$stagedir$(LIBDIR)/$(FULLNAME) | grep -F SONAME || true; \
 	else \
-	  echo "Warning: $(FULLNAME) not found in $$stagedir/usr/lib"; \
+	  echo "Warning: $(FULLNAME) not found in $$stagedir$(LIBDIR)"; \
 	fi; \
 	# keep staging dir for inspection, or uncomment the next line to auto-clean:
 	rm -rf $$stagedir
@@ -79,9 +71,9 @@ smoke-install:
 .PHONY: uninstall
 uninstall:
 	# Remove Library and Symlinks
-	rm -f $(DESTDIR)/usr/lib/$(FULLNAME)
-	rm -f $(DESTDIR)/usr/lib/$(SONAME)
-	rm -f $(DESTDIR)/usr/lib/$(APPLICATION)
+	rm -f $(DESTDIR)$(LIBDIR)/$(FULLNAME)
+	rm -f $(DESTDIR)$(LIBDIR)/$(SONAME)
+	rm -f $(DESTDIR)$(LIBDIR)/$(APPLICATION)
 
 	# Remove Headers
 	rm -rf $(DESTDIR)/usr/include/wk2gtkpdf
@@ -93,7 +85,7 @@ uninstall:
 	rmdir --ignore-fail-on-non-empty $(DESTDIR)/usr/share/wk2gtkpdf
 
 	# Remove Pkg-config
-	rm -f $(DESTDIR)/usr/lib/pkgconfig/wk2gtkpdf.pc
+	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
 
 .PHONY: clean
 clean:
