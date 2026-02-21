@@ -16,8 +16,7 @@ CXX = g++
 
 CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden
 
-USER_CXXFLAGS ?=
-CPPFLAGS += $(USER_CXXFLAGS)
+CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
 
