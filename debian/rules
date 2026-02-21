@@ -15,7 +15,7 @@ endif
 
 # 3. Main Boilerplate
 %:
-	dh $@
+	dh $@ --buildsystem=makefile
 
 # 4. Custom Logic
 override_dh_makeshlibs:
@@ -26,7 +26,7 @@ override_dh_auto_build:
 	$(MAKE) -C src/wk2gtkpdf
 	# Build CLI using the local library paths
 	$(MAKE) -C src/cli \
-		USER_INCDIR="-I$(CURDIR)/src/wk2gtkpdf" \
+		USER_INCDIR="-I$(CURDIR)/src" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf"
 
 override_dh_auto_install:

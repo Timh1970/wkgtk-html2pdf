@@ -349,6 +349,36 @@ void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
 }
 
 #else
+
+void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
+    // 0.9.x: Loading is done via the constructor or Load()
+    PdfMemDocument doc;
+    try {
+        doc.Load(sourcePath.c_str());
+
+        // Call our 0.9.x backported do_annotation
+        do_annotation(doc);
+
+        jlog << iclog::loglevel::debug << iclog::category::LIB
+             << "Saving page to " << destPath
+             << std::endl;
+
+        // 0.9.x: Write() is the equivalent of 0.10's Save()
+        // Note: 0.9.x doesn't have the same 'PdfSaveOptions' enum;
+        // it uses different flags or defaults to 'Clean' via Write().
+        doc.Write(destPath.c_str());
+
+        jlog << iclog::loglevel::debug << iclog::category::LIB
+             << destPath << " written"
+             << std::endl;
+
+    } catch (const PdfError &e) {
+        jlog << iclog::loglevel::error << iclog::category::LIB
+             << "PoDoFo Error in create_anchors: " << e.what()
+             << std::endl;
+    }
+}
+
 void index_pdf::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PdfDestination *pTocDest) {
     if (outlineData.empty() || !pOutlines)
         return;
