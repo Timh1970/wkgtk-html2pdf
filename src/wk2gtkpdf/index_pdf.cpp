@@ -19,8 +19,6 @@ index_pdf::index_pdf(std::vector<PDFprinter::anchor> &links, const int tocPage, 
 #include <vector>
 
 using namespace PoDoFo;
-#define PODOFO_010 // !!!MAKE SURE THIS IS REMOVED!!!
-#ifdef PODOFO_010
 
 static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_px) {
     return pdf_page_width_pts / css_page_width_px;
@@ -73,6 +71,8 @@ std::vector<int> index_pdf::parseNumbering(const std::string &title) {
 //     }
 //     return levels;
 // }
+
+#ifdef PODOFO_010
 
 // Build nested outline structure
 void index_pdf::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
@@ -145,14 +145,9 @@ void index_pdf::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineDa
 
 void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
 
-    /*  --- BEGIN EXPERIMENTAL (Create side index) --- */
-
     // Get or create the outlines structure
     PdfOutlines &outlines = pdfDoc.GetOrCreateOutlines();
 
-    // PdfOutlines     outlines = PdfOutlines(pdfDoc);
-    // PdfOutlineItem *root     = outlines.CreateRoot(PdfString("Contents"));
-    // PdfOutlineItem *lastItem = nullptr;
     // TABLE OF CONTENTS
     PdfPageCollection &pages = pdfDoc.GetPages();
 
@@ -247,15 +242,6 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
         else
             link.SetBorderStyle(0.0, 0.0, 0.0);
 
-        /*  --- BEGIN EXPERIMENTAL (Create side index) --- */
-        // if (!lastItem) {
-        //     lastItem = root->CreateChild(PdfString(a.anchor.title.c_str()), dest);
-        // } else {
-        //     lastItem = lastItem->CreateNext(PdfString(a.anchor.title.c_str()), dest);
-        // }
-        // TRY NESTING INSTAED
-        // Collect outline data
-
         vector<int> buf = parseNumbering(a.target.title);
         if (!buf.empty() && dest && dest->GetPage()) {
             OutlineData od;
@@ -277,7 +263,6 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
                  << "Invalid outline: missing destination or page."
                  << std::endl;
         }
-        /*  --- END EXPERIMENTAL (Create side index) --- */
 
         // DEBUG:
         PdfObject   &pPageObj = dstPage.GetObject();
@@ -287,11 +272,8 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
              << "Total objects: " << pdfDoc.GetObjects().GetSize()
              << std::endl;
     }
-    /*  --- BEGIN EXPERIMENTAL (Create side index) --- */
-    // Second pass: build nested outline structure
 
     buildNestedOutlines(outlines, outlineData, toc);
-    /*  --- END EXPERIMENTAL (Create side index) --- */
 }
 
 static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
@@ -367,92 +349,220 @@ void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
 }
 
 #else
+void index_pdf::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PdfDestination *pTocDest) {
+    if (outlineData.empty() || !pOutlines)
+        return;
 
-static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_px) {
-    return pdf_page_width_pts / css_page_width_px;
-}
+    // Sorting logic remains identical to your 0.10 code
+    std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+        size_t minSize = std::min(a.levels.size(), b.levels.size());
+        for (size_t i = 0; i < minSize; ++i) {
+            if (a.levels[i] != b.levels[i])
+                return a.levels[i] < b.levels[i];
+        }
+        return a.levels.size() < b.levels.size();
+    });
 
-void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
-    for (const auto &a : m_links) {
-        int src_idx = a.index.pageNo - 1;
-        int dst_idx = a.anchor.pageNo - 1;
-        if (src_idx < 0 || src_idx >= static_cast<int>(pdfDoc.GetPageCount()) || dst_idx < 0 || dst_idx >= static_cast<int>(pdfDoc.GetPageCount())) {
-            std::cerr << "Skipping link '" << a.linkName << "': invalid page\n";
+    // In 0.9.x, CreateRoot returns the first item.
+    // Usually, we create a top-level "Contents" item.
+    PdfOutlineItem *root = pOutlines->CreateRoot(PdfString("Contents"));
+    if (pTocDest) {
+        root->SetDestination(*pTocDest);
+    }
+
+    // Tracking map remains the same
+    std::map<int, PdfOutlineItem *> lastItemAtLevel;
+    lastItemAtLevel[0] = root;
+
+    for (const auto &data : outlineData) {
+        if (data.levels.empty())
             continue;
+
+        int             depth  = data.levels.size();
+        PdfOutlineItem *parent = (depth == 1) ? root : lastItemAtLevel[depth - 1];
+        if (!parent)
+            parent = root;
+
+        PdfOutlineItem *newItem = nullptr;
+
+        // 0.9.x uses CreateChild and CreateNext with slightly different signatures
+        // Note: data.dest in 0.9.x is likely a PdfDestination object, not a pointer
+        if (lastItemAtLevel.find(depth) == lastItemAtLevel.end()) {
+            newItem = parent->CreateChild(PdfString(data.title.c_str()), *(data.dest));
+        } else {
+            newItem = lastItemAtLevel[depth]->CreateNext(PdfString(data.title.c_str()), *(data.dest));
         }
 
-        PdfPage *srcPage = pdfDoc.GetPage(src_idx);
-        PdfPage *dstPage = pdfDoc.GetPage(dst_idx);
+        lastItemAtLevel[depth] = newItem;
 
-        // PDF page sizes (points)
-        PdfRect pdfSrcPageRect = srcPage->GetPageSize();
-        double  pdfSrcW        = pdfSrcPageRect.GetWidth();
-
-        PdfRect pdfDstPageRect = dstPage->GetPageSize();
-        double  pdfDstW        = pdfDstPageRect.GetWidth();
-
-        // CSS page size (pixels) from your JS
-        double cssSrcW = a.index.page_width;
-        double cssSrcH = a.index.page_height;
-        double cssDstW = a.anchor.page_width;
-        double cssDstH = a.anchor.page_height;
-
-        if (cssSrcW <= 0 || cssSrcH <= 0 || cssDstW <= 0 || cssDstH <= 0) {
-            std::cerr << "Skipping link '" << a.linkName << "': missing page sizes\n";
-            continue;
-        }
-
-        double scaleSrc = scale_css_to_pdf(pdfSrcW, cssSrcW);
-        double scaleDst = scale_css_to_pdf(pdfDstW, cssDstW);
-
-        // convert source rect: CSS top-left -> PDF bottom-left
-        double src_left_pts   = a.index.xPos * scaleSrc;
-        double src_top_pts    = (cssSrcH - a.index.yPos) * scaleSrc;
-        double src_w_pts      = a.index.w * scaleSrc;
-        double src_h_pts      = a.index.h * scaleSrc;
-        double src_bottom_pts = src_top_pts - src_h_pts;
-
-        PdfRect annotRect(src_left_pts, src_bottom_pts, src_w_pts, src_h_pts);
-
-        // convert destination coords: left/top in PDF points
-        double dst_left_pts = a.anchor.xPos * scaleDst;
-        double dst_top_pts  = (cssDstH - a.anchor.yPos) * scaleDst;
-
-        // PdfDestination( const PdfPage* pPage, double dLeft, double dTop, double dZoom );
-        // dLeft, dTop are PDF points; dZoom: 0.0 = leave viewer default, 1.0 = 100%
-        PdfDestination destination(dstPage, dst_left_pts, dst_top_pts, 0.0);
-
-        // Create annotation on source page and attach destination
-        PdfAnnotation *pAnnot = srcPage->CreateAnnotation(ePdfAnnotation_Link, annotRect);
-        if (!pAnnot) {
-            std::cerr << "Failed to create annotation for '" << a.linkName << "'\n";
-            continue;
-        }
-
-        // Attach destination to the annotation
-        pAnnot->SetDestination(destination);
-
-        // Make annotation invisible for production; use >0 for debugging
-        pAnnot->SetBorderStyle(0.0, 0.0, 0.0);
-
-        // If CreateAnnotation already adds the annotation to the page, nothing more to do.
-        // Otherwise call srcPage->AddAnnotation(pAnnot); depending on your PoDoFo version.
+        // Branch cleanup logic remains the same
+        auto it = lastItemAtLevel.upper_bound(depth);
+        lastItemAtLevel.erase(it, lastItemAtLevel.end());
     }
 }
 
-void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
-    PdfMemDocument doc;
-    doc.Load(sourcePath.c_str());
-    do_annotation(doc);
+///////////////////////////
 
-    jlog << iclog::loglevel::debug << iclog::category::LIB
-         << "Saving page"
-         << std::endl;
+#ifndef PODOFO_010
+void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
+    // 0.9.x: Outlines are accessed directly from the document
+    PdfOutlines *pOutlines = pdfDoc.GetOutlines();
 
-    doc.Write(destPath.c_str());
-    jlog << iclog::loglevel::debug << iclog::category::LIB
-         << destPath << " written"
-         << std::endl;
+    // 0.9.x: No PageCollection; pages are accessed by index from the document
+    int pageCount = pdfDoc.GetPageCount();
+
+    PdfDestination *pTocDest = nullptr;
+    if (m_tocPage != UNSET && m_tocPage < pageCount) {
+        PdfPage *pTocPage = pdfDoc.GetPage(m_tocPage);
+        PdfRect  pageRect = pTocPage->GetMediaBox();
+        // Destination(pPage, left, top, zoom)
+        pTocDest          = new PdfDestination(pTocPage, 0.0, pageRect.GetHeight(), 0.0);
+    }
+
+    for (const auto &a : m_links) {
+        int src_idx = a.index.pageNo - 1;
+        int dst_idx = a.target.pageNo - 1;
+
+        if (src_idx < 0 || src_idx >= pageCount || dst_idx < 0 || dst_idx >= pageCount)
+            continue;
+
+        PdfPage *pSrcPage = pdfDoc.GetPage(src_idx);
+        PdfPage *pDstPage = pdfDoc.GetPage(dst_idx);
+
+        // 0.9.x uses PdfRect instead of Rect
+        PdfRect srcMedia = pSrcPage->GetMediaBox();
+        PdfRect dstMedia = pDstPage->GetMediaBox();
+
+        double scaleSrc = scale_css_to_pdf(srcMedia.GetWidth(), a.index.page_width);
+        double scaleDst = scale_css_to_pdf(dstMedia.GetHeight(), a.target.page_height);
+
+        // Y-axis logic (Bottom-up in PDF)
+        double  src_bottom_pts = (a.index.page_height - (a.index.yPos + a.index.h)) * scaleSrc;
+        PdfRect annotRect(a.index.xPos * scaleSrc, src_bottom_pts, a.index.w * scaleSrc, a.index.h * scaleSrc);
+
+        // Create Annotation: In 0.9.x, you specify the subtype via enum
+        PdfAnnotation *pAnnot = pSrcPage->CreateAnnotation(ePdfAnnotation_Link, annotRect);
+
+        double         dst_top_pts = (a.target.page_height - a.target.yPos) * scaleDst;
+        PdfDestination dest(pDstPage, a.target.xPos * scaleDst, dst_top_pts, 0.0);
+
+        // Attach Destination
+        pAnnot->SetDestination(dest);
+
+        // Border: 0.9.x uses SetFlags or specific border methods
+        if (!m_debug) {
+            // Hide border via an empty border array
+            pAnnot->GetObject()->GetDictionary().AddKey(PdfName("Border"), PdfArray());
+        }
+
+        // Outline Tracking
+        std::vector<int> buf = parseNumbering(a.target.title);
+        if (!buf.empty()) {
+            OutlineData od;
+            od.title  = a.target.title;
+            // In 0.9.x, we usually store the destination as a member, not a shared_ptr
+            od.dest   = new PdfDestination(dest);
+            od.levels = buf;
+
+            bool found = false;
+            for (auto &it : outlineData) {
+                if (it.title == od.title)
+                    found = true;
+            }
+            if (!found)
+                outlineData.push_back(od);
+        }
+    }
+
+    buildNestedOutlines(pOutlines, outlineData, pTocDest);
+
+    // Cleanup if you used 'new' for local storage
+    if (pTocDest)
+        delete pTocDest;
 }
+#endif
+
+// void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
+//     for (const auto &a : m_links) {
+//         int src_idx = a.index.pageNo - 1;
+//         int dst_idx = a.anchor.pageNo - 1;
+//         if (src_idx < 0 || src_idx >= static_cast<int>(pdfDoc.GetPageCount()) || dst_idx < 0 || dst_idx >= static_cast<int>(pdfDoc.GetPageCount())) {
+//             std::cerr << "Skipping link '" << a.linkName << "': invalid page\n";
+//             continue;
+//         }
+
+//         PdfPage *srcPage = pdfDoc.GetPage(src_idx);
+//         PdfPage *dstPage = pdfDoc.GetPage(dst_idx);
+
+//         // PDF page sizes (points)
+//         PdfRect pdfSrcPageRect = srcPage->GetPageSize();
+//         double  pdfSrcW        = pdfSrcPageRect.GetWidth();
+
+//         PdfRect pdfDstPageRect = dstPage->GetPageSize();
+//         double  pdfDstW        = pdfDstPageRect.GetWidth();
+
+//         // CSS page size (pixels) from your JS
+//         double cssSrcW = a.index.page_width;
+//         double cssSrcH = a.index.page_height;
+//         double cssDstW = a.anchor.page_width;
+//         double cssDstH = a.anchor.page_height;
+
+//         if (cssSrcW <= 0 || cssSrcH <= 0 || cssDstW <= 0 || cssDstH <= 0) {
+//             std::cerr << "Skipping link '" << a.linkName << "': missing page sizes\n";
+//             continue;
+//         }
+
+//         double scaleSrc = scale_css_to_pdf(pdfSrcW, cssSrcW);
+//         double scaleDst = scale_css_to_pdf(pdfDstW, cssDstW);
+
+//         // convert source rect: CSS top-left -> PDF bottom-left
+//         double src_left_pts   = a.index.xPos * scaleSrc;
+//         double src_top_pts    = (cssSrcH - a.index.yPos) * scaleSrc;
+//         double src_w_pts      = a.index.w * scaleSrc;
+//         double src_h_pts      = a.index.h * scaleSrc;
+//         double src_bottom_pts = src_top_pts - src_h_pts;
+
+//         PdfRect annotRect(src_left_pts, src_bottom_pts, src_w_pts, src_h_pts);
+
+//         // convert destination coords: left/top in PDF points
+//         double dst_left_pts = a.anchor.xPos * scaleDst;
+//         double dst_top_pts  = (cssDstH - a.anchor.yPos) * scaleDst;
+
+//         // PdfDestination( const PdfPage* pPage, double dLeft, double dTop, double dZoom );
+//         // dLeft, dTop are PDF points; dZoom: 0.0 = leave viewer default, 1.0 = 100%
+//         PdfDestination destination(dstPage, dst_left_pts, dst_top_pts, 0.0);
+
+//         // Create annotation on source page and attach destination
+//         PdfAnnotation *pAnnot = srcPage->CreateAnnotation(ePdfAnnotation_Link, annotRect);
+//         if (!pAnnot) {
+//             std::cerr << "Failed to create annotation for '" << a.linkName << "'\n";
+//             continue;
+//         }
+
+//         // Attach destination to the annotation
+//         pAnnot->SetDestination(destination);
+
+//         // Make annotation invisible for production; use >0 for debugging
+//         pAnnot->SetBorderStyle(0.0, 0.0, 0.0);
+
+//         // If CreateAnnotation already adds the annotation to the page, nothing more to do.
+//         // Otherwise call srcPage->AddAnnotation(pAnnot); depending on your PoDoFo version.
+//     }
+// }
+
+// void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
+//     PdfMemDocument doc;
+//     doc.Load(sourcePath.c_str());
+//     do_annotation(doc);
+
+//     jlog << iclog::loglevel::debug << iclog::category::LIB
+//          << "Saving page"
+//          << std::endl;
+
+//     doc.Write(destPath.c_str());
+//     jlog << iclog::loglevel::debug << iclog::category::LIB
+//          << destPath << " written"
+//          << std::endl;
+// }
 
 #endif

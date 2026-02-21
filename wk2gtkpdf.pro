@@ -5,7 +5,7 @@ CONFIG -= qt
 
 INCLUDEPATH += \
         /usr/include/ImageMagick-7 \
-        /usr/include/podofo-0.10 \
+        /usr/include/podofo-0.9 \
         /usr/include/libxml2 \
         /usr/include/webkitgtk-4.1 \
         /usr/include/glib-2.0 \
