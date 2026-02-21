@@ -1,0 +1,35 @@
+Source: wkgtk-html2pdf
+Section: utils
+Priority: optional
+Maintainer: James Hothersall <james@inplico.uk>
+Build-Depends: debhelper-compat (= 13),
+               libwebkit2gtk-4.1-dev,
+               libpodofo-dev,
+               libjson-c-dev,
+               pkg-config,
+               libgtk-3-dev,
+               libsystemd-dev,
+               libx11-dev,
+               libwayland-dev
+Standards-Version: 4.6.2
+
+Package: wkgtk-html2pdf
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwkgtk-html2pdf (= ${binary:Version})
+Description: CLI tool to convert HTML to PDF using WebKit
+ (Your description here)
+
+Package: libwkgtk-html2pdf
+Section: libs
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: command-line utility to render HTML to PDF using WebKit
+ wkgtk-html2pdf is a lightweight C++ tool designed as a modern
+ replacement for wkhtmltopdf. It provides a CLI and a C++ API to
+ generate high-quality PDF files from HTML documents.
+ .
+ Features include:
+  * Minimal C++ API for PDF generation.
+  * Internal HTML generation and image embedding.
+  * Automated headless operation via xvfb integration.
+

@@ -1,5 +1,5 @@
 # Library and PC
-usr/lib/lib*.so*
+usr/lib/*/lib*.so.*
 usr/lib/pkgconfig/wk2gtkpdf.pc
 usr/include/wk2gtkpdf/*
 
