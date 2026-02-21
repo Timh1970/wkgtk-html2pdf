@@ -31,15 +31,36 @@ $(FULLNAME): $(OBJECTS)
 
 .PHONY: install
 install:
-	# install the real file
-	install -Dm755 -t $(DESTDIR)/usr/lib/ $(FULLNAME)
-	# create symlinks explicitly in DESTDIR (safer for packaging scripts)
+	# Shared Library
+	install -d $(DESTDIR)/usr/lib
+	install -m 755 $(FULLNAME) $(DESTDIR)/usr/lib/$(FULLNAME)
 	ln -sfT $(FULLNAME) $(DESTDIR)/usr/lib/$(SONAME)
 	ln -sfT $(SONAME)   $(DESTDIR)/usr/lib/$(APPLICATION)
-	# headers
-	install -Dm644 -t $(DESTDIR)/usr/include/wk2gtkpdf/ *.h
-	# install pkg-config file if present
-	install -Dm644 -t $(DESTDIR)/usr/lib/pkgconfig wk2gtkpdf.pc || true
+
+	# Headers
+	install -d $(DESTDIR)/usr/include/wk2gtkpdf
+	install -m 644 *.h $(DESTDIR)/usr/include/wk2gtkpdf/
+
+	# Assets (The CSS and JS Helpers)
+	install -d $(DESTDIR)/usr/share/wk2gtkpdf
+	install -m 644 ../../templates/*.css $(DESTDIR)/usr/share/wk2gtkpdf/
+	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
+
+	# Pkg-config
+	install -d $(DESTDIR)/usr/lib/pkgconfig
+	install -m 644 wk2gtkpdf.pc $(DESTDIR)/usr/lib/pkgconfig/
+
+
+# install:
+# 	# install the real file
+# 	install -Dm755 -t $(DESTDIR)/usr/lib/ $(FULLNAME)
+# 	# create symlinks explicitly in DESTDIR (safer for packaging scripts)
+# 	ln -sfT $(FULLNAME) $(DESTDIR)/usr/lib/$(SONAME)
+# 	ln -sfT $(SONAME)   $(DESTDIR)/usr/lib/$(APPLICATION)
+# 	# headers
+# 	install -Dm644 -t $(DESTDIR)/usr/include/wk2gtkpdf/ *.h
+# 	# install pkg-config file if present
+# 	install -Dm644 -t $(DESTDIR)/usr/lib/pkgconfig wk2gtkpdf.pc || true
 
 .PHONY: smoke-install
 smoke-install:
@@ -57,11 +78,22 @@ smoke-install:
 
 .PHONY: uninstall
 uninstall:
+	# Remove Library and Symlinks
 	rm -f $(DESTDIR)/usr/lib/$(FULLNAME)
 	rm -f $(DESTDIR)/usr/lib/$(SONAME)
 	rm -f $(DESTDIR)/usr/lib/$(APPLICATION)
-	rm -f $(DESTDIR)/usr/include/wk2gtkpdf/*.h
-	rmdir --ignore-fail-on-non-empty $(DESTDIR)/usr/include/wk2gtkpdf
+
+	# Remove Headers
+	rm -rf $(DESTDIR)/usr/include/wk2gtkpdf
+
+	# Remove Assets (CSS/JS Helpers)
+	rm -f $(DESTDIR)/usr/share/wk2gtkpdf/*.css
+	rm -f $(DESTDIR)/usr/share/wk2gtkpdf/overflow-monitor.js
+	# Only remove the directory if it is empty
+	rmdir --ignore-fail-on-non-empty $(DESTDIR)/usr/share/wk2gtkpdf
+
+	# Remove Pkg-config
+	rm -f $(DESTDIR)/usr/lib/pkgconfig/wk2gtkpdf.pc
 
 .PHONY: clean
 clean:

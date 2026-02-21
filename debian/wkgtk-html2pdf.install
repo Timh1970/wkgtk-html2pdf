@@ -1,5 +1,1 @@
-usr/bin/*
-usr/share/wk2gtkpdf/*
-xvfb.service /lib/systemd/system/
-50-wk2gtkpdf.rules /usr/share/polkit-1/rules.d/
-
+usr/bin/wkgtk-html2pdf
