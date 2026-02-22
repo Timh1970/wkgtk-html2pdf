@@ -14,7 +14,8 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 CXX = g++
 
-CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden
+CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden -g
+CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
 CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)

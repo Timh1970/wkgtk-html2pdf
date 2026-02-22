@@ -1,4 +1,5 @@
 #!/usr/bin/make -f
+include /usr/share/dpkg/default.mk
 
 # 1. Global Exports
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
@@ -6,8 +7,6 @@ export DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 # ADD THIS LINE: Point pkg-config to the directory containing wk2gtkpdf.pc
 export PKG_CONFIG_PATH := $(CURDIR)/src/wk2gtkpdf:$(PKG_CONFIG_PATH)
-# Also help the linker find the .so during the CLI build
-export LD_LIBRARY_PATH := $(CURDIR)/src/wk2gtkpdf:$(LD_LIBRARY_PATH)
 
 # 2. Dynamic Version Detection
 PODOFO_VERSION := $(shell pkg-config --modversion libpodofo 2>/dev/null || echo 0)
@@ -26,10 +25,10 @@ override_dh_makeshlibs:
 	dh_makeshlibs -V
 
 override_dh_auto_build:
-	# Build Library first
+	# 1. Build the library first
 	$(MAKE) -C src/wk2gtkpdf
-	# Build CLI using local paths
-	$(MAKE) -C src/cli \
+	# 2. Build the CLI (Variable and command MUST be on the same execution line)
+	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf"
 
@@ -44,6 +43,8 @@ override_dh_auto_install:
 override_dh_install:
 	# Sort files into packages based on your .install files
 	dh_install
+	# Force the manual into the CLI package
+	dh_installman -pwkgtk-html2pdf debian/wkgtk-html2pdf.1
 	# Install the Polkit rule into the library package specifically
 	install -Dm 644 debian/50-wk2gtkpdf.rules \
 		debian/libwk2gtkpdf0/usr/share/polkit-1/rules.d/50-wk2gtkpdf.rules

@@ -1,0 +1,5 @@
+debian/    export-ignore
+.git*      export-ignore
+*.o        export-ignore
+*.so       export-ignore
+*.a        export-ignore

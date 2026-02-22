@@ -6,12 +6,12 @@ Build-Depends: debhelper-compat (= 13),
                libwebkit2gtk-4.1-dev,
                libpodofo-dev,
                libjson-c-dev,
-               pkg-config,
+               pkgconf,
                libgtk-3-dev,
                libsystemd-dev,
                libx11-dev,
                libwayland-dev
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 
 Package: wkgtk-html2pdf
 Architecture: any
@@ -26,7 +26,7 @@ Architecture: any
 # Essential for the sd-bus calls and service management
 Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, systemd, adduser
 Description: WebKit-based HTML to PDF rendering library
- This package contains the shared library and the headless 
+ This package contains the shared library and the headless
  xvfb infrastructure used for rendering in non-GUI environments.
 
 Package: libwk2gtkpdf0-dev

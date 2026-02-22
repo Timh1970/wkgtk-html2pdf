@@ -34,6 +34,11 @@ if [ -z "$suffix" ]; then
   exit 1
 fi
 
+# No suffix for release
+if [[ $suffix == "rel" ]]; then
+  suffix=""
+fi
+
 # Ensure we run from the repository root
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root" || exit 1
@@ -71,7 +76,31 @@ name="wk2gtkpdf"
 version="$major.$minor.$patch"
 
 # Replace @VERSION@ in templates
-sed "s/@VERSION@/${version}/" "${name}.pc.in" > "./src/${name}/${name}.pc"
+sed "s/@VERSION@/${version}/" ${name}.pc.in > ./src/${name}/${name}.pc
+
+
+# 1. Prepare the Debian-style date (Required for the footer)
+# Format: Mon, 22 Feb 2026 22:45:00 +0000
+DEB_DATE=$(date -R)
+
+# 2. Build the new Header and Footer
+# Note: 'unstable' or 'trixie' is the target distribution
+CHANGELOG_HEADER="wkgtk-html2pdf (${version}-1) trixie; urgency=medium"
+CHANGELOG_FOOTER=" -- Tim <your@email.com>  $DEB_DATE"
+
+# 3. Prepend to the existing changelog
+# We create a temporary file, add the new entry, then append the old content
+if [ -f "debian/changelog" ]; then
+  echo "$CHANGELOG_HEADER" > debian/changelog.new
+  echo "" >> debian/changelog.new
+  echo "  * Automated release: Version ${version}" >> debian/changelog.new
+  echo "" >> debian/changelog.new
+  echo "$CHANGELOG_FOOTER" >> debian/changelog.new
+  echo "" >> debian/changelog.new
+  cat debian/changelog >> debian/changelog.new
+  mv debian/changelog.new debian/changelog
+fi
+
 
 # Stage everything (intentional)
 git add .
@@ -96,10 +125,16 @@ fi
 # Create annotated tag
 git tag -a "$tag" -m "Release $tag"
 
-# Create archive from the tag to guarantee it matches the tag
-archive_name="inplicare-libs-${version}.tar.gz"
-git archive --format=tar.gz --prefix="${name}-${version}/" "$tag" -o "$archive_name"
 
+# Define the names exactly as the Debian Site Inspector expects
+DEB_NAME="wkgtk-html2pdf"
+DEB_ARCHIVE_NAME="${DEB_NAME}_${version}.orig.tar.gz"
+
+# Create the archive (with hyphen in prefix, underscore in filename)
+git archive --format=tar.gz --prefix="${DEB_NAME}-${version}/" -o "../$DEB_ARCHIVE_NAME" "$tag"
+
+echo "---------------------------------------------------"
 echo "Version: $version"
 echo "Tag created: $tag"
-echo "Archive created: $archive_name"
+echo "Debian-ready Archive: $DEB_ARCHIVE_NAME (created in parent folder)"
+echo "---------------------------------------------------"

@@ -12,6 +12,16 @@
 #define PDF_API __attribute__((visibility("default")))
 #endif
 
+#ifndef APP_VERSION
+#define APP_VERSION "unknown"
+#endif
+
+extern "C" {
+PDF_API const char *wk2gtkpdf_version() {
+    return APP_VERSION;
+}
+}
+
 /**
  * @brief The XvfbMode enum
  *

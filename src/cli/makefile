@@ -1,3 +1,10 @@
+include ../../version.conf
+
+MAJOR := $(major)
+MINOR := $(minor)
+PATCH := $(patch)
+VERSION := $(MAJOR).$(MINOR).$(PATCH)
+
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h)
 OBJECTS = $(SOURCES:.cpp=.o)
@@ -7,9 +14,11 @@ USER_LIBDIR ?=
 
 CXX = g++
 
-CXXFLAGS := -std=c++20 -Wall -Wextra -O2  -m64 -pedantic-errors
+CXXFLAGS := -std=c++20 -Wall -Wextra -O2  -m64 -pedantic-errors -g
 
 CPPFLAGS += $(USER_INCDIR)
+CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
+
 CPPFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
 CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 CPPFLAGS += $(shell pkg-config --cflags libsystemd)

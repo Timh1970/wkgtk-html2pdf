@@ -1,0 +1,50 @@
+cat > wkgtk-html2pdf.1 <<EOF
+.TH WKGTK-HTML2PDF 1 "February 2026" "0.0.16" "User Commands"
+.SH NAME
+wkgtk-html2pdf \- modern WebKit-based HTML to PDF converter
+.SH SYNOPSIS
+.B wkgtk-html2pdf
+[\fIOPTIONS\fR] \fB\-i\fR \fIinput.html\fR \fB\-o\fR \fIoutput.pdf\fR
+.SH DESCRIPTION
+.B wkgtk-html2pdf
+is a powerful tool for converting HTML content into high-quality PDF documents 
+using WebKitGTK. Developed as a modern alternative to the archived \fBwkhtmltopdf\fR, 
+it provides a clean interface for embedding in applications and a 
+simple command-line interface for quick conversions.
+.PP
+The tool supports advanced features such as internal anchors, links, and nested 
+sidebar indexing. It includes built-in CSS templates for all standard ISO and 
+US paper sizes to prevent extraneous blank pages and maintain layout consistency.
+.SH DOCUMENTATION
+This manual is derived from the official project documentation. 
+While this man page provides a standard system reference, the 
+full HTML version of this manual is a self-fulfilling prophecy: 
+it is generated entirely using \fBwkgtk-html2pdf\fR to 
+demonstrate the tool's professional typesetting and 
+indexing capabilities.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Display the help message and exit.
+.TP
+.BR \-v ", " \-\-verbose " \fILEVEL\fR"
+Set the log level (1-7). Logs are written to the system journal.
+.TP
+.BR \-i ", " \-\-infile " \fIFILE\fR"
+Specify the source HTML file to convert.
+.TP
+.BR \-o ", " \-\-outfile " \fIFILE\fR"
+Specify the output PDF file name.
+.TP
+.BR \-O ", " \-\-orientation " \fI[portrait|landscape]\fR"
+Set page orientation (Default: portrait).
+.TP
+.BR \-s ", " \-\-size " \fISIZE\fR"
+Set the page size (Default: A4).
+.TP
+.BR \-r ", " \-\-relative-uri
+Look for assets (images, CSS) in the current folder relative to the input file.
+.SH SEE ALSO
+.BR xvfb (1)
+EOF
+
