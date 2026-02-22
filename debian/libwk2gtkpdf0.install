@@ -1,0 +1,5 @@
+# The versioned libraries
+usr/lib/*/libwk2gtkpdf.so.0*
+
+# The CSS templates
+usr/share/wk2gtkpdf/*

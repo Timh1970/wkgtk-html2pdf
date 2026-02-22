@@ -20,7 +20,7 @@ CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
 
-LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1 libpodofo json-c)
+LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1 libpodofo json-c libsystemd x11 wayland-client)
 
 LIBDIR ?= /usr/lib
 

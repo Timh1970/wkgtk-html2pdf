@@ -15,21 +15,24 @@ Standards-Version: 4.6.2
 
 Package: wkgtk-html2pdf
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwkgtk-html2pdf (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwk2gtkpdf0 (= ${binary:Version})
 Description: CLI tool to convert HTML to PDF using WebKit
- (Your description here)
+ Modern replacement for wkhtmltopdf. This package contains the
+ command-line utility and headless systemd infrastructure.
 
-Package: libwkgtk-html2pdf
+Package: libwk2gtkpdf0
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: command-line utility to render HTML to PDF using WebKit
- wkgtk-html2pdf is a lightweight C++ tool designed as a modern
- replacement for wkhtmltopdf. It provides a CLI and a C++ API to
- generate high-quality PDF files from HTML documents.
- .
- Features include:
-  * Minimal C++ API for PDF generation.
-  * Internal HTML generation and image embedding.
-  * Automated headless operation via xvfb integration.
+# Essential for the sd-bus calls and service management
+Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, systemd, adduser
+Description: WebKit-based HTML to PDF rendering library
+ This package contains the shared library and the headless 
+ xvfb infrastructure used for rendering in non-GUI environments.
+
+Package: libwk2gtkpdf0-dev
+Section: libdevel
+Architecture: any
+Depends: libwk2gtkpdf0 (= ${binary:Version}), ${misc:Depends}
+Description: WebKit-based HTML to PDF rendering library (development files)
+ This package contains the header files and pkg-config metadata.
 

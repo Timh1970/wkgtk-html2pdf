@@ -1,0 +1,7 @@
+debian/tmp/usr/include/wk2gtkpdf/encode_image.h
+debian/tmp/usr/include/wk2gtkpdf/ichtmltopdf++.h
+debian/tmp/usr/include/wk2gtkpdf/iclog.h
+debian/tmp/usr/include/wk2gtkpdf/index_pdf.h
+debian/tmp/usr/include/wk2gtkpdf/pretty_html.h
+debian/tmp/usr/lib/x86_64-linux-gnu/libwk2gtkpdf.so
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/wk2gtkpdf.pc

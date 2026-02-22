@@ -1,8 +1,12 @@
 #!/usr/bin/make -f
 
-# 1. Global Exports (Inherited by all sub-shells)
+# 1. Global Exports
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
+
+# ADD THIS LINE: Point pkg-config to the directory containing wk2gtkpdf.pc
 export PKG_CONFIG_PATH := $(CURDIR)/src/wk2gtkpdf:$(PKG_CONFIG_PATH)
+# Also help the linker find the .so during the CLI build
 export LD_LIBRARY_PATH := $(CURDIR)/src/wk2gtkpdf:$(LD_LIBRARY_PATH)
 
 # 2. Dynamic Version Detection
@@ -22,13 +26,33 @@ override_dh_makeshlibs:
 	dh_makeshlibs -V
 
 override_dh_auto_build:
-	# Build Library first so its .pc and .so are ready for the CLI
+	# Build Library first
 	$(MAKE) -C src/wk2gtkpdf
-	# Build CLI using the local library paths
+	# Build CLI using local paths
 	$(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf"
 
 override_dh_auto_install:
-	$(MAKE) -C src/wk2gtkpdf install DESTDIR=$(CURDIR)/debian/tmp
-	$(MAKE) -C src/cli install DESTDIR=$(CURDIR)/debian/tmp
+	# Pass LIBDIR so files go to /usr/lib/x86_64-linux-gnu/ (or similar)
+	$(MAKE) -C src/wk2gtkpdf install \
+		DESTDIR=$(CURDIR)/debian/tmp \
+		LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
+	$(MAKE) -C src/cli install \
+		DESTDIR=$(CURDIR)/debian/tmp
+
+override_dh_install:
+	# Sort files into packages based on your .install files
+	dh_install
+	# Install the Polkit rule into the library package specifically
+	install -Dm 644 debian/50-wk2gtkpdf.rules \
+		debian/libwk2gtkpdf0/usr/share/polkit-1/rules.d/50-wk2gtkpdf.rules
+
+override_dh_installsystemd:
+	# Tell debhelper that xvfb.service belongs to the library package
+	dh_installsystemd -plibwk2gtkpdf0 --name=xvfb
+
+override_dh_shlibdeps:
+	# Clear those 85+ symbol warnings by pointing to the library we just built
+	dh_shlibdeps -l$(CURDIR)/debian/libwk2gtkpdf0/usr/lib/$(DEB_HOST_MULTIARCH)
+

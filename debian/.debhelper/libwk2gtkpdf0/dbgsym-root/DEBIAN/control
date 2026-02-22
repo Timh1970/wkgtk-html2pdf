@@ -1,0 +1,12 @@
+Package: libwk2gtkpdf0-dbgsym
+Source: wkgtk-html2pdf
+Version: 0.0.16-1
+Auto-Built-Package: debug-symbols
+Architecture: amd64
+Maintainer: James Hothersall <james@inplico.uk>
+Installed-Size: 1454
+Depends: libwk2gtkpdf0 (= 0.0.16-1)
+Section: debug
+Priority: optional
+Description: debug symbols for libwk2gtkpdf0
+Build-Ids: 3c8b0201d9045dd10bb25850dc124786c0b420cd
