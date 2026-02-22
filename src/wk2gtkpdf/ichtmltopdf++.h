@@ -17,9 +17,7 @@
 #endif
 
 extern "C" {
-PDF_API const char *wk2gtkpdf_version() {
-    return APP_VERSION;
-}
+PDF_API const char *wk2gtkpdf_version();
 }
 
 /**

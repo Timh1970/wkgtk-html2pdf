@@ -19,6 +19,12 @@
 #include <wayland-client.h>
 #include <webkit2/webkit2.h>
 
+extern "C" {
+const char *wk2gtkpdf_version() {
+    return APP_VERSION; // Or "0.0.17"
+}
+}
+
 using std::string;
 
 /**
