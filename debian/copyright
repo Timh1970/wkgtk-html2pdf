@@ -11,7 +11,7 @@ Files: debian/*
 Copyright: 2024-2026 James Hothersall <james@wkgtk-html2pdf.com>
 License: MIT
 
-Files: src/iclog.h src/iclog.cpp
+Files: src/wk2gtkpdf/iclog.h src/iclog.cpp
 Copyright: 2025 James Hothersall <james@wkgtk-html2pdf.com>
            2015-2020 JP Embedded <https://github.com>
 License: GPL-2+
