@@ -1,5 +1,6 @@
 [Unit]
 Description=Virtual Frame Buffer X Server
+Documentation=man:wkgtk-html2pdf(1)
 After=network.target
 ConditionPathExists=!/tmp/.X11-unix/X0
 ConditionPathIsSymbolicLink=!/etc/systemd/system/display-manager.service

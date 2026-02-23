@@ -1,26 +1,32 @@
+wkgtk-html2pdf (0.0.21-1) trixie; urgency=medium
+
+  * Automated release: Version 0.0.21
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Mon, 23 Feb 2026 13:19:50 +0000
+
 wkgtk-html2pdf (0.0.20-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.20
 
- -- James Hothersall <james@inplico.uk>  Mon, 23 Feb 2026 11:06:35 +0000
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Mon, 23 Feb 2026 11:06:35 +0000
 
 wkgtk-html2pdf (0.0.19-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.19
 
- -- Tim <james@inplico.uk>  Mon, 23 Feb 2026 09:03:08 +0000
+ -- Tim <james@wkgtk-html2pdf.com>  Mon, 23 Feb 2026 09:03:08 +0000
 
 wkgtk-html2pdf (0.0.18-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.18
 
- -- Tim <james@inplico.uk>  Sun, 22 Feb 2026 23:58:02 +0000
+ -- Tim <james@wkgtk-html2pdf.com>  Sun, 22 Feb 2026 23:58:02 +0000
 
 wkgtk-html2pdf (0.0.17-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.17
 
- -- Tim <james@inplico.uk>  Sun, 22 Feb 2026 23:26:22 +0000
+ -- Tim <james@wkgtk-html2pdf.com>  Sun, 22 Feb 2026 23:26:22 +0000
 
 wkgtk-html2pdf (0.0.16-1) unstable; urgency=medium
 
@@ -28,5 +34,4 @@ wkgtk-html2pdf (0.0.16-1) unstable; urgency=medium
   * Modern GTK-based replacement for wkhtmltopdf.
   * Supports headless PDF generation via Xvfb and systemd.
 
- -- James Hothersall <james@inplico.uk>  Sat, 21 Feb 2026 11:45:00 +0000
-
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sat, 21 Feb 2026 11:45:00 +0000

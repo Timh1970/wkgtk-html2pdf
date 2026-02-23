@@ -1,0 +1,8 @@
+Notes on the Shared Library Symbols:
+The 'no-symbols-control-file' lintian tag is intentionally ignored for
+version 0.0.21. We are waiting for the C++ API to "burn in" and stabilise
+before generating the master symbols control file.
+
+Plan: Generate via 'dpkg-gensymbols' once we hit v0.1.0.
+
+    dpkg-gensymbols -plibwk2gtkpdf0 > debian/libwk2gtkpdf0.symbols

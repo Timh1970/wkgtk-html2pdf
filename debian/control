@@ -2,6 +2,7 @@ Source: wkgtk-html2pdf
 Section: utils
 Priority: optional
 Maintainer: James Hothersall <james@inplico.uk>
+Homepage: https://wkgtk-html2pdf.com
 Build-Depends: debhelper-compat (= 13),
                libwebkit2gtk-4.1-dev,
                libpodofo-dev,
@@ -48,4 +49,3 @@ Description: WebKit-based HTML to PDF rendering library (development files)
  that enable the hard coding of HTML without needing to manually manage
  closing HTML elements making it ideal for use with variable data and PDF
  forms.
-

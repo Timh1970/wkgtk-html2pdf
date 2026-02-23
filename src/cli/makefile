@@ -42,14 +42,14 @@ wkgtk-html2pdf: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
 
 clean:
-	rm -f $(OBJECTS) html2pdf
+	rm -f $(OBJECTS) wkgtk-html2pdf
 
 install:
 	install -Dm755 -t $(DESTDIR)$(BINDIR) wkgtk-html2pdf
 
 uninstall:
-	rm -f $(DESTDIR)$(BINDIR)/html2pdf
+	rm -f $(DESTDIR)$(BINDIR)/wkgtk-html2pdf
 
 .PHONY: distclean
 distclean: clean
-	rm -f html2pdf
+	rm -f wkgtk-html2pdf

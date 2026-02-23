@@ -15,13 +15,24 @@ simple command-line interface for quick conversions.
 The tool supports advanced features such as internal anchors, links, and nested 
 sidebar indexing. It includes built-in CSS templates for all standard ISO and 
 US paper sizes to prevent extraneous blank pages and maintain layout consistency.
+.SH HEADLESS OPERATION
+.B wkgtk\-html2pdf
+utilizes a dedicated
+.B xvfb
+(X Virtual Frame Buffer) service for rendering in non-GUI environments.
+This service is managed via
+.B systemd
+and provides high availability for concurrent rendering requests.
+.PP
+By default, the library leaves the service running after completion to
+ensure the system is ready for immediate high-demand throughput.
 .SH DOCUMENTATION
-This manual is derived from the official project documentation. 
-While this man page provides a standard system reference, the 
-full HTML version of this manual is a self-fulfilling prophecy: 
-it is generated entirely using \fBwkgtk-html2pdf\fR to 
-demonstrate the tool's professional typesetting and 
-indexing capabilities.
+Full documentation and live rendering demonstrations are available at:
+.UR https://wkgtk-html2pdf.com
+.UE
+.PP
+The website itself is a demonstration of the tool: the downloadable
+PDF manual is generated directly from the site's HTML source.
 .SH OPTIONS
 .TP
 .BR \-h ", " \-\-help

@@ -1,14 +1,15 @@
 Format: https://www.debian.org
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: wkgtk-html2pdf
-Upstream-Contact: James Hothersall <james@inplico.uk>
+Upstream-Contact: James Hothersall <james@wkgtk-html2pdf.com>
 Source: https://github.com/Timh1970/wkgtk-html2pdf
 
 Files: *
-Copyright: 2023-2026 James Hothersall <james@inplico.uk>
+Copyright: 2023-2026 James Hothersall <james@wkgtk-html2pdf.com>
 License: MIT
 
 Files: debian/*
-Copyright: 2024-2026 James Hothersall <james@inplico.uk>
+Copyright: 2024-2026 James Hothersall <james@wkgtk-html2pdf.com>
 License: MIT
 
 License: MIT
