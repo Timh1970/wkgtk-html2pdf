@@ -11,6 +11,22 @@ Files: debian/*
 Copyright: 2024-2026 James Hothersall <james@wkgtk-html2pdf.com>
 License: MIT
 
+Files: src/iclog.h src/iclog.cpp
+Copyright: 2025 James Hothersall <james@wkgtk-html2pdf.com>
+           2015-2020 JP Embedded <https://github.com>
+License: GPL-2+
+ Comment: The streambuf and ostream redirection logic is backported
+ and adapted from the JP Embedded cpp-syslog project.
+
+License: GPL-2+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ On Debian systems, the full text of the GNU General Public License
+ version 2 can be found in `/usr/share/common-licenses/GPL-2'.
+
 License: MIT
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

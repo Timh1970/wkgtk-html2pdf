@@ -127,11 +127,11 @@ WKGTK_init icGTK::handle_xvfb_daemon() {
     sd_bus *bus = nullptr;
 
     if (headless) {
-        if (sd_bus_open_system(&bus) < 0) {
-            jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-                 << "Failed to connect to system bus; "
-                 << "the application cannot continue and will now exit" << std::endl;
-            exit(1);
+
+        int r = sd_bus_open_system(&bus);
+        if (r < 0) {
+            jlog << iclog::loglevel::error << "D-Bus Connection Failed: " << strerror(-r) << std::endl;
+            throw std::runtime_error("Failed to connect to system bus: " + std::string(strerror(-r)));
         }
 
         std::string unit  = "xvfb_2eservice"; // escaped 'xvfb.service'
@@ -162,9 +162,9 @@ WKGTK_init icGTK::handle_xvfb_daemon() {
              << "WEBKIT2GTK Initialised." << std::endl;
     } else {
         jlog << iclog::loglevel::error << iclog::category::CORE
-             << "GTK initialization failed; "
-             << "the application cannot continue and will now exit." << std::endl;
-        exit(1);
+             << "GTK initialization failed"
+             << std::endl;
+        throw std::runtime_error("GTK initialization failed");
     }
 
     return (WKGTK_init());

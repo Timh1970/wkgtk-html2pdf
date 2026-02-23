@@ -70,10 +70,6 @@ bool html_tree::is_special_tag(string tag, const vector<string> &table) {
  */
 string html_tree::handle_special_characters(string text) {
 
-    // NOTE:
-    //  YOU NEED TO CALL delete[] ON THE RETURNED VALUE WHEN YOU
-    //  ARE DONE WITH IT.
-
     string subjectString(text);
 
     struct FIND_REPLACE {

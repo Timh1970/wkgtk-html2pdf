@@ -10,15 +10,19 @@
 
 /**
  * @brief PHTML_DEBUG
- *
- * Enabling debug on pretty_html can clog up the logs
- * so we have turned it off by default; to enable set
- * to true.
+ * Internal testing only.  This should not be enables as it will
+ * just clog up the logs with every single open and close on every
+ * single element.
  */
 bool PHTML_DEBUG = false;
 
 typedef std::string WEBPAGE; /**<  HTML Page */
 
+/**
+ * @brief The html_tree class
+ *
+ * Stateful HTML Generator with Automatic Escaping and Tree-based Validation.
+ */
 class html_tree {
     public:
         enum class status {

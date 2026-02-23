@@ -1,8 +1,26 @@
 Notes on the Shared Library Symbols:
-The 'no-symbols-control-file' lintian tag is intentionally ignored for
-version 0.0.21. We are waiting for the C++ API to "burn in" and stabilise
-before generating the master symbols control file.
+ To prevent the "symbols-file-missing-build-depends-package-field"
+ waring add
+ .
+ * Build-Depends-Package: libwk2gtkpdf0-dev
+ .
+ at the very top of the .symbols file.
+ .
+ The library maintains a strict Application Binary Interface (ABI).
+ Global objects like jlog are explicitly exported with ICLOG_API
+ visibility to ensure third-party tools can hook into the system's
+ bitwise logging categories without re-compilation.
+ .
+ When regenerating the symbols ensure that the jlog variable is
+ listed thus:
+ .
+ * Build-Depends-Package: libwk2gtkpdf0-dev
+ libwk2gtkpdf.so.0 libwk2gtkpdf0 #MINVER#
+  jlog@Base X.X.XXX
+  LOG_IGNORE@Base X.X.XXX
+  LOG_LEVEL@Base X.X.XXX
+ .
+ Remeber to remove the release suffix.
 
-Plan: Generate via 'dpkg-gensymbols' once we hit v0.1.0.
 
-    dpkg-gensymbols -plibwk2gtkpdf0 > debian/libwk2gtkpdf0.symbols
+

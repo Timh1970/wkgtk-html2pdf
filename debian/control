@@ -17,35 +17,46 @@ Standards-Version: 4.7.2
 Package: wkgtk-html2pdf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwk2gtkpdf0 (= ${binary:Version})
-Description: CLI tool to convert HTML to PDF using WebKit
- Modern replacement for wkhtmltopdf. This command-line
- utility interfaces with libwebkit2gtk library to generate
- high quality indexable Portable Document Format (PDF)'s
- from well formatted HTML.
+Description: Professional headless HTML-to-PDF engine (CLI tool)
+ A modern, feature-rich replacement for wkhtmltopdf built on WebKit2GTK.
+ This command-line utility provides high-fidelity PDF generation with
+ advanced features for professional document automation.
  .
- A series of standard US and ISO page size templates ensure
- accuracy and repeatability and the elimination of unwanted
- blank page artefacts.
+ Key features:
+  * Native PDF Outlines: Uses PoDoFo post-processing to inject true
+    bookmarks and internal link annotations based on document structure.
+  * Headless Automation: Seamlessly manages Xvfb rendering via systemd
+    and Polkit for secure use on servers and CI/CD pipelines.
+  * Design Guard: Built-in validation for CSS overflows and font
+    consistency.
+  * Precise Layouts: Standard ISO and US templates with visual
+    margin-helpers to eliminate unwanted blank page artifacts.
+
 
 Package: libwk2gtkpdf0
 Section: libs
 Architecture: any
 # Essential for the sd-bus calls and service management
 Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, systemd, adduser
-Description: WebKit-based HTML to PDF rendering library
- This package contains the shared library and the headless
- xvfb infrastructure used for rendering in non-GUI environments.
+Description: WebKit-based HTML to PDF rendering library (shared library)
+ This package provides the core shared library used for headless PDF
+ generation. It bridges the gap between modern WebKit2GTK rendering and
+ the fixed-layout requirements of the PDF format.
  .
- The xvfb service ensures high availability without clashes
- while handling concurrent demand.
+ The library includes an integrated system service to manage Xvfb
+ instances on-demand, ensuring high availability and concurrency
+ safety in non-GUI environments without requiring root privileges.
 
 Package: libwk2gtkpdf0-dev
 Section: libdevel
 Architecture: any
 Depends: libwk2gtkpdf0 (= ${binary:Version}), ${misc:Depends}
 Description: WebKit-based HTML to PDF rendering library (development files)
- This package is the API which enables the generation of PDF's from plain
- HTML or the utilisation of the built in pretty_html and html_tree classes
- that enable the hard coding of HTML without needing to manually manage
- closing HTML elements making it ideal for use with variable data and PDF
- forms.
+ This package provides the C++ API for the wkgtk-html2pdf engine.
+ It features a stateful DOM construction API (pretty_html) that
+ facilitates the generation of well-formed, escaped HTML without
+ manual string concatenation.
+ .
+ Developers can use this API to build complex, variable-data reports,
+ manage document indexing via CSS coordinate mapping, and automate
+ professional PDF workflows with native bookmarking support.
