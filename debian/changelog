@@ -1,20 +1,26 @@
+wkgtk-html2pdf (0.0.20-1) trixie; urgency=medium
+
+  * Automated release: Version 0.0.20
+
+ -- James Hothersall <james@inplico.uk>  Mon, 23 Feb 2026 11:06:35 +0000
+
 wkgtk-html2pdf (0.0.19-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.19
 
- -- Tim <your@email.com>  Mon, 23 Feb 2026 09:03:08 +0000
+ -- Tim <james@inplico.uk>  Mon, 23 Feb 2026 09:03:08 +0000
 
 wkgtk-html2pdf (0.0.18-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.18
 
- -- Tim <your@email.com>  Sun, 22 Feb 2026 23:58:02 +0000
+ -- Tim <james@inplico.uk>  Sun, 22 Feb 2026 23:58:02 +0000
 
 wkgtk-html2pdf (0.0.17-1) trixie; urgency=medium
 
   * Automated release: Version 0.0.17
 
- -- Tim <your@email.com>  Sun, 22 Feb 2026 23:26:22 +0000
+ -- Tim <james@inplico.uk>  Sun, 22 Feb 2026 23:26:22 +0000
 
 wkgtk-html2pdf (0.0.16-1) unstable; urgency=medium
 

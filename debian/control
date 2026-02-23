@@ -11,14 +11,20 @@ Build-Depends: debhelper-compat (= 13),
                libsystemd-dev,
                libx11-dev,
                libwayland-dev
-Standards-Version: 4.7.0
+Standards-Version: 4.7.2
 
 Package: wkgtk-html2pdf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwk2gtkpdf0 (= ${binary:Version})
 Description: CLI tool to convert HTML to PDF using WebKit
- Modern replacement for wkhtmltopdf. This package contains the
- command-line utility and headless systemd infrastructure.
+ Modern replacement for wkhtmltopdf. This command-line
+ utility interfaces with libwebkit2gtk library to generate
+ high quality indexable Portable Document Format (PDF)'s
+ from well formatted HTML.
+ .
+ A series of standard US and ISO page size templates ensure
+ accuracy and repeatability and the elimination of unwanted
+ blank page artefacts.
 
 Package: libwk2gtkpdf0
 Section: libs
@@ -28,11 +34,18 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, systemd, adduser
 Description: WebKit-based HTML to PDF rendering library
  This package contains the shared library and the headless
  xvfb infrastructure used for rendering in non-GUI environments.
+ .
+ The xvfb service ensures high availability without clashes
+ while handling concurrent demand.
 
 Package: libwk2gtkpdf0-dev
 Section: libdevel
 Architecture: any
 Depends: libwk2gtkpdf0 (= ${binary:Version}), ${misc:Depends}
 Description: WebKit-based HTML to PDF rendering library (development files)
- This package contains the header files and pkg-config metadata.
+ This package is the API which enables the generation of PDF's from plain
+ HTML or the utilisation of the built in pretty_html and html_tree classes
+ that enable the hard coding of HTML without needing to manually manage
+ closing HTML elements making it ideal for use with variable data and PDF
+ forms.
 

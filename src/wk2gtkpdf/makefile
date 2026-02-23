@@ -26,7 +26,7 @@ LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1 libpodofo json-c libsystemd x
 LIBDIR ?= /usr/lib
 
 $(FULLNAME): $(OBJECTS)
-	$(CXX) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDLIBS)
+	$(CXX) $(LDFLAGS) -shared -Wl,-soname,$(SONAME) -o $@ $^ $(LDLIBS)
 	ln -sfT $(FULLNAME) $(SONAME)
 	ln -sfT $(SONAME) $(APPLICATION)
 

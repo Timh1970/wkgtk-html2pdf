@@ -36,7 +36,7 @@ PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin
 
 wkgtk-html2pdf: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<

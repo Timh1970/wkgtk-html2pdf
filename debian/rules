@@ -1,6 +1,5 @@
 #!/usr/bin/make -f
 include /usr/share/dpkg/default.mk
-
 # 1. Global Exports
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
