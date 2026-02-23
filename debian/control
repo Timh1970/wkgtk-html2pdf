@@ -1,7 +1,7 @@
 Source: wkgtk-html2pdf
 Section: utils
 Priority: optional
-Maintainer: James Hothersall <james@inplico.uk>
+Maintainer: James Hothersall <james@wkgtk-html2pdf.com>
 Homepage: https://wkgtk-html2pdf.com
 Build-Depends: debhelper-compat (= 13),
                libwebkit2gtk-4.1-dev,
