@@ -91,10 +91,6 @@ namespace iclog ICLOG_API {
     std::string ICLOG_API get_level(unsigned level);
     std::string ICLOG_API get_category(category cat);
 
-    // Acknowledgement:  JP Embedded
-    // https://github.com/jp-embedded/cpp-syslog/blob/master/src/syslog.h
-    // Stremabuf; ostream; redirect (GPL) <http://www.gnu.org/licenses/>.
-
     //  STREAMBUF CLASS
     class ICLOG_API streambuf : public std::streambuf {
         private:
