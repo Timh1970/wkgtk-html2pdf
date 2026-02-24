@@ -101,6 +101,11 @@ if [ -f "debian/changelog" ]; then
   mv debian/changelog.new debian/changelog
 fi
 
+
+# This replaces the brittle .symbols file with a stable versioned dependency.
+SHLIBS_FILE="debian/libwk2gtkpdf0.shlibs"
+echo "libwk2gtkpdf 0 libwk2gtkpdf0 (>= ${version})" > "$SHLIBS_FILE"
+
 # Sanitise the debian files
 sed -i 's/[[:space:]]*$//' debian/control debian/changelog debian/rules
 
