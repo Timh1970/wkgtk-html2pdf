@@ -1,26 +1,57 @@
-Notes on the Shared Library Symbols:
- To prevent the "symbols-file-missing-build-depends-package-field"
- waring add
- .
- * Build-Depends-Package: libwk2gtkpdf0-dev
- .
- at the very top of the .symbols file.
- .
- The library maintains a strict Application Binary Interface (ABI).
- Global objects like jlog are explicitly exported with ICLOG_API
- visibility to ensure third-party tools can hook into the system's
- bitwise logging categories without re-compilation.
- .
- When regenerating the symbols ensure that the jlog variable is
- listed thus:
- .
- * Build-Depends-Package: libwk2gtkpdf0-dev
- libwk2gtkpdf.so.0 libwk2gtkpdf0 #MINVER#
-  jlog@Base X.X.XXX
-  LOG_IGNORE@Base X.X.XXX
-  LOG_LEVEL@Base X.X.XXX
- .
- Remeber to remove the release suffix.
+ABI Management and C++ Symbols
+------------------------------
+
+This package intentionally utilizes a versioned 'shlibs' control file
+(debian/libwk2gtkpdf0.shlibs) rather than a '.symbols' file for
+ABI dependency tracking.
+
+As noted in the Debian Wiki and Maintainer guidance:
+"For C++ libraries it is often better not to ship symbols files."
+
+The decision to revert to shlibs was driven by:
+ 1. C++ Template Volatility: The extensive use of std::regex and
+    Standard Library templates results in a high volume of ephemeral
+    mangled symbols (e.g., _ZGVZNKSt8__detail...) that vary between
+    compiler versions and optimization levels.
+ 2. Toolchain Regression: During the Sid (Unstable) 2026 build cycle,
+    the 'Build-Depends-Package' metadata field in the symbols parser
+    consistently triggered uninitialized hash errors in
+    Dpkg::Shlibs::SymbolFile.pm (line 267).
+
+Maintenance Note:
+The 'symbols' approach should be periodically re-tested against
+future iterations of the dpkg-dev toolchain to determine if
+upstream has resolved these parser regressions and if a
+manageable regex-based symbol filter can be implemented
+without excessive maintenance overhead.
 
 
+Headless Rendering & Xvfb Orchestration
+---------------------------------------
+The rendering engine utilizes a systemd-managed Xvfb instance (xvfb.service)
+via sd-bus. To ensure secure, unprivileged execution in server-side
+environments, a custom Polkit rule (50-wk2gtkpdf.rules) is included.
+This allows the 'libwk2gtkpdf0' library to manage the lifecycle of the
+display server without requiring root escalation or a persistent
+user session.
 
+PoDoFo 0.9.x Compatibility
+--------------------------
+The library is architected for PoDoFo 0.9.8, which is the current
+stable target in Debian Sid and Trixie. This ensures immediate
+usability without requiring experimental backports of the
+breaking 0.10.x branch.
+
+The library includes conditional compilation logic (-DPODOFO_010) to
+bridge the API divergence between PoDoFo 0.9.x and 0.10.x This
+ensures ABI stability and eases the path for future development and
+enables support for distributions whose default is 0.10.x.
+
+WebKit2GTK Process Lifecycle
+----------------------------
+To prevent 'zombie' WebProcess or NetworkProcess orphans common in
+multiplexed WebKit environments, the library implements RAII-based
+process management. The previous use of exit() calls has been
+refactored to standard C++ exceptions (std::runtime_error) to allow
+calling applications to handle fatal rendering errors without
+uncontrolled process termination.
