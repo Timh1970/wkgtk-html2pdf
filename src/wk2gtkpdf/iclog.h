@@ -135,17 +135,17 @@ namespace iclog ICLOG_API {
     // REDIRECT CLASS
     class ICLOG_API redirect {
         private:
-            ostream               m_dst;
-            std::ostream         &m_src;
+            ostream               m_sDest;
+            std::ostream         &m_sSource;
             std::streambuf *const m_sbuf;
 
         public:
-            redirect(std::ostream &src);
+            redirect(std::ostream &sSource);
             ~redirect();
     };
 
 } // namespace iclog ICLOG_API
 
-extern iclog::ostream jlog ICLOG_API;
+extern iclog::ostream wkJlog ICLOG_API;
 
 #endif // NC_ERRLOG_H

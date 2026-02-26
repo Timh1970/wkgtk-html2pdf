@@ -90,26 +90,17 @@ void iclog::ostream::category(BITWISE cat) {
  */
 void iclog::ostream::level(loglevel level) { m_logbuf.level(level); }
 
-/**
- * @brief iclog::redirect::redirect
- * @param src
- *
- * Redirect class
- *
- * @note This only redirects c++ style streams. (std::cout etc.) The underlying
- * streams are unaffected.
- */
-iclog::redirect::redirect(std::ostream &src)
-    : m_src(src),
-      m_sbuf(src.rdbuf(m_dst.rdbuf())) {
+iclog::redirect::redirect(std::ostream &sSource)
+    : m_sSource(sSource),
+      m_sbuf(sSource.rdbuf(m_sSource.rdbuf())) {
 
-    m_dst << (&src == &std::cout ? loglevel::info : loglevel::error);
+    m_sSource << (&sSource == &std::cout ? loglevel::info : loglevel::error);
 }
 
 iclog::redirect::~redirect() {
-    m_src.rdbuf(m_sbuf);
+    m_sSource.rdbuf(m_sbuf);
 }
 
 unsigned       LOG_LEVEL  = LOG_NOTICE;
 BITWISE        LOG_IGNORE = 0;
-iclog::ostream jlog;
+iclog::ostream wkJlog;

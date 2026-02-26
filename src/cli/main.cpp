@@ -1,3 +1,5 @@
+#include "src/wk2gtkpdf/iclog.h"
+
 #include <filesystem>
 #include <getopt.h>
 #include <iostream>
@@ -34,7 +36,10 @@ void help() {
  * @brief main
  * @return
  *
- * This is a test of the inplicare print library version.
+ * Command line interface for generation of PDF's from HTML
+ *
+ * @note This is a simple bridge to the API with little functionality
+ * beyond the parsing of command line arguments
  */
 int main(int argc, char *argv[]) {
 
@@ -69,9 +74,6 @@ int main(int argc, char *argv[]) {
     };
     int value        = 0;
     int option_index = 0;
-
-    // while ((opt = getopt(argc, argv, "i:O:o:s:v:")) != -1) {
-    //     switch (opt)
 
     while ((value = getopt_long(
                 argc,
@@ -150,12 +152,12 @@ int main(int argc, char *argv[]) {
               << "\nOrientation: " << orientation << "\nSize: " << pageSize
               << std::endl;
 
-    jlog << iclog::loglevel::debug << iclog::category::CLI
-         << "\nProcessing HTML: " << infile << "\nOrientation: " << orientation
-         << "\nSize: " << pageSize << std::endl;
+    wkJlog << iclog::loglevel::debug << iclog::category::CLI
+           << "\nProcessing HTML: " << infile << "\nOrientation: " << orientation
+           << "\nSize: " << pageSize << std::endl;
 
     PDFprinter pdf(baseURI);
-    // OPTION 1
+    // OPTION 1 (depreciated/removed pending final testing) No longer necessary
     // pdf.set_param(
     //     PDFprinter::read_file(infile),
     //     PDFprinter::read_file("/usr/share/icprint/a4-portrait-pdf.page"), /**<

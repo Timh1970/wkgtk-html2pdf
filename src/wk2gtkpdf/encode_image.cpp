@@ -21,7 +21,7 @@ encode_image::encode_image(const std::string fPath)
  */
 string encode_image::base64_encode(unsigned char const *bytes_to_encode, size_t in_len) {
 
-    jlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+    wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
          << "Encoding image"
          << std::endl;
 
@@ -86,7 +86,7 @@ string encode_image::image_type(const string file) {
     // CONVERT UPPER CASE EXTENSIONS TO LOWER CASE FOR COMPARISON PURPOSES
     std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
-    jlog << iclog::loglevel::debug << iclog::category::CORE
+    wkJlog << iclog::loglevel::debug << iclog::category::CORE
          << "Seeking mime type for " << extension
          << std::endl;
 
@@ -111,7 +111,7 @@ string encode_image::image_type(const string file) {
     string e;
     for (const MIME_TYPE &t : m_mimeLUT) {
         if (t.extension.compare(extension) == 0) {
-            jlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+            wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
                  << "Applying mime type " << t.enctype << " to image."
                  << std::endl;
 
@@ -119,7 +119,7 @@ string encode_image::image_type(const string file) {
         }
     }
 
-    jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+    wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
          << "Cannot find mime type for extension " << extension
          << std::endl;
 
@@ -134,7 +134,7 @@ string encode_image::process_image() {
 
     std::ifstream file(m_fullPath);
     if (file.fail()) {
-        jlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+        wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
              << "Cannot read " << m_fullPath
              << std::endl;
 
@@ -177,7 +177,7 @@ string encode_image::b64_image() {
 
     // Path not supplied, assumme working directory.
     if (imageName.empty()) {
-        jlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+        wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
              << "No path found, using current folder." << m_fullPath
              << std::endl;
         imageName = m_fullPath;

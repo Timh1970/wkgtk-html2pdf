@@ -367,7 +367,7 @@ void info_page(html_tree *subpage) {
 
 std::string webpage() {
 
-    jlog << iclog::loglevel::debug << iclog::category::CLI
+    wkJlog << iclog::loglevel::debug << iclog::category::CLI
          << "Constructing html form."
          << std::endl;
 
