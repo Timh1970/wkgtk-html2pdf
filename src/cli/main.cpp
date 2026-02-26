@@ -1,5 +1,3 @@
-#include "src/wk2gtkpdf/iclog.h"
-
 #include <filesystem>
 #include <getopt.h>
 #include <iostream>
