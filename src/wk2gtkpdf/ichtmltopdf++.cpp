@@ -57,7 +57,16 @@ WKGTK_init::~WKGTK_init() {
         g_main_loop_unref(loop);
     }
     wkJlog << iclog::loglevel::info << iclog::category::CORE
-         << "GTK main loop exiting." << std::endl;
+           << "GTK main loop exiting." << std::endl;
+}
+
+/**
+ * @brief icGTK::init
+ * @return
+ * avoid linker errors.
+ */
+icGTK &icGTK::init() {
+    return icGTK::init(XvfbMode::KEEP_RUNNING);
 }
 
 /**
@@ -74,7 +83,7 @@ icGTK::icGTK(XvfbMode runMode)
     : tk(handle_xvfb_daemon()),
       runMode(runMode) {
     wkJlog << iclog::loglevel::info << iclog::category::CORE
-         << "Inplicare initialising  WebKitGTK." << std::endl;
+           << "Inplicare initialising  WebKitGTK." << std::endl;
 }
 
 icGTK::~icGTK() {
@@ -121,7 +130,7 @@ WKGTK_init icGTK::handle_xvfb_daemon() {
     if ((XOpenDisplay(display) == nullptr) && (wl_display_connect(wayland) == nullptr)) {
         headless = true;
         wkJlog << iclog::loglevel::info << iclog::category::CORE
-             << "Preparing headless mode..." << std::endl;
+               << "Preparing headless mode..." << std::endl;
     }
 
     sd_bus *bus = nullptr;
@@ -139,15 +148,15 @@ WKGTK_init icGTK::handle_xvfb_daemon() {
 
         if (state != "active") {
             wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-                 << unit << " not active, starting..." << std::endl;
+                   << unit << " not active, starting..." << std::endl;
             if (EXIT_SUCCESS == start_service(bus)) {
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                     << " state: " << check_xvfb(bus, unit) << std::endl;
+                       << " state: " << check_xvfb(bus, unit) << std::endl;
 
                 while (state != "active") {
                     state = check_xvfb(bus, unit);
                     wkJlog << iclog::loglevel::debug << iclog::category::CORE << unit
-                         << " state: " << state << std::endl;
+                           << " state: " << state << std::endl;
                     std::this_thread::sleep_for(std::chrono::milliseconds(200));
                 }
             }
@@ -159,11 +168,11 @@ WKGTK_init icGTK::handle_xvfb_daemon() {
 
     if (gtk_init_check(NULL, NULL)) {
         wkJlog << iclog::loglevel::info << iclog::category::CORE
-             << "WEBKIT2GTK Initialised." << std::endl;
+               << "WEBKIT2GTK Initialised." << std::endl;
     } else {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "GTK initialization failed"
-             << std::endl;
+               << "GTK initialization failed"
+               << std::endl;
         throw std::runtime_error("GTK initialization failed");
     }
 
@@ -236,13 +245,13 @@ bool icGTK::start_service(sd_bus *bus) {
 
     if (r < 0) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "Failed to start unit: " << error.message << std::endl;
+               << "Failed to start unit: " << error.message << std::endl;
     } else {
         // Read the returned job path
         r = sd_bus_message_read(reply, "o", &job_path);
         if (r >= 0) {
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "Started job: " << job_path << std::endl;
+                   << "Started job: " << job_path << std::endl;
         }
     }
     sd_bus_message_unref(reply);
@@ -285,13 +294,13 @@ bool icGTK::stop_service(sd_bus *bus) {
 
     if (r < 0) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "Failed to Stop unit: " << error.message << std::endl;
+               << "Failed to Stop unit: " << error.message << std::endl;
     } else {
         // Read the returned job path
         r = sd_bus_message_read(reply, "o", &job_path);
         if (r >= 0) {
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "Stopped job: " << job_path << std::endl;
+                   << "Stopped job: " << job_path << std::endl;
         }
     }
     sd_bus_message_unref(reply);
@@ -318,7 +327,7 @@ struct PDFprinterUserData {
 static void print_finished(WebKitPrintOperation *print_operation __attribute__((unused)), void *user_data) {
     g_main_loop_quit(((PDFprinterUserData *)user_data)->main_loop);
     wkJlog << iclog::loglevel::debug << iclog::category::CORE
-         << "Printing complte; quitting." << std::endl;
+           << "Printing complte; quitting." << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -578,7 +587,7 @@ static void javascript_callback(
 
     if (error) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "JavaScript error: " << error->message << std::endl;
+               << "JavaScript error: " << error->message << std::endl;
         g_error_free(error);
         return;
     }
@@ -588,19 +597,19 @@ static void javascript_callback(
 
     if (!json_string) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "Failed to convert JavaScript result to string" << std::endl;
+               << "Failed to convert JavaScript result to string" << std::endl;
         g_object_unref(js_result);
         return;
     }
 
     wkJlog << iclog::loglevel::debug << iclog::category::CORE
-         << "Extracted JSON: " << json_string << std::endl;
+           << "Extracted JSON: " << json_string << std::endl;
 
     // Parse JSON with json-c
     json_object *root = json_tokener_parse(json_string);
     if (!root) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
-             << "Failed to parse JSON" << std::endl;
+               << "Failed to parse JSON" << std::endl;
         g_free(json_string);
         g_object_unref(js_result);
         return;
@@ -661,8 +670,8 @@ static void javascript_callback(
             });
 
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "Finding Index: " << (id ? id : "null") << " -> page: " << page
-                 << " pos: (" << x << "," << y << ")" << std::endl;
+                   << "Finding Index: " << (id ? id : "null") << " -> page: " << page
+                   << " pos: (" << x << "," << y << ")" << std::endl;
         }
     }
     // END
@@ -689,8 +698,8 @@ static void javascript_callback(
 
             } catch (std::out_of_range e) {
                 wkJlog << iclog::loglevel::warning << iclog::category::LIB
-                     << e.what()
-                     << std::endl;
+                       << e.what()
+                       << std::endl;
             }
         }
     }
@@ -700,9 +709,9 @@ static void javascript_callback(
             if (s.linkName.compare(t.first) == 0) {
                 s.target = t.second;
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                     << "\nIndex: " << s.linkName << " -> page: " << s.index.pageNo << " pos: (" << s.index.xPos << "," << s.index.yPos << ") size: (" << s.index.w << "," << s.index.h << ")\n"
-                     << "Target: " << s.linkName << " -> title: " << s.target.title << " -> page: " << s.target.pageNo << " pos: (" << s.target.xPos << "," << s.target.yPos << ") size: (" << s.target.w << "," << s.target.h << ")"
-                     << std::endl;
+                       << "\nIndex: " << s.linkName << " -> page: " << s.index.pageNo << " pos: (" << s.index.xPos << "," << s.index.yPos << ") size: (" << s.index.w << "," << s.index.h << ")\n"
+                       << "Target: " << s.linkName << " -> title: " << s.target.title << " -> page: " << s.target.pageNo << " pos: (" << s.target.xPos << "," << s.target.yPos << ") size: (" << s.target.w << "," << s.target.h << ")"
+                       << std::endl;
             }
         }
     }
@@ -732,7 +741,7 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
     switch (load_event) {
         case WEBKIT_LOAD_STARTED:
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "WEBKIT LOAD STARTED." << std::endl;
+                   << "WEBKIT LOAD STARTED." << std::endl;
             /* New load, we have now a provisional URI */
             // printf("WEBKIT_LOAD_STARTED\n");
 
@@ -741,11 +750,11 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
             break;
         case WEBKIT_LOAD_COMMITTED:
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "The load is being performed. Current URI is the final one and it "
-                    "won't change unless a new "
-                 << "load is requested or a navigation within the same page is "
-                    "performed."
-                 << std::endl;
+                   << "The load is being performed. Current URI is the final one and it "
+                      "won't change unless a new "
+                   << "load is requested or a navigation within the same page is "
+                      "performed."
+                   << std::endl;
             break;
 
             // --- EXPERIMENTAL CODE START ---
@@ -771,7 +780,7 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
             // --- ADDED ---
         case WEBKIT_LOAD_FINISHED:
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                 << "WEBKIT LOAD FINISHED - extracting positions" << std::endl;
+                   << "WEBKIT LOAD FINISHED - extracting positions" << std::endl;
 
             auto js = [&user_data]() {
                 return (
@@ -791,9 +800,9 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
                 WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
                 webkit_settings_set_enable_javascript(view_settings, true);
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                     << "Extracting coordinates using:\n"
-                     << js()
-                     << std::endl;
+                       << "Extracting coordinates using:\n"
+                       << js()
+                       << std::endl;
                 // Evaluate JS to extract positions
                 webkit_web_view_evaluate_javascript(
                     web_view,
@@ -809,7 +818,7 @@ static void web_view_load_changed(WebKitWebView *web_view, WebKitLoadEvent load_
             } else {
                 // No extraction needed — proceed directly to print
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                     << "No index extraction required — printing directly" << std::endl;
+                       << "No index extraction required — printing directly" << std::endl;
 
                 WebKitPrintOperation *print_operation = ((PDFprinterUserData *)user_data)->print_operation;
                 webkit_print_operation_print(print_operation);
@@ -838,7 +847,7 @@ static int cb_worker(struct html2pdf_params *p) {
     user_data.tocPage  = p->tocPage;
 
     wkJlog << iclog::loglevel::debug << iclog::category::CORE
-         << "Applying print settings" << std::endl;
+           << "Applying print settings" << std::endl;
     GtkPrintSettings *print_settings = gtk_print_settings_new();
     gtk_print_settings_set_printer(print_settings, "Print to File");
     gtk_print_settings_set(print_settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
@@ -848,8 +857,8 @@ static int cb_worker(struct html2pdf_params *p) {
     if (p->key_file_data != NULL) {
 
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
-             << "Applying page setup:\n"
-             << p->key_file_data << std::endl;
+               << "Applying page setup:\n"
+               << p->key_file_data << std::endl;
         GKeyFile *key_file = g_key_file_new();
         g_key_file_load_from_data(key_file, p->key_file_data, (gsize)-1, G_KEY_FILE_NONE, NULL);
         gtk_page_setup_load_key_file(page_setup, key_file, NULL, NULL);
@@ -878,8 +887,8 @@ static int cb_worker(struct html2pdf_params *p) {
     if (p->default_stylesheet) {
 
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
-             << "Injecting style sheet:\n"
-             << p->default_stylesheet << std::endl;
+               << "Injecting style sheet:\n"
+               << p->default_stylesheet << std::endl;
         user_content_manager = webkit_user_content_manager_new();
         user_stylesheet      = webkit_user_style_sheet_new(
             p->default_stylesheet,
@@ -892,8 +901,8 @@ static int cb_worker(struct html2pdf_params *p) {
         g_object_set_property(G_OBJECT(web_view), "user-content-manager", (GValue *)(user_content_manager));
     } else {
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
-             << "Injecting stylesheet: No explicit style sheet set; skipping:"
-             << std::endl;
+               << "Injecting stylesheet: No explicit style sheet set; skipping:"
+               << std::endl;
     }
 
     g_object_ref_sink(G_OBJECT(web_view));
@@ -912,8 +921,8 @@ static int cb_worker(struct html2pdf_params *p) {
     if (p->html_txt != NULL) {
         // webkit_web_view_load_html(web_view, p->html_txt, "file:///tmp");
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
-             << "Setting base URI: " << p->in_uri
-             << std::endl;
+               << "Setting base URI: " << p->in_uri
+               << std::endl;
         webkit_web_view_load_html(web_view, p->html_txt, p->in_uri);
         // webkit_web_view_load_html(web_view, p->html_txt, p->base_uri);
     } else {
@@ -958,10 +967,23 @@ static int cb_worker(struct html2pdf_params *p) {
 /**************************************/
 /**
  * @brief PDFprinter::PDFprinter
+ *
+ * Set default value to "file:///"
+ *
+ * This satisfies the "Missing Symbol" _ZN10PDFprinterC1Ev on some machines
+ *
+ */
+PDFprinter::PDFprinter()
+    : PDFprinter::PDFprinter("file:///") {}
+
+/**
+ * @brief PDFprinter::PDFprinter
  */
 PDFprinter::PDFprinter(std::string baseURI) {
     in_uri = nullptr;
-    to_cstring(baseURI, in_uri);
+
+    std::string safeURI = baseURI.empty() ? "file:///" : baseURI;
+    to_cstring(safeURI, in_uri);
     html_txt           = nullptr;
     base_uri           = nullptr;
     out_uri            = nullptr;
@@ -1003,7 +1025,7 @@ std::string PDFprinter::read_file(const std::string &fullPath) {
     std::ifstream file(fullPath);
     if (file.fail()) {
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
-             << "Cannot find the file specified: " << fullPath << std::endl;
+               << "Cannot find the file specified: " << fullPath << std::endl;
         return ("");
     }
     std::ostringstream buffer;
@@ -1049,7 +1071,7 @@ void PDFprinter::read_file_to_blob() {
     }
 
     wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-         << "Generated BLOB: " << path << " size=" << m_binPDF.size() << std::endl;
+           << "Generated BLOB: " << path << " size=" << m_binPDF.size() << std::endl;
 }
 
 std::string PDFprinter::generate_uuid_string() {
@@ -1071,7 +1093,7 @@ std::string PDFprinter::generate_uuid_string() {
 
     std::string uuid = ss.str();
     wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-         << "UUID generated: " << uuid << std::endl;
+           << "UUID generated: " << uuid << std::endl;
 
     return uuid;
 }
@@ -1238,7 +1260,7 @@ void PDFprinter::make_pdf() {
     // GENERATE BLOB (if requested)
     if (m_makeBlob) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-             << "Making BLOB" << std::endl;
+               << "Making BLOB" << std::endl;
         read_file_to_blob();
     }
 }

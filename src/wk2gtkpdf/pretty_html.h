@@ -8,14 +8,6 @@
 #define PHTML_API __attribute__((visibility("default")))
 #endif
 
-/**
- * @brief PHTML_DEBUG
- * Internal testing only.  This should not be enables as it will
- * just clog up the logs with every single open and close on every
- * single element.
- */
-bool PHTML_DEBUG = false;
-
 typedef std::string WEBPAGE; /**<  HTML Page */
 
 /**
@@ -43,44 +35,7 @@ class html_tree {
         std::vector<TAG_CONTENT> m_tagContent;
         status                   m_nodestatus;
 
-        // Void Tags (should not be closed)
-        const std::vector<std::string> voidTags{
-            "area",
-            "base",
-            "br",
-            "col",
-            "command",
-            "embed",
-            "hr",
-            "img",
-            "input",
-            "keygen",
-            "link",
-            "meta",
-            "param",
-            "source",
-            "track",
-            "wbr"
-        };
-
-        // Blocks (That should not have new lines)
-        // This is a work in progress
-        const std::vector<std::string> blockTags{
-            "textarea",
-            "p",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "title",
-            "a",
-            "button",
-            "label"
-        };
-
-        bool        is_special_tag(std::string tag, const std::vector<std::string> &table);
+        bool        is_special_tag(const std::string &tag, const std::vector<std::string> &table);
         std::string handle_special_characters(std::string text);
 
     public:

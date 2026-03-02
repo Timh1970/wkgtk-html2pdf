@@ -26,7 +26,7 @@ typedef ulong             BITWISE;
  */
 extern BITWISE LOG_IGNORE ICLOG_API;
 
-namespace iclog ICLOG_API {
+namespace iclog {
 
     typedef enum : unsigned long long {
         SQL         = 0x01ULL,
@@ -58,38 +58,11 @@ namespace iclog ICLOG_API {
         debug    = LOG_DEBUG    // For debugging program
     } loglevel;
 
-    const std::pair<category, std::string> catLUT[]{
-        {SQL_SEL,     "(SQL SELECT) "          },
-        {SQL_UPD,     "(SQL UPDATE) "          },
-        {SQL_INS,     "(SQL INSERT) "          },
-        {SQL_STAT,    "(SQL STATEMENT) "       },
-        {SQL,         "(SQL) "                 },
-        {IF_NCURSEES, "(NCURSES INTERFACE) "   },
-        {IF_WEB,      "(WEB INTERFACE) "       },
-        {DAEMON,      "(DAEMON) "              },
-        {CORE,        "(CORE) "                },
-        {UNDEF,       "(UNDEFINED) "           },
-        {SEC_WEB,     "SECURITY WEB "          },
-        {SEC_NCURSES, "SECURITY NCURSES "      },
-        {LIB,         "LIBRARY "               },
-        {CLI,         "COMMAND LINE INTERFACE "},
-        {LIB_HTML,    "HTML LIBS "             },
-        {HTML,        "HTML "                  }
-    };
+    extern ICLOG_API const std::pair<category, std::string> catLUT[];
+    extern ICLOG_API const std::pair<unsigned, std::string> levelLUT[];
 
-    const std::pair<unsigned, std::string> levelLUT[]{
-        {LOG_EMERG,   "EMERGENCY: "  },
-        {LOG_ALERT,   "ALERT: "      },
-        {LOG_CRIT,    "CRITICAL: "   },
-        {LOG_ERR,     "ERROR: "      },
-        {LOG_WARNING, "WARNING: "    },
-        {LOG_NOTICE,  "NOTICE: "     },
-        {LOG_INFO,    "INFORMATION: "},
-        {LOG_DEBUG,   "DEBUG: "      }
-    };
-
-    std::string ICLOG_API get_level(unsigned level);
-    std::string ICLOG_API get_category(category cat);
+    const std::string &get_level(unsigned level);
+    const std::string &get_category(category cat);
 
     //  STREAMBUF CLASS
     class ICLOG_API streambuf : public std::streambuf {
@@ -144,8 +117,8 @@ namespace iclog ICLOG_API {
             ~redirect();
     };
 
-} // namespace iclog ICLOG_API
+} // namespace iclog
 
-extern iclog::ostream wkJlog ICLOG_API;
+extern ICLOG_API iclog::ostream wkJlog;
 
 #endif // NC_ERRLOG_H

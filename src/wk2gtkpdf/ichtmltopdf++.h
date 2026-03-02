@@ -72,7 +72,8 @@ class icGTK {
         ~icGTK();
 
     public:
-        PDF_API static icGTK &init(XvfbMode runMode = XvfbMode::KEEP_RUNNING);
+        PDF_API static icGTK &init();
+        PDF_API static icGTK &init(XvfbMode runMode);
         PDF_API               icGTK(const icGTK &)     = delete;
         PDF_API icGTK        &operator=(const icGTK &) = delete;
 };
@@ -253,7 +254,8 @@ class PDF_API PDFprinter {
         void        read_file_to_blob();
 
     public:
-        PDFprinter(std::string baseURI = "file:///");
+        PDFprinter();
+        PDFprinter(std::string baseURI);
         ~PDFprinter();
         void set_param(std::string html, std::string printSettings, std::string outFile, index_mode createIndex = index_mode::OFF);
         void set_param(std::string html, std::string outFile, index_mode createIndex = index_mode::OFF);

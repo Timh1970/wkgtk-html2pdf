@@ -2,6 +2,51 @@
 
 #include "iclog.h"
 
+/**
+ * @brief PHTML_DEBUG
+ * Internal testing only.  This should not be enables as it will
+ * just clog up the logs with every single open and close on every
+ * single element.
+ */
+bool PHTML_DEBUG = false;
+
+// Void Tags (should not be closed)
+const std::vector<std::string> voidTags{
+    "area",
+    "base",
+    "br",
+    "col",
+    "command",
+    "embed",
+    "hr",
+    "img",
+    "input",
+    "keygen",
+    "link",
+    "meta",
+    "param",
+    "source",
+    "track",
+    "wbr"
+};
+
+// Blocks (That should not have new lines)
+// This is a work in progress
+const std::vector<std::string> blockTags{
+    "textarea",
+    "p",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "title",
+    "a",
+    "button",
+    "label"
+};
+
 typedef typename iclog::category cat;
 typedef typename iclog::loglevel lvl;
 using std::endl;
@@ -49,7 +94,7 @@ html_tree::~html_tree() {
  *
  * Check if element should be closed
  */
-bool html_tree::is_special_tag(string tag, const vector<string> &table) {
+bool html_tree::is_special_tag(const string &tag, const vector<string> &table) {
     bool voidTag = false;
 
     for (auto &it : table) {

@@ -10,7 +10,7 @@
 
 // #define PODOFO_010 // !!!MAKE SURE THIS IS REMOVED!!!
 
-class PDF_API index_pdf {
+class index_pdf {
     public:
         static const int UNSET = -1;
 

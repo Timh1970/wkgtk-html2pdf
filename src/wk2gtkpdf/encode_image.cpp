@@ -7,6 +7,34 @@
 #include <vector>
 using std::string;
 
+const struct b64 {
+        /* clang-format off */
+                const char m_encodingTable[64] = {
+                    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+                };
+        /* clang-format on */
+
+        const int m_modTable[3]   = {0, 2, 1};
+        char     *m_decodingTable = nullptr;
+} base64;
+
+/**
+ * @brief encode_image::encode_image
+ *
+ * Prevent symbol errors
+ */
+encode_image::encode_image()
+    : m_fullPath("") {
+
+    wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+           << "Constructor requires argument."
+           << std::endl;
+}
+
 encode_image::encode_image(const std::string fPath)
     : m_fullPath(fPath) {
 }
@@ -22,8 +50,8 @@ encode_image::encode_image(const std::string fPath)
 string encode_image::base64_encode(unsigned char const *bytes_to_encode, size_t in_len) {
 
     wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-         << "Encoding image"
-         << std::endl;
+           << "Encoding image"
+           << std::endl;
 
     string        ret;
     int           i = 0;
@@ -87,8 +115,8 @@ string encode_image::image_type(const string file) {
     std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
 
     wkJlog << iclog::loglevel::debug << iclog::category::CORE
-         << "Seeking mime type for " << extension
-         << std::endl;
+           << "Seeking mime type for " << extension
+           << std::endl;
 
     struct MIME_TYPE {
             const std::string extension;
@@ -112,16 +140,16 @@ string encode_image::image_type(const string file) {
     for (const MIME_TYPE &t : m_mimeLUT) {
         if (t.extension.compare(extension) == 0) {
             wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-                 << "Applying mime type " << t.enctype << " to image."
-                 << std::endl;
+                   << "Applying mime type " << t.enctype << " to image."
+                   << std::endl;
 
             return (t.enctype);
         }
     }
 
     wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-         << "Cannot find mime type for extension " << extension
-         << std::endl;
+           << "Cannot find mime type for extension " << extension
+           << std::endl;
 
     return ("");
 }
@@ -135,8 +163,8 @@ string encode_image::process_image() {
     std::ifstream file(m_fullPath);
     if (file.fail()) {
         wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
-             << "Cannot read " << m_fullPath
-             << std::endl;
+               << "Cannot read " << m_fullPath
+               << std::endl;
 
         return ("");
     }
@@ -178,8 +206,8 @@ string encode_image::b64_image() {
     // Path not supplied, assumme working directory.
     if (imageName.empty()) {
         wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-             << "No path found, using current folder." << m_fullPath
-             << std::endl;
+               << "No path found, using current folder." << m_fullPath
+               << std::endl;
         imageName = m_fullPath;
     }
 
