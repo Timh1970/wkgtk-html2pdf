@@ -2,23 +2,57 @@
 
 #include "iclog.h"
 
-#include <iostream>
+#include <podofo/podofo.h>
 #include <regex>
+#include <string>
 #include <vector>
 
 using std::vector;
+using namespace PoDoFo;
 
-index_pdf::index_pdf(std::vector<PDFprinter::anchor> &links, const int tocPage, bool debug)
-    : m_tocPage(tocPage),
-      m_debug(debug),
-      m_links(links) {
+struct index_pdf_impl {
+        struct OutlineData {
+                std::string      title;
+                std::vector<int> levels;
+#ifdef PODOFO_010
+                std::shared_ptr<PoDoFo::PdfDestination> dest;
+#else
+                PoDoFo::PdfDestination *dest;
+#endif
+        };
+
+        int                      m_tocPage;
+        bool                     m_debug;
+        std::vector<PDF_Anchor>  m_links; // Internal copy of the data
+        std::vector<OutlineData> m_outlineData;
+
+        std::vector<int> parseNumbering(const std::string &title);
+        void             do_annotation(PoDoFo::PdfMemDocument &pdfDoc);
+
+#ifdef PODOFO_010
+        void buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PoDoFo::PdfDestination> toc);
+#else
+        void buildNestedOutlines(PoDoFo::PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PoDoFo::PdfDestination *pTocDest);
+#endif
+};
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+index_pdf::index_pdf(const PDF_Anchor *links, size_t count, int tocPage, bool debug)
+    : m_pimpl(new index_pdf_impl()) {
+
+    m_pimpl->m_tocPage = tocPage;
+    m_pimpl->m_debug   = debug;
+
+    // Copy the raw ABI data into our internal vector
+    if (links && count > 0) {
+        m_pimpl->m_links.assign(links, links + count);
+    }
 }
 
-// language: c++
-#include <iostream>
-#include <vector>
-
-using namespace PoDoFo;
+index_pdf::~index_pdf() {
+    delete m_pimpl;
+}
 
 static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_px) {
     return pdf_page_width_pts / css_page_width_px;
@@ -31,7 +65,7 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
  *
  * Parse numbering from the title
  */
-std::vector<int> index_pdf::parseNumbering(const std::string &title) {
+std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
     std::regex       numberPattern(R"(^(\d+(?:\.\d+)*))");
     std::smatch      match;
@@ -52,7 +86,7 @@ std::vector<int> index_pdf::parseNumbering(const std::string &title) {
 #ifdef PODOFO_010
 
 // Build nested outline structure
-void index_pdf::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
+void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
     if (outlineData.empty())
         return;
 
@@ -120,7 +154,7 @@ void index_pdf::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineDa
     }
 }
 
-void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
+void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
 
     // Get or create the outlines structure
     PdfOutlines &outlines = pdfDoc.GetOrCreateOutlines();
@@ -138,7 +172,7 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
      * are setting Height from the size of the page.
      */
     std::shared_ptr<PdfDestination> toc = nullptr;
-    if (m_tocPage != UNSET) {
+    if (m_tocPage != index_pdf::UNSET) {
         PdfPage &tocPage        = pages.GetPageAt(m_tocPage);
         Rect     pdfSrcPageRect = tocPage.GetMediaBox();
         toc                     = std::make_shared<PdfDestination>(tocPage, 0.0, pdfSrcPageRect.Height, 0.0);
@@ -150,8 +184,8 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
         int dst_idx = a.target.pageNo - 1;
         if (src_idx < 0 || src_idx >= static_cast<int>(pdfDoc.GetPages().GetCount()) || dst_idx < 0 || dst_idx >= static_cast<int>(pdfDoc.GetPages().GetCount())) {
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                 << "Skipping link '" << a.linkName << "': invalid page"
-                 << std::endl;
+                   << "Skipping link '" << a.linkName << "': invalid page"
+                   << iclog::endl;
             continue;
         }
 
@@ -173,8 +207,8 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
 
         if (cssSrcW <= 0 || cssSrcH <= 0 || cssDstW <= 0 || cssDstH <= 0) {
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                 << "Skipping link '" << a.linkName << "': missing page sizes"
-                 << std::endl;
+                   << "Skipping link '" << a.linkName << "': missing page sizes"
+                   << iclog::endl;
             continue;
         }
 
@@ -227,44 +261,44 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
             od.levels  = buf;
             // AVOID DUPLICATES
             bool found = false;
-            for (OutlineData &it : outlineData) {
+            for (OutlineData &it : m_outlineData) {
                 if (it.title.compare(od.title) == 0)
                     found = true;
             }
             if (!found) {
-                outlineData.push_back(od);
+                m_outlineData.push_back(od);
             }
 
         } else {
             wkJlog << iclog::loglevel::notice << iclog::category::LIB
-                 << "Invalid outline: missing destination or page."
-                 << std::endl;
+                   << "Invalid outline: missing destination or page."
+                   << iclog::endl;
         }
 
         // DEBUG:
         PdfObject   &pPageObj = dstPage.GetObject();
         PdfReference ref      = pPageObj.GetIndirectReference(); // alternate name sometimes used
         wkJlog << iclog::loglevel::debug << iclog::category::LIB
-             << "dst page ref: " << ref.ObjectNumber() << " gen: " << ref.GenerationNumber() << "\n"
-             << "Total objects: " << pdfDoc.GetObjects().GetSize()
-             << std::endl;
+               << "dst page ref: " << ref.ObjectNumber() << " gen: " << ref.GenerationNumber() << "\n"
+               << "Total objects: " << pdfDoc.GetObjects().GetSize()
+               << iclog::endl;
     }
 
-    buildNestedOutlines(outlines, outlineData, toc);
+    buildNestedOutlines(outlines, m_outlineData, toc);
 }
 
 static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
     PdfPageCollection &pages     = doc.GetPages();
     unsigned           pageCount = pages.GetCount();
     wkJlog << iclog::loglevel::debug << iclog::category::LIB
-         << "Page count: " << pageCount
-         << std::endl;
+           << "Page count: " << pageCount
+           << iclog::endl;
 
     for (unsigned p = 0; p < pageCount; ++p) {
         PdfPage &page = pages.GetPageAt(p);
         wkJlog << iclog::loglevel::debug << iclog::category::LIB
-             << "Checking page " << (p + 1)
-             << std::endl;
+               << "Checking page " << (p + 1)
+               << iclog::endl;
 
         auto    &annots     = page.GetAnnotations();
         unsigned annotCount = annots.GetCount();
@@ -280,18 +314,18 @@ static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
                 } catch (...) {
                 }
                 wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                     << "Stream length: " << len
-                     << std::endl;
+                       << "Stream length: " << len
+                       << iclog::endl;
                 if (len == 0) {
 
                     wkJlog << iclog::loglevel::error << iclog::category::LIB
-                         << "** EMPTY stream on annotation object **"
-                         << std::endl;
+                           << "** EMPTY stream on annotation object **"
+                           << iclog::endl;
                 }
             } else {
                 wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                     << "no stream on this annotation object."
-                     << std::endl;
+                       << "no stream on this annotation object."
+                       << iclog::endl;
             }
 
             // Check for Type /Metadata (unlikely on annotation objects)
@@ -300,8 +334,8 @@ static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
                     PdfObject *typeObj = obj.GetDictionary().GetKey(PdfName("Type"));
                     if (typeObj && typeObj->GetName() == "Metadata") {
                         wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                             << "-> annotation object typed as Metadata"
-                             << std::endl;
+                               << "-> annotation object typed as Metadata"
+                               << iclog::endl;
                     }
                 }
             } catch (...) {
@@ -310,53 +344,52 @@ static void debug_check_annotations_and_streams(PdfMemDocument &doc) {
     }
 }
 
-void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
+void index_pdf::create_anchors(const char *sourcePath, const char *destPath) {
     PdfMemDocument doc;
     doc.Load(sourcePath);
-    do_annotation(doc);
+    m_pimpl->do_annotation(doc);
     debug_check_annotations_and_streams(doc);
 
     wkJlog << iclog::loglevel::debug << iclog::category::LIB
-         << "Saving page"
-         << std::endl;
+           << "Saving page"
+           << iclog::endl;
     doc.Save(destPath, PoDoFo::PdfSaveOptions::Clean | PoDoFo::PdfSaveOptions::NoMetadataUpdate);
     wkJlog << iclog::loglevel::debug << iclog::category::LIB
-         << destPath << " written"
-         << std::endl;
+           << destPath << " written"
+           << iclog::endl;
 }
 
 #else
 
-void index_pdf::create_anchors(std::string sourcePath, std::string destPath) {
-    // 0.9.x: Loading is done via the constructor or Load()
+void index_pdf::create_anchors(const char *sourcePath, const char *destPath) { // 0.9.x: Loading is done via the constructor or Load()
     PdfMemDocument doc;
     try {
-        doc.Load(sourcePath.c_str());
+        doc.Load(sourcePath);
 
         // Call our 0.9.x backported do_annotation
-        do_annotation(doc);
+        m_pimpl->do_annotation(doc);
 
         wkJlog << iclog::loglevel::debug << iclog::category::LIB
-             << "Saving page to " << destPath
-             << std::endl;
+               << "Saving page to " << destPath
+               << iclog::endl;
 
         // 0.9.x: Write() is the equivalent of 0.10's Save()
         // Note: 0.9.x doesn't have the same 'PdfSaveOptions' enum;
         // it uses different flags or defaults to 'Clean' via Write().
-        doc.Write(destPath.c_str());
+        doc.Write(destPath);
 
         wkJlog << iclog::loglevel::debug << iclog::category::LIB
-             << destPath << " written"
-             << std::endl;
+               << destPath << " written"
+               << iclog::endl;
 
     } catch (const PdfError &e) {
         wkJlog << iclog::loglevel::error << iclog::category::LIB
-             << "PoDoFo Error in create_anchors: " << e.what()
-             << std::endl;
+               << "PoDoFo Error in create_anchors: " << e.what()
+               << iclog::endl;
     }
 }
 
-void index_pdf::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PdfDestination *pTocDest) {
+void index_pdf_impl::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PdfDestination *pTocDest) {
     if (outlineData.empty() || !pOutlines)
         return;
 
@@ -411,7 +444,7 @@ void index_pdf::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineD
 ///////////////////////////
 
 #ifndef PODOFO_010
-void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
+void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
     // 0.9.x: Outlines are accessed directly from the document
     PdfOutlines *pOutlines = pdfDoc.GetOutlines();
 
@@ -419,7 +452,7 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
     int pageCount = pdfDoc.GetPageCount();
 
     PdfDestination *pTocDest = nullptr;
-    if (m_tocPage != UNSET && m_tocPage < pageCount) {
+    if (m_tocPage != index_pdf::UNSET && m_tocPage < pageCount) {
         PdfPage *pTocPage = pdfDoc.GetPage(m_tocPage);
         PdfRect  pageRect = pTocPage->GetMediaBox();
         // Destination(pPage, left, top, zoom)
@@ -472,16 +505,16 @@ void index_pdf::do_annotation(PdfMemDocument &pdfDoc) {
             od.levels = buf;
 
             bool found = false;
-            for (auto &it : outlineData) {
+            for (auto &it : m_outlineData) {
                 if (it.title == od.title)
                     found = true;
             }
             if (!found)
-                outlineData.push_back(od);
+                m_outlineData.push_back(od);
         }
     }
 
-    buildNestedOutlines(pOutlines, outlineData, pTocDest);
+    buildNestedOutlines(pOutlines, m_outlineData, pTocDest);
 
     // Cleanup if you used 'new' for local storage
     if (pTocDest)

@@ -1,65 +1,52 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #ifndef _GUARD_PRETTY_HTML_H
 #define _GUARD_PRETTY_HTML_H
-
-#include <string>
-#include <vector>
 
 #ifndef PHTML_API
 #define PHTML_API __attribute__((visibility("default")))
 #endif
 
-typedef std::string WEBPAGE; /**<  HTML Page */
+#ifndef PHTML_API
+#define PHTML_API __attribute__((visibility("default")))
+#endif
 
-/**
- * @brief The html_tree class
- *
- * Stateful HTML Generator with Automatic Escaping and Tree-based Validation.
- */
-class html_tree {
-    public:
-        enum class status {
-            UNPROCESSED,
-            OPEN,
-            CLOSED
-        };
+namespace phtml {
+    // Forward decls.
+    class PHTML_API html_tree;
+    void PHTML_API  process_nodes(html_tree *primaryNode);
+    struct html_tree_impl;
+    html_tree *find_first_open_sibling(html_tree *parent);
 
-    private:
-        struct TAG_CONTENT {
-                std::string text;
-                bool        lineBreak;
-        };
+    class PHTML_API html_tree {
+        public:
+            // Use raw C-strings to cross the binary boundary
+            html_tree(const char *htmlTag, bool includeHeader = false);
+            ~html_tree();
 
-        // DECLARATIONS
-        const std::string        m_htmlTag;
-        std::string             &m_htmlPage;
-        std::vector<TAG_CONTENT> m_tagContent;
-        status                   m_nodestatus;
+            // ABI-safe handles for the tree structure
+            html_tree *new_node(const char *htmlTag);
+            html_tree *new_node_f(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
-        bool        is_special_tag(const std::string &tag, const std::vector<std::string> &table);
-        std::string handle_special_characters(std::string text);
+            // Pass content as raw pointers
+            void set_node_content(const char *content, bool lineBreak = false, bool escapeSpecialChars = true);
+            void set_node_content_f(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
-    public:
-        std::vector<html_tree *> childNodes;
-        html_tree               *previousBranch;
+            // Access the final master string as a C-string
+            const char *get_html() const;
 
-        PHTML_API html_tree(
-            std::string  htmlTag,
-            std::string &htmlPage,
-            html_tree   *previousBranch = nullptr
-        );
-        PHTML_API ~html_tree();
+            friend void process_nodes(html_tree *primaryNode);
 
-        PHTML_API html_tree *new_node(std::string htmlTag);
-        bool                 is_leaf_node();
-        void                 open_node(unsigned tabs);
-        void                 close_node(unsigned tabs);
-        status               closed();
-        PHTML_API void       set_node_content(std::string content, bool lineBreak = true, bool escapeSpecialChars = false);
-};
+        private:
+            // Internal constructor so children can share the root implementation
+            html_tree(const char *htmlTag, html_tree *parent_handle);
+            // The only member: The Pimpl pointer
+            html_tree_impl   *m_pimpl;
+            friend html_tree *find_first_open_sibling(html_tree *parent);
+    };
 
-namespace pretty_html {
-    html_tree     *find_first_open_sibling(html_tree *parent);
-    PHTML_API void process_nodes(html_tree *primaryNode);
-} // namespace pretty_html
+} // namespace phtml
 
 #endif

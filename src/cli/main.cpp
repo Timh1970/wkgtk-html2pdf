@@ -2,10 +2,13 @@
 #include <getopt.h>
 #include <iostream>
 #include <systemd/sd-journal.h>
+#include <unistd.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
 
 using std::string;
+
+using namespace phtml;
 std::string appname;
 #ifndef APP_VERSION
 #define APP_VERSION "unknown"
@@ -152,9 +155,9 @@ int main(int argc, char *argv[]) {
 
     wkJlog << iclog::loglevel::debug << iclog::category::CLI
            << "\nProcessing HTML: " << infile << "\nOrientation: " << orientation
-           << "\nSize: " << pageSize << std::endl;
+           << "\nSize: " << pageSize << iclog::endl;
 
-    PDFprinter pdf(baseURI);
+    PDFprinter pdf(baseURI.c_str());
     // OPTION 1 (depreciated/removed pending final testing) No longer necessary
     // pdf.set_param(
     //     PDFprinter::read_file(infile),
@@ -166,7 +169,8 @@ int main(int argc, char *argv[]) {
     /**
      * If you are using a default page size
      */
-    pdf.set_param(PDFprinter::read_file(infile), outfile, idxMode);
+    // pdf.set_param(PDFprinter::read_file(infile), outfile, idxMode);
+    pdf.set_param_from_file(infile.c_str(), outfile.c_str(), idxMode);
 
     /**
      * If the pageSize and orintation are empty or invalid
@@ -176,7 +180,7 @@ int main(int argc, char *argv[]) {
      * printer settings configuration sting using OPTION 1
      * above.
      */
-    pdf.layout(pageSize, orientation);
+    pdf.layout(pageSize.c_str(), orientation.c_str());
     pdf.make_pdf();
 
     return (0);

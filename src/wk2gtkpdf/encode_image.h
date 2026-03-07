@@ -1,21 +1,25 @@
 #ifndef ENCODE_IMAGE_H
 #define ENCODE_IMAGE_H
-#include <string>
+
 #ifndef B64ENC_API
 #define B64ENC_API __attribute__((visibility("default")))
 #endif
-class encode_image {
-    private:
-        const std::string m_fullPath;
+namespace phtml {
+    struct encode_image_impl;
 
-        std::string base64_encode(unsigned char const *bytes_to_encode, size_t in_len);
-        std::string process_image();
-        std::string image_type(const std::string file);
+    class B64ENC_API encode_image {
+        public:
+            // Use raw C-strings to keep the ABI "Virgin"
+            encode_image(const char *fPath);
+            ~encode_image();
 
-    public:
-        B64ENC_API encode_image();
-        B64ENC_API encode_image(const std::string fPath);
-        B64ENC_API std::string b64_image();
-};
+            // Returns the full "data:image/..." string as a C-string
+            const char *b64_image();
+
+        private:
+            encode_image_impl *m_pimpl;
+    };
+
+} // namespace phtml
 
 #endif // ENCODE_IMAGE_H

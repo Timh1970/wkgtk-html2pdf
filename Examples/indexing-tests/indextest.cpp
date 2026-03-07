@@ -1,5 +1,7 @@
 #include <filesystem>
+#include <fstream>
 #include <systemd/sd-journal.h>
+#include <unistd.h>
 #include <wk2gtkpdf/encode_image.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
@@ -7,10 +9,10 @@
 #include <wk2gtkpdf/pretty_html.h>
 
 using namespace std;
+using namespace phtml;
 
-WEBPAGE page() {
-    WEBPAGE    html("<!DOCTYPE html>\n");
-    html_tree  dom("html", html);
+const char *page() {
+    html_tree  dom("html");
     html_tree *head = dom.new_node("head");
     head->new_node("style")
         ->set_node_content(
@@ -48,8 +50,8 @@ WEBPAGE page() {
     for (int i = 1; i != 11; ++i) {
         page
             ->new_node("div class=\"index-item\"")
-            ->new_node("a href=\"#anchor" + std::to_string(i) + "\"")
-            ->set_node_content("Anchor " + std::to_string(i));
+            ->new_node_f("a href=\"#anchor %d \"", i)
+            ->set_node_content_f("Anchor %d", i);
     }
 
     int topMargin = 100;
@@ -58,16 +60,20 @@ WEBPAGE page() {
         page            = page->new_node("div class=\"subpage\"");
         page
             ->new_node("h2")
-            ->set_node_content("Page " + std::to_string(i + 1));
+            ->set_node_content_f("Page %d", i + 1);
         page
-            ->new_node("div class=\"anchor\" id=\"anchor" + std::to_string(i) + "\" style=\"margin-top:" + std::to_string(topMargin) + "px;\"")
-            ->set_node_content("Anchor " + std::to_string(i));
+            ->new_node_f("div class=\"anchor\" id=\"anchor %d \" style=\"margin-top: %dpx;\"", i, topMargin)
+            ->set_node_content_f("Anchor %d", i);
         topMargin += 10;
     }
 
-    pretty_html::process_nodes(&dom);
+    process_nodes(&dom);
 
-    return (html);
+    const char *html = dom.get_html();
+
+    // CREATE LOCAL COPY
+    const char *buf = strdup(html);
+    return (buf);
 }
 
 int main(int argc __attribute__((unused)), char **argv) {
@@ -80,7 +86,7 @@ int main(int argc __attribute__((unused)), char **argv) {
     // INIT WEBKITGTK
     icGTK::init();
 
-    WEBPAGE html = page();
+    const char *html = page();
 
     /**
      * @brief file
@@ -100,7 +106,7 @@ int main(int argc __attribute__((unused)), char **argv) {
          * Generate a pdf without an index
          */
         PDFprinter pdf;
-        pdf.set_param(html, std::filesystem::current_path().string() + "/noindex.pdf");
+        pdf.set_param(html, (std::filesystem::current_path().string() + "/noindex.pdf").c_str());
         pdf.layout("A4", "portrait");
         pdf.make_pdf();
     }
@@ -111,7 +117,7 @@ int main(int argc __attribute__((unused)), char **argv) {
          * Do the same but add the anchors
          */
         PDFprinter pdf;
-        pdf.set_param(html, std::filesystem::current_path().string() + "/indexed.pdf", true);
+        pdf.set_param(html, (std::filesystem::current_path().string() + "/indexed.pdf").c_str(), index_mode::ENHANCED);
         pdf.layout("A4", "portrait");
         pdf.make_pdf();
     }

@@ -3,6 +3,8 @@
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/pretty_html.h>
 
+using namespace phtml;
+
 /**
  * @brief main
  * @return
@@ -34,11 +36,6 @@ int main() {
     icGTK::init();
 
     /**
-     * @brief html
-     * A std::string container for the html.
-     */
-    WEBPAGE   html("<!DOCTYPE html>");
-    /**
      * @brief dom
      *
      * The built in pretty_html functions enable you to generate
@@ -48,13 +45,13 @@ int main() {
      * This is the primary element <html> and here is where we
      * pass in the webpage string.
      */
-    html_tree dom("html", html);
+    phtml::html_tree dom("html");
 
     /**
      * @brief head
      * A nested head element.
      */
-    html_tree *head = dom.new_node("head");
+    phtml::html_tree *head = dom.new_node("head");
 
     /**
      * An absolute link to one of the base stylesheets used to
@@ -66,7 +63,7 @@ int main() {
      * @brief body
      * The body element.
      */
-    html_tree *body = dom.new_node("body");
+    phtml::html_tree *body = dom.new_node("body");
 
     /**
      * @brief page
@@ -77,8 +74,8 @@ int main() {
      * second is the area inside the page margin. We create a separate
      * reference to the innermost element for adding content.
      */
-    html_tree *page    = body->new_node("div class=\"page\"");
-    html_tree *subpage = page->new_node("div class=\"subpage\"");
+    phtml::html_tree *page    = body->new_node("div class=\"page\"");
+    phtml::html_tree *subpage = page->new_node("div class=\"subpage\"");
 
     /**
      * Put something on the page.
@@ -91,8 +88,9 @@ int main() {
     /**
      * compile the html
      */
-    pretty_html::process_nodes(&dom);
+    phtml::process_nodes(&dom);
 
+    const char   *html = dom.get_html();
     /**
      * @brief file
      *
@@ -119,8 +117,7 @@ int main() {
      */
     pdf.set_param(
         html,
-        PDFprinter::read_file("/usr/share/wkgtkprinter/a4-portrait-pdf.page"),
-        std::filesystem::current_path().string() + "/hello.pdf"
+        (std::filesystem::current_path().string() + "/hello.pdf").c_str()
     );
 
     /**

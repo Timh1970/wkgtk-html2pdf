@@ -30,6 +30,7 @@ SOURCES += \
         src/log++/ic_printerlog++.cpp \
         src/wk2gtkpdf/encode_image.cpp \
         src/wk2gtkpdf/ichtmltopdf++.cpp \
+        src/wk2gtkpdf/ichtmltopdf_int.cpp \
         src/wk2gtkpdf/iclog.cpp \
         src/wk2gtkpdf/index_pdf.cpp \
         src/wk2gtkpdf/pretty_html.cpp
@@ -45,6 +46,7 @@ HEADERS += \
         src/log++/ic_printerlog++.h \
         src/wk2gtkpdf/encode_image.h \
         src/wk2gtkpdf/ichtmltopdf++.h \
+        src/wk2gtkpdf/ichtmltopdf_int.h \
         src/wk2gtkpdf/iclog.h \
         src/wk2gtkpdf/index_pdf.h \
         src/wk2gtkpdf/pretty_html.h

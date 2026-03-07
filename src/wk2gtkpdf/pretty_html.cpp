@@ -2,88 +2,143 @@
 
 #include "iclog.h"
 
-/**
- * @brief PHTML_DEBUG
- * Internal testing only.  This should not be enables as it will
- * just clog up the logs with every single open and close on every
- * single element.
- */
-bool PHTML_DEBUG = false;
-
-// Void Tags (should not be closed)
-const std::vector<std::string> voidTags{
-    "area",
-    "base",
-    "br",
-    "col",
-    "command",
-    "embed",
-    "hr",
-    "img",
-    "input",
-    "keygen",
-    "link",
-    "meta",
-    "param",
-    "source",
-    "track",
-    "wbr"
-};
-
-// Blocks (That should not have new lines)
-// This is a work in progress
-const std::vector<std::string> blockTags{
-    "textarea",
-    "p",
-    "h1",
-    "h2",
-    "h3",
-    "h4",
-    "h5",
-    "h6",
-    "title",
-    "a",
-    "button",
-    "label"
-};
-
+#include <cstdlib>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string>
+#include <vector>
 typedef typename iclog::category cat;
 typedef typename iclog::loglevel lvl;
-using std::endl;
 using std::string;
 using std::vector;
 
-/**
- * @brief html_tree::html_tree
- * @param htmlTag
- * @param htmlPage
- * @param previousBranch
- *
- * Each instanance of this class is an HTML element with a link to
- * parent, if it has one.
- */
-html_tree::html_tree(
-    std::string  htmlTag,
-    std::string &htmlPage,
-    html_tree   *previousBranch
-)
-    : m_htmlTag(htmlTag),
-      m_htmlPage(htmlPage),
-      previousBranch(previousBranch) {
+namespace phtml {
 
-    // INITIALISE THE WEB PAGE
-    if (m_htmlPage.empty())
-        m_htmlPage = "Content-type:text/html\r\n\r\n<!DOCTYPE html>\n";
-    m_nodestatus = status::UNPROCESSED;
+    enum class status {
+        UNPROCESSED,
+        OPEN,
+        CLOSED
+    };
+
+    /**
+     * @brief PHTML_DEBUG
+     * Internal testing only.  This should not be enables as it will
+     * just clog up the logs with every single open and close on every
+     * single element.
+     */
+    bool PHTML_DEBUG = false;
+
+    // Void Tags (should not be closed)
+    static const char *const voidTags[]{
+        "area",
+        "base",
+        "br",
+        "col",
+        "command",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "keygen",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+        nullptr
+    };
+
+    // Blocks (That should not have new lines)
+    // This is a work in progress
+    static const char *const blockTags[]{
+        "textarea",
+        "p",
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "title",
+        "a",
+        "button",
+        "label",
+        nullptr
+    };
+
+    struct html_tree_impl {
+            // 1. THE SHARED LUNGS: Every node's 'm_htmlPage' points to the same memory.
+            std::string &m_htmlPage;
+
+            // 2. THE MASTER STORAGE: Only the ROOT node actually uses this.
+            std::string m_rootBuffer;
+
+            // 3. THE NODE DATA: The stuff you had in your original class.
+            std::string              m_htmlTag;
+            std::vector<html_tree *> childNodes;
+            status                   m_nodestatus   = status::UNPROCESSED;
+            html_tree               *previousBranch = nullptr;
+
+            struct TAG_CONTENT {
+                    std::string text;
+                    bool        lineBreak;
+            };
+
+            std::vector<TAG_CONTENT> m_tagContent;
+
+            // --- THE TWO CONSTRUCTORS FOR THE PIMPL ---
+
+            // A. For the ROOT: Point the reference to our own 'm_rootBuffer'
+            html_tree_impl(const char *tag)
+                : m_htmlPage(m_rootBuffer),
+                  m_htmlTag(tag) {}
+
+            // B. For the CHILDREN: Point the reference to the PARENT'S 'm_htmlPage'
+            // Child Constructor
+            html_tree_impl(const char *tag, std::string &master, html_tree *parent)
+                : m_htmlPage(master),
+                  m_htmlTag(tag),
+                  previousBranch(parent) {}
+
+            bool        is_special_tag(const std::string &tag, const char *const table[]);
+            bool        is_leaf_node();
+            std::string handle_special_characters(std::string text);
+            status      closed();
+            void        open_node(unsigned tabs = 0);
+            void        close_node(unsigned tabs = 0);
+    };
+
+} // namespace phtml
+
+phtml::html_tree::html_tree(const char *htmlTag, bool includeHeader)
+    : m_pimpl(new html_tree_impl(htmlTag)) {
+    // INITIALISE THE MASTER PAGE (Only happens once)
+    if (includeHeader) {
+        // Only add the "poison" if we're going to a web server
+        m_pimpl->m_htmlPage = "Content-type:text/html\r\n\r\n<!DOCTYPE html>\n";
+    } else {
+        // Just the clean DocType for local files
+        m_pimpl->m_htmlPage = "<!DOCTYPE html>\n";
+    }
+    m_pimpl->m_nodestatus = status::UNPROCESSED;
+}
+
+// THE CHILD (Private - used by new_node)
+phtml::html_tree::html_tree(const char *htmlTag, html_tree *parent_handle)
+    : m_pimpl(new html_tree_impl(htmlTag, parent_handle->m_pimpl->m_htmlPage, parent_handle)) {
+    m_pimpl->m_nodestatus = status::UNPROCESSED;
 }
 
 /**************************************/
 /*  DESTRUCTOR                        */
 /**************************************/
-html_tree::~html_tree() {
-    for (html_tree *it : childNodes) {
+phtml::html_tree::~html_tree() {
+    for (html_tree *it : m_pimpl->childNodes) {
         delete it;
     }
+    delete m_pimpl;
+    m_pimpl = nullptr;
 }
 
 /**
@@ -94,15 +149,12 @@ html_tree::~html_tree() {
  *
  * Check if element should be closed
  */
-bool html_tree::is_special_tag(const string &tag, const vector<string> &table) {
-    bool voidTag = false;
-
-    for (auto &it : table) {
-        if (tag == it)
-            voidTag = true;
+bool phtml::html_tree_impl::is_special_tag(const string &tag, const char *const table[]) {
+    for (int i = 0; table[i] != nullptr; ++i) {
+        if (tag == table[i])
+            return true;
     }
-
-    return (voidTag);
+    return false;
 }
 
 /**
@@ -113,7 +165,7 @@ bool html_tree::is_special_tag(const string &tag, const vector<string> &table) {
  *
  * Search the string for characters that require escaping and escape them
  */
-string html_tree::handle_special_characters(string text) {
+string phtml::html_tree_impl::handle_special_characters(string text) {
 
     string subjectString(text);
 
@@ -152,10 +204,38 @@ string html_tree::handle_special_characters(string text) {
  *
  * Create a new node
  */
-html_tree *html_tree::new_node(string htmlTag) {
-    // html_tree *t = (new html_tree(htmlTag, m_htmlPage, this));
-    childNodes.push_back(new html_tree(htmlTag, m_htmlPage, this));
-    return (childNodes.back());
+phtml::html_tree *phtml::html_tree::new_node(const char *htmlTag) {
+    // We pass 'this' (the current node) as the parent of the new child
+    html_tree *child = new html_tree(htmlTag, this);
+    m_pimpl->childNodes.push_back(child);
+    return child;
+}
+
+phtml::html_tree *phtml::html_tree::new_node_f(const char *format, ...) {
+    char   *buffer = nullptr;
+    va_list args;
+    va_start(args, format);
+    html_tree *result = nullptr;
+
+    if (vasprintf(&buffer, format, args) != -1) {
+        result = new_node(buffer);
+        free(buffer);
+    }
+    va_end(args);
+    return result;
+}
+
+void phtml::html_tree::set_node_content_f(const char *format, ...) {
+    char   *buffer = nullptr;
+    va_list args;
+    va_start(args, format);
+    // vasprintf handles the size calculation and allocation for you
+    if (vasprintf(&buffer, format, args) != -1) {
+        // Call your existing ABI-safe method
+        set_node_content(buffer);
+        free(buffer); // Clean up the temporary string
+    }
+    va_end(args);
 }
 
 /**
@@ -164,7 +244,7 @@ html_tree *html_tree::new_node(string htmlTag) {
  *
  * Does this element have children
  */
-bool html_tree::is_leaf_node() {
+bool phtml::html_tree_impl::is_leaf_node() {
     return ((childNodes.empty()) ? true : false);
 }
 
@@ -177,13 +257,12 @@ bool html_tree::is_leaf_node() {
  *
  * Apply a ">" at the end of the element instantiation.
  */
-void html_tree::open_node(unsigned tabs) {
-
+void phtml::html_tree_impl::open_node(unsigned tabs) {
     if (tabs)
         m_htmlPage.append(tabs, '\t');
 
-    string tag(m_htmlTag.substr(0, m_htmlTag.find_first_of(" ")));
-    bool   blockTag(is_special_tag(tag, blockTags));
+    std::string tag = m_htmlTag.substr(0, m_htmlTag.find_first_of(" "));
+    bool        blockTag(is_special_tag(tag, blockTags));
 
     m_htmlPage.append("<" + m_htmlTag + ">");
 
@@ -191,7 +270,7 @@ void html_tree::open_node(unsigned tabs) {
         m_htmlPage.append("\n");
 
     if (!m_tagContent.empty()) {
-        for (TAG_CONTENT &s : m_tagContent) {
+        for (phtml::html_tree_impl::TAG_CONTENT &s : m_tagContent) {
 
             if (blockTag) {
                 m_htmlPage.append(s.text);
@@ -211,7 +290,7 @@ void html_tree::open_node(unsigned tabs) {
     wkJlog
         << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
         << m_htmlTag
-        << std::endl;
+        << iclog::endl;
 }
 
 /**
@@ -220,7 +299,7 @@ void html_tree::open_node(unsigned tabs) {
  *
  * Close the element
  */
-void html_tree::close_node(unsigned tabs) {
+void phtml::html_tree_impl::close_node(unsigned tabs) {
 
     string tag(m_htmlTag.substr(0, m_htmlTag.find_first_of(" ")));
 
@@ -238,15 +317,15 @@ void html_tree::close_node(unsigned tabs) {
     if (PHTML_DEBUG)
         wkJlog
             << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
-            << tag
-            << std::endl;
+            << "Closed " << tag
+            << iclog::endl;
 }
 
 /**
  * @brief html_tree::closed
  * @return the status of the element.
  */
-html_tree::status html_tree::closed() { return (m_nodestatus); }
+phtml::status phtml::html_tree_impl::closed() { return (m_nodestatus); }
 
 /******************************************************************************/
 /*  SET NODE CONTENT                                                          */
@@ -261,11 +340,15 @@ html_tree::status html_tree::closed() { return (m_nodestatus); }
  * literally rather than be used as a line break.
  *
  */
-void html_tree::set_node_content(string content, bool lineBreak, bool escapeSpecialChars) {
+void phtml::html_tree::set_node_content(const char *content, bool lineBreak, bool escapeSpecialChars) {
     if (escapeSpecialChars)
-        m_tagContent.push_back({handle_special_characters(content), lineBreak});
+        m_pimpl->m_tagContent.push_back({m_pimpl->handle_special_characters(content), lineBreak});
     else
-        m_tagContent.push_back({content, lineBreak});
+        m_pimpl->m_tagContent.push_back({content, lineBreak});
+}
+
+const char *phtml::html_tree::get_html() const {
+    return m_pimpl->m_htmlPage.c_str();
 }
 
 // END OF CLASS  --  ^^^^^^^^
@@ -279,18 +362,18 @@ void html_tree::set_node_content(string content, bool lineBreak, bool escapeSpec
  * Iterate through each node until you find the first one that is
  * not marked closed.
  */
-html_tree *pretty_html::find_first_open_sibling(html_tree *parent) {
+phtml::html_tree *phtml::find_first_open_sibling(html_tree *parent) {
 
     html_tree *workNode = nullptr;
 
-    for (html_tree *it : parent->childNodes) {
-        if (it->closed() != html_tree::status::CLOSED) {
+    for (html_tree *it : parent->m_pimpl->childNodes) {
+        if (it->m_pimpl->closed() != status::CLOSED) {
             workNode = it;
             if (PHTML_DEBUG)
                 wkJlog
                     << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
                     << "found child node"
-                    << std::endl;
+                    << iclog::endl;
             break;
         }
     }
@@ -309,32 +392,32 @@ html_tree *pretty_html::find_first_open_sibling(html_tree *parent) {
  * The HTML itself is contained within the std::string attached to
  * the primary html_tree instance.
  */
-void pretty_html::process_nodes(html_tree *primaryNode) {
-
+void phtml::process_nodes(html_tree *primaryNode) {
     html_tree *curNode = primaryNode;
-    unsigned   tabs    = 0;
-    while (primaryNode->closed() != html_tree::status::CLOSED) {
 
-        if (curNode->closed() == html_tree::status::UNPROCESSED) {
-            curNode->open_node(tabs);
+    unsigned tabs = 0;
+    while (primaryNode->m_pimpl->closed() != status::CLOSED) {
+
+        if (curNode->m_pimpl->closed() == status::UNPROCESSED) {
+            curNode->m_pimpl->open_node(tabs);
             ++tabs;
             if (PHTML_DEBUG)
                 wkJlog
                     << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
                     << "opening unprocessed node"
-                    << std::endl;
+                    << iclog::endl;
         }
 
         // if the current node is a leaf node and it is open then close it
-        if ((curNode->is_leaf_node()) && (curNode->closed() == html_tree::status::OPEN)) {
+        if ((curNode->m_pimpl->is_leaf_node()) && (curNode->m_pimpl->closed() == status::OPEN)) {
 
             --tabs;
-            curNode->close_node(tabs);
+            curNode->m_pimpl->close_node(tabs);
             if (PHTML_DEBUG)
                 wkJlog
                     << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
                     << "closing leaf node"
-                    << std::endl;
+                    << iclog::endl;
         }
 
         // NEXT NODE
@@ -350,7 +433,7 @@ void pretty_html::process_nodes(html_tree *primaryNode) {
                 wkJlog
                     << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
                     << "setting current node to child"
-                    << std::endl;
+                    << iclog::endl;
 
         }
 
@@ -359,18 +442,18 @@ void pretty_html::process_nodes(html_tree *primaryNode) {
         else {
 
             // if the current node has no open children then close it
-            if (curNode->closed() == html_tree::status::OPEN) {
+            if (curNode->m_pimpl->closed() == status::OPEN) {
                 --tabs;
-                curNode->close_node(tabs);
+                curNode->m_pimpl->close_node(tabs);
             }
 
             // we can then make our way back up to the parent node
-            curNode = curNode->previousBranch;
+            curNode = curNode->m_pimpl->previousBranch;
             if (PHTML_DEBUG)
                 wkJlog
                     << lvl::debug << cat::LIB_HTML << iclog_FUNCTION
                     << "returninng to previous branch"
-                    << std::endl;
+                    << iclog::endl;
         }
     }
 }

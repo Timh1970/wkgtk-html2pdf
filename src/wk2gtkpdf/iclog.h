@@ -1,10 +1,7 @@
 #ifndef NC_ERRLOG_H
 #define NC_ERRLOG_H
-#include <ostream>
-#include <streambuf>
-#include <string>
+#include <cstdint>
 #include <syslog.h>
-
 #define DEBUG     true
 #define DEBUG_SQL true
 
@@ -16,15 +13,16 @@
 #define ICLOG_API __attribute__((visibility("default")))
 #endif
 
-extern unsigned ICLOG_API LOG_LEVEL;
-
-typedef ulong             BITWISE;
+// Wrapping in extern "C" makes the symbol names stable and easy to map
+extern "C" {
+extern ICLOG_API uint32_t LOG_LEVEL;
 /**
  * @brief LOG_IGNORE
  *
  * A bitwise set of events **NOT** to log
  */
-extern BITWISE LOG_IGNORE ICLOG_API;
+extern ICLOG_API uint64_t LOG_IGNORE;
+}
 
 namespace iclog {
 
@@ -58,67 +56,48 @@ namespace iclog {
         debug    = LOG_DEBUG    // For debugging program
     } loglevel;
 
-    extern ICLOG_API const std::pair<category, std::string> catLUT[];
-    extern ICLOG_API const std::pair<unsigned, std::string> levelLUT[];
+    struct ostream_impl;
 
-    const std::string &get_level(unsigned level);
-    const std::string &get_category(category cat);
+    class logstream;
+    typedef logstream &(*logstreamManipulator)(logstream &);
 
-    //  STREAMBUF CLASS
-    class ICLOG_API streambuf : public std::streambuf {
-        private:
-            std::string m_buf;
-            loglevel    m_level;
-            int         m_category;
-
+    class ICLOG_API logstream {
         public:
-            ICLOG_API      streambuf();
-            void ICLOG_API level(loglevel level);
-            void ICLOG_API category(BITWISE cat);
+            logstream();
+            ~logstream();
 
-        protected:
-            int ICLOG_API      sync();
-            int_type ICLOG_API overflow(int_type c);
+            logstream &operator<<(const char *s);
+            logstream &operator<<(int i);
+            logstream &operator<<(double d);
+
+            logstream &operator<<(logstreamManipulator manip) {
+                return manip(*this);
+            }
+
+            void flush();
+
+            void                        level(loglevel lev);
+            void                        category(unsigned long long cat);
+            friend ICLOG_API logstream &endl(logstream &os);
+
+            template <typename T>
+            logstream &operator<<(T &(*f)(T &));
+
+            template <typename T>
+            logstream &operator<<(const T &value);
+
+        private:
+            ostream_impl *m_pimpl;
     };
 
-    // OSTREAM CLASS
-    class ICLOG_API ostream : public std::ostream {
-
-        private:
-            streambuf m_logbuf;
-
-        public:
-            ICLOG_API      ostream();
-            void ICLOG_API level(loglevel level);
-            void ICLOG_API category(BITWISE cat);
-    };
-
-    inline ostream &operator<<(ostream &os, const loglevel lev) {
-        os << get_level(lev);
-        os.level(lev);
-        return os;
-    }
-
-    inline ostream &operator<<(ostream &os, const category cat) {
-        os << get_category(cat);
-        os.category(cat);
-        return os;
-    }
-
-    // REDIRECT CLASS
-    class ICLOG_API redirect {
-        private:
-            ostream               m_sDest;
-            std::ostream         &m_sSource;
-            std::streambuf *const m_sbuf;
-
-        public:
-            redirect(std::ostream &sSource);
-            ~redirect();
-    };
-
+    // This is the bridge that allows wkJlog << std::endl;
+    // It exists only to catch the standard manipulator
+    ICLOG_API logstream &endl(logstream &os);
+    ICLOG_API logstream &operator<<(logstream &os, loglevel lev);
+    ICLOG_API logstream &operator<<(logstream &os, category cat);
 } // namespace iclog
 
-extern ICLOG_API iclog::ostream wkJlog;
+// The global logger instance
+extern ICLOG_API iclog::logstream wkJlog;
 
 #endif // NC_ERRLOG_H

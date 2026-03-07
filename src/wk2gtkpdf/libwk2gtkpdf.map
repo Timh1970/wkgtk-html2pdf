@@ -1,0 +1,19 @@
+LIBWK2GTKPDF_1.0 {
+    global:
+        # Only export the names you actually want the world to see
+        extern "C++" {
+            phtml::*;
+            iclog::*;
+            icGTK::*;
+            "wkJlog";
+        };
+        # If you have any raw C functions like PDF_FreeAnchors
+        PDF_FreeAnchors;
+        wk2gtkpdf_version;
+        LOG_LEVEL;
+        LOG_IGNORE;
+        PDF_FreeBlob;
+    local:
+        # Hide everything else, including PoDoFo and std::regex leaks
+        *;
+};

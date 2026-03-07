@@ -1,3 +1,4 @@
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -5,6 +6,8 @@
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
 #include <wk2gtkpdf/pretty_html.h>
+
+using namespace phtml;
 
 void contact_table(html_tree *subpage) {
 
@@ -365,16 +368,14 @@ void info_page(html_tree *subpage) {
     );
 }
 
-std::string webpage() {
+const char *webpage() {
 
     wkJlog << iclog::loglevel::debug << iclog::category::CLI
-         << "Constructing html form."
-         << std::endl;
-
-    std::string html("<!DOCTYPE html>");
+           << "Constructing html form."
+           << iclog::endl;
 
     // PRIMARY ELEMENT
-    html_tree dom("html", html);
+    html_tree dom("html");
 
     // HEAD
     html_tree *head = dom.new_node("head");
@@ -394,7 +395,7 @@ std::string webpage() {
      */
     std::ifstream f("demo-form.css");
     std::string   style((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-    head->new_node("style")->set_node_content(style);
+    head->new_node("style")->set_node_content(style.c_str());
 
     // BODY
     html_tree *body    = dom.new_node("body");
@@ -407,8 +408,19 @@ std::string webpage() {
 
     // LOGO
     encode_image img("example-logo.png");
-    container->new_node("img class=\"logo\" src=" + img.b64_image());
+    const char  *encImg = img.b64_image();
+    const char  *prefix = "img class=\"logo\" src=";
 
+    size_t lenPrefix = strlen(prefix);
+    size_t lenImg    = strlen(encImg);
+    char  *strImg    = (char *)malloc(lenPrefix + lenImg + 1);
+
+    if (strImg) {
+        memcpy(strImg, prefix, lenPrefix);
+        memcpy(strImg + lenPrefix, encImg, lenImg + 1);
+    }
+
+    // std::cout << strImg << std::endl;
     // TITLE
     container->new_node("h1 class=\"doctitle\"")->set_node_content("DEMO Job sheet");
 
@@ -428,9 +440,10 @@ std::string webpage() {
     subpage = page->new_node("div class=\"subpage\"");
     info_page(subpage);
 
-    pretty_html::process_nodes(&dom);
-
-    return (html);
+    process_nodes(&dom);
+    const char *html = dom.get_html();
+    char       *buf  = strdup(html);
+    return (buf);
 }
 
 /**
@@ -447,13 +460,12 @@ int main() {
     // INITIALISE WEBKIT2GTK (SINGLETON)
     icGTK::init();
 
-    WEBPAGE html = webpage();
-
+    const char *page = webpage();
     // MAKE A PDF FROM THE HTML
-    PDFprinter pdf;
+    PDFprinter  pdf;
     pdf.set_param(
-        html,
-        std::filesystem::current_path().string() + "/demo-form.pdf"
+        page,
+        (std::filesystem::current_path().string() + "/demo-form.pdf").c_str()
     );
     pdf.layout("A4", "portrait");
     pdf.make_pdf();
@@ -461,7 +473,7 @@ int main() {
     // WRITE OUT THE HTML
     std::ofstream file(std::filesystem::current_path().string() + "/demo-from.html");
     if (file) {
-        file << html;
+        file << page;
         file.close();
     }
 
@@ -472,6 +484,9 @@ int main() {
     std::cout
         << "demo-form.html and demo-form.pdf have been generated"
         << std::endl;
+
+    free((void *)page);
+    page = nullptr;
 
     return (0);
 }

@@ -1,32 +1,37 @@
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include "iclog.h"
 
-#include <fstream>
 #include <iostream>
-#include <sstream>
+#include <string>
+#include <syslog.h>
 
-using std::endl;
-using std::ofstream;
-using std::string;
-using std::stringstream;
+// 1. Global Externs (C-Linkage)
+extern "C" {
+uint32_t LOG_LEVEL  = LOG_DEBUG;
+uint64_t LOG_IGNORE = 0;
+}
 
 namespace iclog {
     const std::pair<category, std::string> catLUT[]{
-        {SQL_SEL,     "(SQL SELECT) "          },
-        {SQL_UPD,     "(SQL UPDATE) "          },
-        {SQL_INS,     "(SQL INSERT) "          },
-        {SQL_STAT,    "(SQL STATEMENT) "       },
-        {SQL,         "(SQL) "                 },
-        {IF_NCURSEES, "(NCURSES INTERFACE) "   },
-        {IF_WEB,      "(WEB INTERFACE) "       },
-        {DAEMON,      "(DAEMON) "              },
-        {CORE,        "(CORE) "                },
-        {UNDEF,       "(UNDEFINED) "           },
-        {SEC_WEB,     "SECURITY WEB "          },
-        {SEC_NCURSES, "SECURITY NCURSES "      },
-        {LIB,         "LIBRARY "               },
-        {CLI,         "COMMAND LINE INTERFACE "},
-        {LIB_HTML,    "HTML LIBS "             },
-        {HTML,        "HTML "                  }
+        {SQL_SEL,     "(SQL SELECT) "            },
+        {SQL_UPD,     "(SQL UPDATE) "            },
+        {SQL_INS,     "(SQL INSERT) "            },
+        {SQL_STAT,    "(SQL STATEMENT) "         },
+        {SQL,         "(SQL) "                   },
+        {IF_NCURSEES, "(NCURSES INTERFACE) "     },
+        {IF_WEB,      "(WEB INTERFACE) "         },
+        {DAEMON,      "(DAEMON) "                },
+        {CORE,        "(CORE) "                  },
+        {UNDEF,       "(UNDEFINED) "             },
+        {SEC_WEB,     "(SECURITY WEB) "          },
+        {SEC_NCURSES, "(SECURITY NCURSES) "      },
+        {LIB,         "(LIBRARY) "               },
+        {CLI,         "(COMMAND LINE INTERFACE) "},
+        {LIB_HTML,    "(HTML LIBS) "             },
+        {HTML,        "(HTML) "                  }
     };
 
     const std::pair<unsigned, std::string> levelLUT[]{
@@ -40,105 +45,137 @@ namespace iclog {
         {LOG_DEBUG,   "DEBUG: "      }
     };
 
-    static const std::string unknown_level = "UNKNOWN: ";
-    static const std::string unknown_cat   = "(UNKNOWN) ";
-
-    ICLOG_API const std::string &get_level(unsigned level) {
-        for (const auto &it : levelLUT) {
-            if (level == it.first)
-                return it.second;
+    const std::string &get_category_name(category cat) {
+        for (const auto &pair : catLUT) {
+            if (pair.first == cat)
+                return pair.second;
         }
-        return unknown_level;
+        static std::string unknown = "[UNK_CAT] ";
+        return unknown;
     }
 
-    ICLOG_API const std::string &get_category(category cat) {
-        for (const auto &it : catLUT) {
-            if (cat == it.first)
-                return it.second;
+    const std::string &get_level_name(loglevel lev) {
+        for (const auto &pair : levelLUT) {
+            if (pair.first == lev)
+                return pair.second;
         }
-        return unknown_cat;
+        static std::string unknown = "[UNK_LVL] ";
+        return unknown;
     }
 
-    typedef typename iclog::ostream::traits_type::int_type int_type;
+    // 2. The Internal Engine (Hidden from Header)
+    class streambuf_internal : public std::streambuf {
+        public:
+            std::string m_buf;
+            int         m_level    = LOG_INFO;
+            uint64_t    m_category = CORE;
 
-    /**************************************/
-    /*  CONSTRUCTOR                       */
-    /**************************************/
-    streambuf::streambuf()
-        : m_buf(""),
-          m_level(loglevel::debug),
-          m_category(CORE) {
-        m_buf.reserve(1024);
+        protected:
+            int sync() override {
+                if (!m_buf.empty()) {
+                    if (!(LOG_IGNORE & m_category)) {
+                        syslog(m_level, "%s", m_buf.c_str());
+                    }
+                    m_buf.clear();
+                }
+                return 0;
+            }
+
+            int_type overflow(int_type c) override {
+                if (c != traits_type::eof()) {
+                    m_buf += static_cast<char>(c);
+                }
+                return c;
+            }
+    };
+
+    // 3. The Pimpl Container
+    struct ostream_impl {
+            streambuf_internal buf;
+            std::ostream       stream;
+
+            ostream_impl()
+                : stream(&buf) {}
+    };
+
+    // 4. logstream Method Implementations
+    logstream::logstream()
+        : m_pimpl(new ostream_impl()) {}
+
+    logstream::~logstream() { delete m_pimpl; }
+
+    logstream &logstream::operator<<(const char *s) {
+        if (s)
+            m_pimpl->stream << s;
+        return *this;
     }
 
-    /**
-     * @brief iclog::streambuf::level
-     * @param level
-     *
-     * Set the level of the alert
-     */
-    void streambuf::level(loglevel level) { m_level = level; }
-
-    /**
-     * @brief iclog::streambuf::sync
-     * @return
-     *
-     * Write the contents of the buffer to syslog()
-     */
-    int streambuf::sync() {
-        if (m_buf.size()) {
-
-            if ((LOG_IGNORE & m_category) == 0)
-                syslog(m_level, "%s", m_buf.c_str());
-
-            m_buf.erase();
-        }
-        return 0;
+    logstream &logstream::operator<<(int i) {
+        m_pimpl->stream << i;
+        return *this;
     }
 
-    int_type streambuf::overflow(int_type c) {
-        if (c == traits_type::eof())
-            sync();
-        else
-            m_buf += static_cast<char>(c);
-        return c;
+    logstream &logstream::operator<<(double d) {
+        m_pimpl->stream << d;
+        return *this;
     }
 
-    void streambuf::category(BITWISE cat) { m_category = cat; }
-
-    /**
-     * @brief iclog::ostream::ostream
-     *
-     * Ostream class
-     */
-    ostream::ostream()
-        : std::ostream(&m_logbuf) {}
-
-    void ostream::category(BITWISE cat) {
-        m_logbuf.category(cat);
+    void logstream::flush() {
+        m_pimpl->stream.flush();
     }
 
-    /**
-     * @brief iclog::ostream::level
-     * @param level
-     *
-     * Set the log level
-     */
-    void ostream::level(loglevel level) { m_logbuf.level(level); }
-
-    redirect::redirect(std::ostream &sSource)
-        : m_sSource(sSource),
-          m_sbuf(sSource.rdbuf(m_sSource.rdbuf())) {
-
-        m_sSource << (&sSource == &std::cout ? loglevel::info : loglevel::error);
+    void logstream::level(loglevel lev) {
+        m_pimpl->buf.m_level = static_cast<int>(lev);
     }
 
-    redirect::~redirect() {
-        m_sSource.rdbuf(m_sbuf);
+    void logstream::category(unsigned long long cat) {
+        m_pimpl->buf.m_category = cat;
     }
+
+    logstream &endl(logstream &os) {
+        os.m_pimpl->stream << std::endl;
+        return os;
+    }
+
+    // 6. Enum Operators (Found via ADL)
+    logstream &operator<<(logstream &os, category cat) {
+        os << get_category_name(cat).c_str();
+        os.category(static_cast<unsigned long long>(cat));
+        return os;
+    }
+
+    logstream &operator<<(logstream &os, loglevel lev) {
+        os << get_level_name(lev).c_str();
+        os.level(lev);
+        return os;
+    }
+
+    template <>
+    logstream &logstream::operator<<(std::ostream &(*f)(std::ostream &)) {
+        m_pimpl->stream << f;
+        return *this;
+    }
+
+    // This handles the "Standard" types that the header doesn't know about
+    template <typename T>
+    logstream &logstream::operator<<(const T &value) {
+        m_pimpl->stream << value;
+        return *this;
+    }
+
+    // Explicitly instantiate for std::string to keep the linker happy
+    // template logstream &logstream::operator<<(const std::string &);
 
 } // namespace iclog
 
-ICLOG_API unsigned LOG_LEVEL  = LOG_NOTICE;
-ICLOG_API BITWISE  LOG_IGNORE = 0;
-ICLOG_API iclog::ostream wkJlog;
+ICLOG_API iclog::logstream wkJlog;
+
+namespace iclog {
+    // Force the compiler to generate the binary code for these types
+    template ICLOG_API logstream &logstream::operator<<(const std::string &);
+    template ICLOG_API logstream &logstream::operator<<(char *const &);
+    template ICLOG_API logstream &logstream::operator<<(const unsigned int &);
+    template ICLOG_API logstream &logstream::operator<<(const unsigned long &);
+    template ICLOG_API logstream &logstream::operator<<(const unsigned short &);
+    template ICLOG_API logstream &logstream::operator<<(const long &);
+} // namespace iclog
