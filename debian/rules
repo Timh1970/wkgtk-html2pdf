@@ -15,6 +15,8 @@ ifeq ($(IS_010),yes)
     export DEB_CXXFLAGS_MAINT_APPEND = -DPODOFO_010
 endif
 
+HAS_WK6 := $(shell pkg-config --exists webkitgtk-6.0 && echo 1 || echo 0)
+
 # 3. Main Boilerplate
 %:
 	dh $@ --buildsystem=makefile
@@ -29,7 +31,8 @@ override_dh_auto_build:
 	# 2. Build the CLI (Variable and command MUST be on the same execution line)
 	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src" \
-		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf"
+		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
+		USE_WEBKIT_6=$(HAS_WK6)
 
 override_dh_auto_install:
 	# Pass LIBDIR so files go to /usr/lib/x86_64-linux-gnu/ (or similar)

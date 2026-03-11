@@ -4,21 +4,17 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 CXX = g++
 CXXFLAGS := -std=c++20 -Wall
-CXXFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
-CXXFLAGS += $(shell pkg-config --cflags libpodofo)
-CXXFLAGS += $(shell pkg-config --cflags json-c)
-CXXFLAGS += $(shell Magick++-config --cppflags)
+CXXFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
+CXXFLAGS += $(shell pkg-config --cflags Magick++)
 
-LDLIBS := -Wl,--start-group
+
 LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
-LDLIBS += $(shell pkg-config --libs libpodofo)
-LDLIBS += $(shell pkg-config --libs json-c)
-LDLIBS += $(shell Magick++-config --ldflags)
+LDLIBS += $(shell pkg-config --libs Magick++)
 
-LDLIBS += -Wextra -O2  -m64 -pedantic-errors -Wl,--end-group
+LDLIBS += -Wextra -O2  -m64 -pedantic-errors
 
 grayscale: $(OBJECTS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $<

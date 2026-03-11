@@ -3,6 +3,7 @@
 #include "iclog.h"
 
 #include <X11/Xlib.h>
+#include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <stdexcept>
@@ -10,7 +11,14 @@
 #include <systemd/sd-bus.h>
 #include <thread>
 #include <wayland-client.h>
+
+#ifdef USE_WEBKIT_6
+#include <webkit/webkit.h>
+#else
 #include <webkit2/webkit2.h>
+#endif
+
+WKGTKRunMode phtml::WKGTK_run_mode = WKGTKRunMode::UNSET;
 
 struct WKGTK_init_impl {
         GMainLoop              *glob_loop = nullptr;
@@ -67,8 +75,8 @@ WKGTK_init::~WKGTK_init() {
 }
 
 struct icGTK_impl {
-        XvfbMode    runMode;
-        WKGTK_init *tk = nullptr; // Allocated on the heap to hide its size
+        WKGTK_init      *tk      = nullptr; // Allocated on the heap to hide its size
+        std::atomic_bool gui_run = false;
 
         std::string check_xvfb(sd_bus *bus, const std::string &service);
         WKGTK_init  handle_xvfb_daemon();
@@ -82,7 +90,7 @@ struct icGTK_impl {
  * avoid linker errors.
  */
 icGTK &icGTK::init() {
-    return icGTK::init(XvfbMode::KEEP_RUNNING);
+    return icGTK::init(WKGTKRunMode::KEEP_RUNNING);
 }
 
 /**
@@ -95,13 +103,10 @@ icGTK &icGTK::init() {
  * @note START_STOP run mode is primarily used for testing.
  *
  */
-icGTK::icGTK(XvfbMode runMode)
+icGTK::icGTK(WKGTKRunMode runMode)
     : m_pimpl(new icGTK_impl()) {
-    m_pimpl->tk      = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
-    m_pimpl->runMode = runMode;
-    wkJlog << iclog::loglevel::info << iclog::category::CORE
-           << "Inplicare initialising  WebKitGTK."
-           << iclog::endl;
+    m_pimpl->tk           = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
+    phtml::WKGTK_run_mode = runMode;
 }
 
 WKGTK_init::WKGTK_init(WKGTK_init &&other) noexcept
@@ -111,7 +116,7 @@ WKGTK_init::WKGTK_init(WKGTK_init &&other) noexcept
 
 icGTK::~icGTK() {
 
-    if (m_pimpl->runMode == XvfbMode::START_STOP) {
+    if (phtml::WKGTK_run_mode == WKGTKRunMode::START_STOP) {
         sd_bus *bus = nullptr;
         if (sd_bus_open_system(&bus) >= 0) {
             std::string state = m_pimpl->check_xvfb(bus, "xvfb_2eservice");
@@ -131,7 +136,7 @@ icGTK::~icGTK() {
  * This uses the Myers singleton approach to ensure we can only call
  * the class once.  It is genius, but I cannot claim credit for it.
  */
-icGTK &icGTK::init(XvfbMode runMode) {
+icGTK &icGTK::init(WKGTKRunMode runMode) {
     static icGTK instance(runMode);
     return instance;
 }
@@ -193,15 +198,23 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         setenv("DISPLAY", ":99", 1);
     }
 
-    if (gtk_init_check(NULL, NULL)) {
-        wkJlog << iclog::loglevel::info << iclog::category::CORE
-               << "WEBKIT2GTK Initialised." << iclog::endl;
+#ifdef USE_WEBKIT_6
+    // GTK4: No arguments, returns boolean
+    if (gtk_init_check()) {
+        wkJlog << iclog::loglevel::info << "WEBKIT 6 (GTK4) Initialised." << iclog::endl;
     } else {
-        wkJlog << iclog::loglevel::error << iclog::category::CORE
-               << "GTK initialization failed"
-               << iclog::endl;
-        throw std::runtime_error("GTK initialization failed");
+        wkJlog << iclog::loglevel::error << "GTK4 initialization failed" << iclog::endl;
+        throw std::runtime_error("GTK4 initialization failed");
     }
+#else
+    // GTK3: Needs NULL pointers for argc/argv compatibility
+    if (gtk_init_check(NULL, NULL)) {
+        wkJlog << iclog::loglevel::info << "WEBKIT 2 (GTK3) Initialised." << iclog::endl;
+    } else {
+        wkJlog << iclog::loglevel::error << "GTK3 initialization failed" << iclog::endl;
+        throw std::runtime_error("GTK3 initialization failed");
+    }
+#endif
 
     return (WKGTK_init());
 }

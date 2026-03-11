@@ -13,6 +13,16 @@
 #define PHTML_API __attribute__((visibility("default")))
 #endif
 
+extern "C" {
+/**
+ * @brief PDF_FreeHTML
+ * @param html The string returned by get_html()
+ *
+ * Safely releases the memory allocated for the HTML string.
+ */
+void PHTML_API PDF_FreeHTML(const char *html);
+}
+
 namespace phtml {
     // Forward decls.
     class PHTML_API html_tree;

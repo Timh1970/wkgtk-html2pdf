@@ -1,6 +1,6 @@
 prefix=/usr
 exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
+libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: wk2gtkpdf
@@ -9,4 +9,4 @@ Version: @VERSION@
 Conflicts:
 Libs: -L${libdir} -lwk2gtkpdf
 Cflags: -I${includedir}
-Requires: webkit2gtk-4.1 libsystemd
+Requires.private: @WEBKIT_PC_NAME@ libpodofo json-c

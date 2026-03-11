@@ -14,16 +14,35 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 CXX = g++
 
+CXXFLAGS +=
 CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden -g
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
 CPPFLAGS +=
-CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
 
 LDFLAGS += -Wl,--version-script=libwk2gtkpdf.map
 
-LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1 libpodofo json-c libsystemd x11 wayland-client)
+LDLIBS += $(shell pkg-config --libs libpodofo )
+LDLIBS += $(shell pkg-config --libs json-c)
+LDLIBS += $(shell pkg-config --libs libsystemd)
+LDLIBS += $(shell pkg-config --libs x11)
+LDLIBS += $(shell pkg-config --libs wayland-client)
+
+
+ifeq ($(USE_WEBKIT_6), 1)
+    # Trixie path: We switch the pkg-config name and add our internal flag
+    CXXFLAGS += -DUSE_WEBKIT_6
+    WEBKIT_NAME = webkitgtk-6.0
+    CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
+    LDLIBS   += $(shell pkg-config --libs $(WEBKIT_NAME))
+else
+    # Legacy path: Your original working setup
+    WEBKIT_NAME = webkit2gtk-4.1
+    CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
+    LDLIBS   += $(shell pkg-config --libs $(WEBKIT_NAME))
+endif
+
 
 LIBDIR ?= /usr/lib
 
@@ -56,6 +75,7 @@ install:
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
 	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
+	sed -i "s|@WEBKIT_PC_NAME@|$(WEBKIT_NAME)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
 
 .PHONY: smoke-install
 smoke-install:

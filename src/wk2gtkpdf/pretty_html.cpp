@@ -457,3 +457,9 @@ void phtml::process_nodes(html_tree *primaryNode) {
         }
     }
 }
+
+void PDF_FreeHTML(const char *html) {
+    if (html) {
+        free((void *)html);
+    }
+}

@@ -3,6 +3,7 @@
 #include "index_pdf.h"
 
 #include <algorithm>
+#include <atomic>
 #include <condition_variable>
 #include <cstring>
 #include <fstream>
@@ -17,14 +18,28 @@
 #include <string>
 #include <thread>
 #include <vector>
+#ifdef USE_WEBKIT_6
+#include <webkit/webkit.h>
+#define WK_EXTERN_PRINT_SETTINGS GtkPrintSettings
+#else
 #include <webkit2/webkit2.h>
+#define WK_EXTERN_PRINT_SETTINGS WebKitPrintSettings
+#endif
 
 extern "C" {
 const char *wk2gtkpdf_version() {
-    return APP_VERSION; // Or "0.0.17"
+    return APP_VERSION; // unknown
 }
 }
 
+/**
+ * @brief js_code
+ *
+ * This is javascript to generate JSON that eventullly be used to overlay the pdf
+ * with anchor points and references as webkit2gtk cannot do this natively.
+ *
+ *
+ */
 namespace phtml {
     const char *js_code_classic =
         "window.indexPositions = []; "
@@ -279,6 +294,13 @@ namespace phtml {
         {nullptr,   0,    0   }
     };
 
+    /******************************************************************************/
+    /*                                                                            */
+    /*                                                                            */
+    /*  PDFprinter PIMPL pointer                                                  */
+    /*                                                                            */
+    /*                                                                            */
+    /******************************************************************************/
     struct PDFprinter_impl {
 
             char                    *in_uri             = nullptr;
@@ -298,6 +320,13 @@ namespace phtml {
             GMainLoop               *main_loop          = nullptr;
             char                    *m_destFile         = nullptr;
 
+            /**
+             * @brief m_processing
+             *
+             * This flag is used explicitly in GUI mode only, in normal
+             * mode the thread and mutexes handle state.
+             */
+            bool                       m_processing = false;
             std::vector<unsigned char> m_binPDF;
 
             PDF_Anchor *m_indexData         = nullptr;
@@ -315,6 +344,9 @@ namespace phtml {
                 delete[] out_uri;
                 delete[] key_file_data;
                 delete[] default_stylesheet;
+                wait_cond  = nullptr;
+                wait_mutex = nullptr;
+                wait_data  = nullptr;
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
                        << "Cleaning up payload."
                        << iclog::endl;
@@ -324,13 +356,25 @@ namespace phtml {
                     PDF_FreeAnchors(list);
                     m_indexData = nullptr;
                 }
-                wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-                       << "Cleaning up class object complete."
+
+                std::ifstream stat_stream("/proc/self/statm", std::ios_base::in);
+                unsigned long size, resident, share, text, lib, data, dt;
+                stat_stream >> size >> resident >> share >> text >> lib >> data >> dt;
+
+                // Page size is usually 4KB
+                long page_size_kb = sysconf(_SC_PAGE_SIZE) / 1024;
+                wkJlog << iclog::loglevel::debug << iclog::category::LIB << iclog_FUNCTION
+                       << "Cleaning up class object complete.\n"
+                       << "MEM: Resident Set Size: " << (resident * page_size_kb) << " KB"
                        << iclog::endl;
             }
 
             void  read_file_to_blob();
             char *read_file(const char *fullPath);
+            void  make_pdf_int();
+            void  make_pdf_ext();
+
+            static int cb_worker(void *p);
             // void  add_index_entry(
             //      const char *id,
             //      double      x,
@@ -361,20 +405,13 @@ namespace phtml {
         if (impl->main_loop) {
             g_main_loop_quit(impl->main_loop);
         }
+
+        impl->m_processing = false;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////
     /**
      * @brief INDEXABLE PDF
-     */
-
-    /**
-     * @brief js_code
-     *
-     * This is javascript to generate JSON that eventullly be used to overlay the pdf
-     * with anchor points and references as webkit2gtk cannot do this natively.
-     *
-     *
      */
 
     // --- EXPERIMENTAL CODE START ---
@@ -514,28 +551,6 @@ namespace phtml {
                     }
                 }
             }
-
-            ///////////////////////////////
-            // json_object_object_foreach(targets, key, val) {
-            //     // Find the matching anchor in our array by ID (the key)
-            //     for (size_t i = 0; i < impl->m_indexDataCount; ++i) {
-            //         PDF_Anchor &s = impl->m_indexData[i];
-            //         if (std::strcmp(s.linkName, key) == 0) {
-            //             const char *title = json_object_get_string(json_object_object_get(val, "title"));
-
-            //             // Map the 'target' (destination) data
-            //             s.target.title       = title ? strdup(title) : strdup("");
-            //             s.target.xPos        = json_object_get_double(json_object_object_get(val, "x"));
-            //             s.target.yPos        = json_object_get_double(json_object_object_get(val, "y"));
-            //             s.target.w           = json_object_get_double(json_object_object_get(val, "width"));
-            //             s.target.h           = json_object_get_double(json_object_object_get(val, "height"));
-            //             s.target.page_width  = json_object_get_double(json_object_object_get(val, "page_width"));
-            //             s.target.page_height = json_object_get_double(json_object_object_get(val, "page_height"));
-            //             s.target.pageNo      = json_object_get_int(json_object_object_get(val, "page"));
-            //             break; // Match found, move to next target
-            //         }
-            //     }
-            // }
         }
 
         for (size_t i = 0; i != impl->m_indexDataCount; ++i) {
@@ -554,8 +569,6 @@ namespace phtml {
         // After extraction, trigger print
         webkit_print_operation_print(impl->m_print_operation);
     }
-
-    // --- EXPERIMENTAL CODE END ---
 
     /**
      * @brief web_view_load_changed
@@ -643,7 +656,7 @@ namespace phtml {
      * @note It is **NOT** threadsafe as Webkit2GTK is event driven and handles
      * calls in a queue.
      */
-    int PDFprinter::cb_worker(void *p) {
+    int PDFprinter_impl::cb_worker(void *p) {
 
         PDFprinter_impl *impl = reinterpret_cast<PDFprinter_impl *>(p);
 
@@ -672,12 +685,30 @@ namespace phtml {
 
         impl->m_print_settings = print_settings;
 
-        WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
-        WebKitWebView            *web_view             = 0;
+        // WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
+        WebKitWebView *web_view = 0;
+
+#ifdef USE_WEBKIT_6
+        // WEBKIT 6.0 (GTK4) WAY:
+        // 1. Create an ephemeral network session (The 6.0 replacement for ephemeral context)
+        WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
+
+        // 2. Create the WebView and link it to the session
+        // webkit_web_view_new_with_context is GONE. Use g_object_new instead.
+        web_view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, NULL));
+
+        // Cleanup the local session ref (the web_view now owns it)
+        g_object_unref(session);
+#else
+        // WEBKIT 4.1 (GTK3) WAY:
+        WebKitWebContext *web_context = webkit_web_context_new_ephemeral();
+        web_view                      = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
+#endif
+
         WebKitUserContentManager *user_content_manager = 0;
         WebKitUserStyleSheet     *user_stylesheet      = 0;
 
-        web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
+        // web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
 
         WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
         webkit_settings_set_enable_javascript(view_settings, false);
@@ -737,29 +768,30 @@ namespace phtml {
                << "Performing PDF generation loop cleanup operations."
                << iclog::endl;
 
+#ifdef USE_WEBKIT_6
+        // GTK4: No gtk_widget_destroy. Unreffing the view triggers its
+        // internal cleanup of the NetworkSession and WebsiteDataManager.
+        if (WEBKIT_IS_WEB_VIEW(web_view)) {
+            g_object_unref(web_view);
+            web_view = nullptr;
+        }
+#else
+        // WebKit 4.1 / GTK3: Manual destruction and context cleanup
+        if (GTK_IS_WIDGET(web_view)) {
+            gtk_widget_destroy(GTK_WIDGET(web_view));
+            web_view = nullptr;
+        }
+        if (web_context) {
+            g_object_unref(web_context);
+            web_context = nullptr;
+        }
+#endif
+
+        // Print Operation cleanup (Identical in both versions)
         if (impl->m_print_operation) {
             g_object_unref(impl->m_print_operation);
             impl->m_print_operation = nullptr;
         }
-        if (impl->m_print_settings) {
-            g_object_unref(impl->m_print_settings);
-            impl->m_print_settings = nullptr;
-        }
-        g_object_unref(G_OBJECT(page_setup));
-        page_setup = nullptr;
-
-        if (impl->default_stylesheet) {
-            g_object_unref(G_OBJECT(user_content_manager));
-            user_content_manager = nullptr;
-            webkit_user_style_sheet_unref(user_stylesheet);
-        }
-
-        gtk_widget_destroy(GTK_WIDGET(web_view));
-        g_object_unref(G_OBJECT(web_view));
-        web_view = nullptr;
-        g_object_unref(G_OBJECT(web_context));
-        g_main_loop_unref(main_loop);
-        main_loop = nullptr;
 
         std::mutex              *wait_mutex = impl->wait_mutex;
         std::condition_variable *wait_cond  = impl->wait_cond;
@@ -780,10 +812,6 @@ namespace phtml {
 
         return G_SOURCE_REMOVE;
     }
-
-    /**************************************/
-    /*  PDFprinter CLASS                  */
-    /**************************************/
 
     static void cstring_cpy(const char *src, char *&dest) {
         delete[] dest;
@@ -846,6 +874,7 @@ namespace phtml {
      * @brief PDFprinter::~PDFprinter
      */
     PDFprinter::~PDFprinter() {
+
         delete m_pimpl;
     }
 
@@ -965,6 +994,9 @@ namespace phtml {
         }
     }
 
+    /******************************************************************************/
+    /*  PARAMETERS METHODS                                                        */
+    /******************************************************************************/
     /**
      * @brief Configure PDF generation with HTML, print settings, and output file.
      *
@@ -1053,6 +1085,9 @@ namespace phtml {
         m_pimpl->html_txt = m_pimpl->read_file(htmlFile ? htmlFile : "");
     }
 
+    /******************************************************************************/
+    /*  LAYOUT                                                                    */
+    /******************************************************************************/
     void PDFprinter::layout(const char *pageSize, const char *orientation) {
 
         // If user passed NULL, we use defaults to prevent a crash
@@ -1078,49 +1113,81 @@ namespace phtml {
 
         std::string printSettings(
             /* clang-format off */
-        "[Print Settings]\n"
-        "quality=high\n"
-        "resolution=300\n"
-        "output-file-format=pdf\n"
-        "printer=Print to File\n"
-        "page-set=all\n"
-        "[Page Setup]\n"
-        "PPDName=" + std::string(sz.sizeName) + "\n"
-        "DisplayName=" + std::string(sz.sizeName) + "\n"
-        "Width=" + std::to_string(sz.shortMM) + "\n"
-        "Height=" + std::to_string(sz.longMM) + "\n"
-        "MarginTop=0\n"
-        "MarginBottom=0\n"
-        "MarginLeft=0\n"
-        "MarginRight=0\n"
-        "Orientation=" + o + "\n"
+            "[Print Settings]\n"
+            "quality=high\n"
+            "resolution=300\n"
+            "output-file-format=pdf\n"
+            "printer=Print to File\n"
+            "page-set=all\n"
+            "[Page Setup]\n"
+            "PPDName=" + std::string(sz.sizeName) + "\n"
+            "DisplayName=" + std::string(sz.sizeName) + "\n"
+            "Width=" + std::to_string(sz.shortMM) + "\n"
+            "Height=" + std::to_string(sz.longMM) + "\n"
+            "MarginTop=0\n"
+            "MarginBottom=0\n"
+            "MarginLeft=0\n"
+            "MarginRight=0\n"
+            "Orientation=" + o + "\n"
             /* clang-format on */
         );
 
         cstring_cpy(printSettings.c_str(), m_pimpl->key_file_data);
     }
 
+    void PDFprinter::layout(unsigned width, unsigned height) {
+        std::string o      = (width > height) ? "landscape" : "portrait";
+        std::string szName = std::to_string(width) + "x" + std::to_string(height) + "mm";
+        // We use a generic PPDName for custom sizes;
+        // Cairo/WebKit just needs the raw dimensions.
+        std::string printSettings(
+            /* clang-format off */
+            "[Print Settings]\n"
+            "quality=high\n"
+            "resolution=300\n"
+            "output-file-format=pdf\n"
+            "printer=Print to File\n"
+            "page-set=all\n"
+            "[Page Setup]\n"
+            "PPDName=Custom\n"
+            "DisplayName=" + std::string(szName) + "\n"
+            "Width=" + std::to_string(width) + "\n"
+            "Height=" + std::to_string(height) + "\n"
+            "MarginTop=0\n"
+            "MarginBottom=0\n"
+            "MarginLeft=0\n"
+            "MarginRight=0\n"
+            "Orientation=" + o + "\n"
+            /* clang-format on */
+        );
+
+        cstring_cpy(printSettings.c_str(), m_pimpl->key_file_data);
+    }
+
+    /******************************************************************************/
+    /*  MAKE PDF                                                                  */
+    /******************************************************************************/
     /**
      * @brief PDFprinter::make_pdf
      *
      * Generate the pdf.
      */
-    void PDFprinter::make_pdf() {
 
+    void PDFprinter_impl::make_pdf_int() {
         // DIRECTLY CREATE THE PDF
-        if (m_pimpl->m_doIndex == index_mode::OFF && m_pimpl->m_destFile) {
+        if (m_doIndex == index_mode::OFF && m_destFile) {
             // Use std::string as a local "calculator" only
             std::string full_uri  = "file://";
-            full_uri             += m_pimpl->m_destFile;
-            cstring_cpy(full_uri.c_str(), m_pimpl->out_uri);
+            full_uri             += m_destFile;
+            cstring_cpy(full_uri.c_str(), out_uri);
         }
 
         std::string tempFile = "/tmp/" + generate_uuid_string();
 
         // POST PROCESS (index or create blob)
-        if ((m_pimpl->m_doIndex != index_mode::OFF) || m_pimpl->m_makeBlob) {
+        if ((m_doIndex != index_mode::OFF) || m_makeBlob) {
             std::string fullUri = "file://" + tempFile;
-            cstring_cpy(fullUri.c_str(), m_pimpl->out_uri);
+            cstring_cpy(fullUri.c_str(), out_uri);
         }
 
         // MAKE THE PDF
@@ -1128,12 +1195,20 @@ namespace phtml {
             std::mutex              wait_mutex;
             std::condition_variable wait_cond;
             int                     wait_data = 0;
+            PDFprinter_impl::wait_cond        = &wait_cond;
+            PDFprinter_impl::wait_mutex       = &wait_mutex;
+            PDFprinter_impl::wait_data        = &wait_data;
 
-            m_pimpl->wait_cond  = &wait_cond;
-            m_pimpl->wait_mutex = &wait_mutex;
-            m_pimpl->wait_data  = &wait_data;
-
-            g_idle_add((GSourceFunc)cb_worker, m_pimpl);
+            // g_idle_add((GSourceFunc)cb_worker, m_pimpl);
+            // Instead of g_idle_add, use a priority-aware invocation
+            wkJlog << iclog::loglevel::debug << "Queueing PDF Generation Job" << iclog::endl;
+            g_main_context_invoke_full(
+                NULL,                   // Use default context
+                G_PRIORITY_HIGH,        // JUMP TO FRONT OF QUEUE
+                (GSourceFunc)cb_worker, // Your worker function
+                this,                   // Data
+                NULL                    // No destroy notify
+            );
 
             {
                 std::unique_lock<std::mutex> lock(wait_mutex);
@@ -1142,22 +1217,79 @@ namespace phtml {
         });
 
         t.join();
+
         wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
                << "Exited PDF genertation process thread." << iclog::endl;
 
         // CREATE INDEX (if requested)
-        if ((m_pimpl->m_doIndex == index_mode::CLASSIC) || (m_pimpl->m_doIndex == index_mode::ENHANCED)) {
+        if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
 
-            index_pdf idx(m_pimpl->m_indexData, m_pimpl->m_indexDataCount, m_pimpl->m_tocPage);
-            idx.create_anchors(tempFile.c_str(), m_pimpl->m_destFile);
+            index_pdf idx(m_indexData, m_indexDataCount, m_tocPage);
+            idx.create_anchors(tempFile.c_str(), m_destFile);
             std::remove(tempFile.c_str());
         }
 
         // GENERATE BLOB (if requested)
-        if (m_pimpl->m_makeBlob) {
-            wkJlog << iclog::loglevel::error << iclog::category::CORE << iclog_FUNCTION
+        if (m_makeBlob) {
+            wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
                    << "Making BLOB" << iclog::endl;
-            m_pimpl->read_file_to_blob();
+            read_file_to_blob();
+        }
+    }
+
+    void PDFprinter_impl::make_pdf_ext() {
+
+        // DIRECTLY CREATE THE PDF
+        if (m_doIndex == index_mode::OFF && m_destFile) {
+            // Use std::string as a local "calculator" only
+            std::string full_uri  = "file://";
+            full_uri             += m_destFile;
+            cstring_cpy(full_uri.c_str(), out_uri);
+        }
+
+        std::string tempFile = "/tmp/" + generate_uuid_string();
+
+        // POST PROCESS (index or create blob)
+        if ((m_doIndex != index_mode::OFF) || m_makeBlob) {
+            std::string fullUri = "file://" + tempFile;
+            cstring_cpy(fullUri.c_str(), out_uri);
+        }
+
+        // MAKE THE PDF
+        m_processing = true;
+
+        // Direct call (already on the correct thread)
+        cb_worker(this);
+
+        // The "ncurses-style" pump to keep the window alive
+        while (m_processing) {
+            g_main_context_iteration(NULL, TRUE);
+        }
+
+        // CREATE INDEX (if requested)
+        if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
+
+            index_pdf idx(m_indexData, m_indexDataCount, m_tocPage);
+            idx.create_anchors(tempFile.c_str(), m_destFile);
+            std::remove(tempFile.c_str());
+        }
+
+        // GENERATE BLOB (if requested)
+        if (m_makeBlob) {
+            wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+                   << "Making BLOB" << iclog::endl;
+            read_file_to_blob();
+        }
+    }
+
+    void PDFprinter::make_pdf() {
+
+        if (WKGTK_run_mode == WKGTKRunMode::UNSET) {
+            // USE THE CALLERS OWN INSTANCE OF THE PRIAMRY GTK CONTEXT (No Thread)
+            return m_pimpl->make_pdf_ext();
+        } else {
+            // USE INTERNAL INSTACNE: threaded version
+            return m_pimpl->make_pdf_int();
         }
     }
 
@@ -1172,6 +1304,8 @@ namespace phtml {
 
             if (blob.data) {
                 std::memcpy(blob.data, m_pimpl->m_binPDF.data(), blob.size);
+            } else {
+                blob.size = 0; // Ensure size is 0 if malloc failed
             }
 
             // Optional: Clear the internal vector if you want to ensure

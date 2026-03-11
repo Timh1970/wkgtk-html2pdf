@@ -91,6 +91,7 @@ namespace phtml {
              */
             PDF_API void     make_pdf();
             PDF_API void     layout(const char *pageSize, const char *oreintation);
+            PDF_API void     layout(unsigned width, unsigned height);
             /**
              * @brief get_blob
              * Returns a Binary Large Object (PDF data).
@@ -114,11 +115,6 @@ namespace phtml {
             PDF_API PDF_AnchorList get_anchors();
 
         private:
-            // This is static so WebKit can call it like a C function.
-            // Because it takes a pointer to a struct ('p'), it doesn't need
-            // to know the size of 'Impl' yet.
-            static int cb_worker(void *p);
-
             // This is the ONLY variable the user's compiler sees.
             // It is 8 bytes. It never changes size.
             PDFprinter_impl *m_pimpl;

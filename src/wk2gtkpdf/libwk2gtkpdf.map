@@ -13,6 +13,7 @@ LIBWK2GTKPDF_1.0 {
         LOG_LEVEL;
         LOG_IGNORE;
         PDF_FreeBlob;
+        PDF_FreeHTML;
     local:
         # Hide everything else, including PoDoFo and std::regex leaks
         *;

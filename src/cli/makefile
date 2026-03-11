@@ -19,18 +19,14 @@ CXXFLAGS := -std=c++20 -Wall -Wextra -O2  -m64 -pedantic-errors -g
 CPPFLAGS += $(USER_INCDIR)
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
-CPPFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
-CPPFLAGS += $(shell pkg-config --cflags webkit2gtk-4.1)
+# CPPFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
 CPPFLAGS += $(shell pkg-config --cflags libsystemd)
-CPPFLAGS += $(shell pkg-config --cflags libpodofo)
-CPPFLAGS += $(shell pkg-config --cflags json-c)
+
 
 LDLIBS += $(USER_LIBDIR)
-LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
-LDLIBS += $(shell pkg-config --libs webkit2gtk-4.1)
-LDLIBS += $(shell pkg-config --libs libsystemd)
-LDLIBS += $(shell pkg-config --libs libpodofo)
-LDLIBS += $(shell pkg-config --libs json-c)
+# LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
+LDLIBS += -lwk2gtkpdf $(shell pkg-config --libs libsystemd)
+
 
 PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin

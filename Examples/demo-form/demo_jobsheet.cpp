@@ -119,12 +119,12 @@ void build_call_table(html_tree *subpage) {
         ->set_node_content("3216549");
 }
 
-void build_faults_table(html_tree &subpage) {
+void build_faults_table(html_tree *subpage) {
     // FAULT TABLE HEADERS
-    html_tree *table = subpage.new_node("table class=fixed");
-    table->new_node("col width=14%");
-    table->new_node("col width=67%");
-    table->new_node("col width=19%");
+    html_tree *table = subpage->new_node("table class=\"fixed\"");
+    table->new_node("col width=\"14%\"");
+    table->new_node("col width=\"67%\"");
+    table->new_node("col width=\"19%\"");
     table->new_node("tr")
         ->new_node("th colspan=\"3\"")
         ->set_node_content("Faults");
@@ -420,6 +420,10 @@ const char *webpage() {
         memcpy(strImg + lenPrefix, encImg, lenImg + 1);
     }
 
+    container->new_node(strImg);
+
+    free(strImg);
+
     // std::cout << strImg << std::endl;
     // TITLE
     container->new_node("h1 class=\"doctitle\"")->set_node_content("DEMO Job sheet");
@@ -430,7 +434,7 @@ const char *webpage() {
 
     contact_table(subpage);
     build_call_table(subpage);
-    build_faults_table(*subpage);
+    build_faults_table(subpage);
     build_parts_table(subpage);
     build_labour_table(subpage);
     build_travel_table(subpage);
@@ -485,8 +489,7 @@ int main() {
         << "demo-form.html and demo-form.pdf have been generated"
         << std::endl;
 
-    free((void *)page);
-    page = nullptr;
+    PDF_FreeHTML(page);
 
     return (0);
 }

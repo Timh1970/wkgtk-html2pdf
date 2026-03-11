@@ -2,8 +2,137 @@ let canvas, ctx;
 const allIssues = new Set();
 const realFonts = [];
 
+/**
+ * Text-Surgical Engine Compensation
+ * Finds all elements with direct text and applies a coefficient to their line-height.
+ */
+async function applyTextShave() {
+    const ua = navigator.userAgent;
+
+    // 1. Determine Coefficient (The "Magic Number")
+    let coef = coefficient();
+
+    if (coef === 1.0) return;
+
+    // 2. Find all elements that actually contain text
+    // We use a TreeWalker to find Text Nodes, then target their parent elements
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+
+    const textElements = new Set();
+    while(walker.nextNode()) {
+        const parent = walker.currentNode.parentElement;
+        // Ignore whitespace-only nodes and script/style tags
+        if (walker.currentNode.textContent.trim().length > 0) {
+            textElements.add(parent);
+        }
+    }
+
+    // 3. Apply the Coefficient to the computed pixel value
+    textElements.forEach(el => {
+        const style = window.getComputedStyle(el);
+
+
+        // 1. Adjust Font Size (The "Footprint")
+        const currentFS = parseFloat(style.fontSize);
+        el.style.fontSize = `${(currentFS * fsCoef).toFixed(4)}px`;
+
+        // 2. Contract the Kerning
+        const currentLS = (style.letterSpacing === 'normal') ? 0 : parseFloat(style.letterSpacing);
+        el.style.letterSpacing = `${(currentLS + lsNudge).toPrecision(6)}px`;
+        // 3. Line height
+        const lh = style.lineHeight;
+
+        let numericLH;
+        if (lh === 'normal') {
+            numericLH = parseFloat(style.fontSize) * 1.2;
+        } else {
+            numericLH = parseFloat(lh);
+        }
+
+        // Apply the coefficient and force it in pixels
+        // This bypasses the engine's internal "normal" rounding logic
+        const adjustedLH = (numericLH * coef).toPrecision(5);
+        el.style.lineHeight = `${adjustedLH}px`;
+    });
+
+    console.log(`📏 Shaved ${textElements.size} text elements by ${coef}`);
+};
+
+
+
+async function initDesignHelper()  {
+    console.log("🛠️ Starting Design Helper...");
+
+    // 1. Wait for fonts (critical for accurate height measurements)
+    await document.fonts.ready;
+
+    // 2. Apply the Shave to all text-containing elements
+    // This rewrites the Computed Style to match WebKitGTK metrics
+    await applyTextShave();
+
+    // 3. Brief "settle" time for the browser to recalculate layout
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    // 4. Initialize the ResizeObserver now that the "shaved" reality is set
+    document.querySelectorAll('.subpage').forEach((subpage) => {
+        observer.observe(subpage);
+    });
+    //
+    console.log("✅ Observer active on corrected metrics.");
+};
+var lsNudge = 0;
+var fsCoef = 1.0;
+// --- Engine Compensation Helper ---
+function coefficient() {
+        const ua = navigator.userAgent;
+        console.log(`User Agent is ${ua}`);
+        // 1. WebKit/WebKitGTK - THE BASELINE
+        // If it's WebKit but NOT Chrome/OPR, it's our "Gold Standard"
+        if (/AppleWebKit/.test(ua) && !/Chrome/.test(ua) && !/OPR/.test(ua)) {
+            console.log("WebKit Browser detected");
+            return 1.0;
+        }
+        // 2. Opera - The Chromium Pioneer
+        if (/OPR/.test(ua) || /Opera/.test(ua)) {
+            console.log("Opera Browser detected");
+            return 0.987; // Opera's specific "magic number"
+        }
+        // 3. Falkon / QtWebEngine
+        if (/QtWebEngine/.test(ua) || /Falkon/.test(ua)) {
+            console.log("Falkon or other QtWebEngine Browser detected");
+            fsCoef = 1.077;
+            lsNudge = 1.0;
+            return 0.89; // Falkon usually needs a lighter touch
+        }
+        // 4. Firefox (Gecko)
+        if (/Firefox/.test(ua)) {
+            console.log("Firefox Browser detected");
+            return 1; // Gecko drift is minimal
+        }
+        // 5. Generic Chromium (Chrome, Edge, Brave)
+        if (/Chrome/.test(ua)) {
+            console.log("Chrome Browser detected");
+            const version = parseInt(ua.match(/Chrome\/(\d+)/)?.[1] || 0);
+            return version >= 140 ? 0.972 : 0.988;
+        }
+        return 1.0; // Fallback for anything else
+}
+
+
+
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+    initDesignHelper();
+
+
+
+
     canvas = document.createElement('canvas');
     canvas.style.display = 'none';
     canvas.width = 500;
@@ -107,10 +236,10 @@ const observer = new ResizeObserver(async (entries) => {
     });
 });
 
-document.querySelectorAll('.subpage').forEach((subpage) => {
-    observer.observe(subpage);
-    // checkDesignIssues(subpage); // This will now check all child elements
-});
+// document.querySelectorAll('.subpage').forEach((subpage) => {
+//     observer.observe(subpage);
+//     // checkDesignIssues(subpage); // This will now check all child elements
+// });
 
 const createDesignStatusPanel = () => {
     const panel = document.createElement('div');
@@ -165,7 +294,7 @@ async function isFontRendered(fontName) {
 
     // Draw with test font + fallback
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = `16px "${fontName}", "monospace`;
+    ctx.font = `16px "${fontName}", "monospace"`;
     ctx.fillText(testString, 10, 50);
     const withFont = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
 
