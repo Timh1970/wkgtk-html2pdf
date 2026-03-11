@@ -18,10 +18,10 @@ override_dh_auto_build:
 
 	# Build WK4 CLI against the library we just put in src/wk2gtkpdf
 	# Build WK4 CLI
-	$(MAKE) -C src/cli \
+	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
-		CPPFLAGS="$(shell pkg-config --cflags webkit2gtk-4.1)" \
+		CPPFLAGS="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf $(shell pkg-config --cflags webkit2gtk-4.1)" \
 		LDLIBS="-L$(CURDIR)/src/wk2gtkpdf -lwk2gtkpdf $(shell pkg-config --libs webkit2gtk-4.1 libsystemd)"
 
 
@@ -38,7 +38,7 @@ override_dh_auto_build:
 	$(MAKE) -C src/wk2gtkpdf install DESTDIR=$(CURDIR)/debian/tmp-wk6 PC_NAME=wk2gtkpdf-6.pc LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
 
 	# Build WK6 CLI against the NEW library
-	$(MAKE) -C src/cli \
+	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
 		CPPFLAGS="$(shell pkg-config --cflags webkitgtk-6.0)" \

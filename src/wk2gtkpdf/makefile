@@ -32,19 +32,14 @@ LDLIBS += $(shell pkg-config --libs wayland-client)
 
 PC_NAME ?= wk2gtkpdf.pc
 
-ifeq ($(USE_WEBKIT_6), 1)
-    # Trixie path: We switch the pkg-config name and add our internal flag
-    CXXFLAGS += -DUSE_WEBKIT_6
+ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
     WEBKIT_NAME = webkitgtk-6.0
-    CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
-    LDLIBS   += $(shell pkg-config --libs $(WEBKIT_NAME))
 else
-    # Legacy path: Your original working setup
     WEBKIT_NAME = webkit2gtk-4.1
-    CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
-    LDLIBS   += $(shell pkg-config --libs $(WEBKIT_NAME))
 endif
 
+CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
+LDLIBS += $(shell pkg-config --libs $(WEBKIT_NAME))
 
 LIBDIR ?= /usr/lib
 
