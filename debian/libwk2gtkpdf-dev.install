@@ -1,3 +1,3 @@
+usr/lib/*/pkgconfig/*.pc
 usr/include/wk2gtkpdf/*
 usr/lib/*/libwk2gtkpdf.so
-usr/lib/*/pkgconfig/wk2gtkpdf.pc

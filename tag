@@ -102,9 +102,15 @@ if [ -f "debian/changelog" ]; then
 fi
 
 
-# This replaces the brittle .symbols file with a stable versioned dependency.
-SHLIBS_FILE="debian/libwk2gtkpdf0.shlibs"
-echo "libwk2gtkpdf 0 libwk2gtkpdf0 (>= ${version})" > "$SHLIBS_FILE"
+# For the GTK3 / WK4 version
+SHLIBS_FILE4="debian/libwk2gtkpdf-4-0.shlibs"
+echo "libwk2gtkpdf-4 0 libwk2gtkpdf-4-0 (>= ${version})" > "$SHLIBS_FILE4"
+
+# For the GTK4 / WK6 version
+SHLIBS_FILE6="debian/libwk2gtkpdf-6-0.shlibs"
+echo "libwk2gtkpdf-6 0 libwk2gtkpdf-6-0 (>= ${version})" > "$SHLIBS_FILE6"
+
+
 
 # Sanitise the debian files
 sed -i 's/[[:space:]]*$//' debian/control debian/changelog debian/rules

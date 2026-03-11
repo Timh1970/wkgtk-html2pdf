@@ -6,12 +6,12 @@ set -e
 # we point the generic command to the one that actually exists.
 
 if [ "$1" = "configure" ]; then
-    # Remove any existing symlink/file to avoid "already exists" errors
     rm -f /usr/bin/wkgtk-html2pdf
 
-    if [ -x /usr/bin/wkgtk-html2pdf-6 ]; then
+    # Just use the filename; the shell will find it in the standard path
+    if command -v wkgtk-html2pdf-6 >/dev/null 2>&1; then
         ln -s wkgtk-html2pdf-6 /usr/bin/wkgtk-html2pdf
-    elif [ -x /usr/bin/wkgtk-html2pdf-4 ]; then
+    elif command -v wkgtk-html2pdf-4 >/dev/null 2>&1; then
         ln -s wkgtk-html2pdf-4 /usr/bin/wkgtk-html2pdf
     fi
 fi

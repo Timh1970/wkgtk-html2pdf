@@ -1,12 +1,9 @@
-include ../../version.conf
+ include ../../version.conf
 
 MAJOR := $(major)
 MINOR := $(minor)
 PATCH := $(patch)
 VERSION := $(MAJOR).$(MINOR).$(PATCH)
-APPLICATION=libwk2gtkpdf.so
-FULLNAME = $(APPLICATION).$(VERSION)
-SONAME = $(APPLICATION).$(MAJOR)
 
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h)
@@ -33,10 +30,16 @@ LDLIBS += $(shell pkg-config --libs wayland-client)
 PC_NAME ?= wk2gtkpdf.pc
 
 ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
+    ENGINE_SUFFIX = -6
     WEBKIT_NAME = webkitgtk-6.0
 else
+    ENGINE_SUFFIX = -4
     WEBKIT_NAME = webkit2gtk-4.1
 endif
+
+APPLICATION = libwk2gtkpdf$(ENGINE_SUFFIX).so
+FULLNAME = $(APPLICATION).$(VERSION)
+SONAME = $(APPLICATION).$(MAJOR)
 
 CPPFLAGS += $(shell pkg-config --cflags $(WEBKIT_NAME))
 LDLIBS += $(shell pkg-config --libs $(WEBKIT_NAME))
@@ -69,13 +72,13 @@ install:
 	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
 
 	# Pkg-config
-	# Pkg-config
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	# Install using the dynamic PC_NAME
 	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
 	# Apply sed directly to the newly named file
 	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
 	sed -i "s|@WEBKIT_PC_NAME@|$(WEBKIT_NAME)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+	sed -i "s|libwk2gtkpdf|wk2gtkpdf$(ENGINE_SUFFIX)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
 
 .PHONY: smoke-install
 smoke-install:
@@ -98,6 +101,9 @@ uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/$(SONAME)
 	rm -f $(DESTDIR)$(LIBDIR)/$(APPLICATION)
 
+	# Remove Pkg-config
+	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+
 	# Remove Headers
 	rm -rf $(DESTDIR)/usr/include/wk2gtkpdf
 
@@ -107,8 +113,6 @@ uninstall:
 	# Only remove the directory if it is empty
 	rmdir --ignore-fail-on-non-empty $(DESTDIR)/usr/share/wk2gtkpdf
 
-	# Remove Pkg-config
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
 
 .PHONY: clean
 clean:

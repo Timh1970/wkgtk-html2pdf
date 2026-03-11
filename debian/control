@@ -35,7 +35,7 @@ Description: Professional headless HTML-to-PDF engine (CLI tool)
  advanced features for professional document automation.
 
 # --- THE GTK3 ENGINE ---
-Package: libwk2gtkpdf4-0
+Package: libwk2gtkpdf-4-0
 Section: libs
 Architecture: any
 Multi-Arch: same
@@ -49,7 +49,7 @@ Description: WebKit-based HTML to PDF rendering library (GTK3 Engine)
  fixed-layout PDF requirements.
 
 # --- THE GTK4 ENGINE ---
-Package: libwk2gtkpdf6-0
+Package: libwk2gtkpdf-6-0
 Section: libs
 Architecture: any
 Multi-Arch: same

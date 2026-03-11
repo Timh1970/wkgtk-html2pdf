@@ -11,22 +11,27 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 USER_INCDIR ?= -I/usr/include/wk2gtkpdf
 USER_LIBDIR ?=
+# ONLY evaluate these if we aren't cleaning
+ifeq (,$(filter clean distclean,$(MAKECMDGOALS)))
 
-CXX = g++
+    # Detect Engine
+    ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
+        ENGINE_SUFFIX = -6
+    else
+        ENGINE_SUFFIX = -4
+    endif
 
-CXXFLAGS := -std=c++20 -Wall -Wextra -O2  -m64 -pedantic-errors -g
+    PC_NAME = wk2gtkpdf$(ENGINE_SUFFIX)
 
-CPPFLAGS += $(USER_INCDIR)
-CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
+    # Use = instead of += for the first assignment to ensure they aren't empty strings
+    # and remove the 2>/dev/null so you can actually see if pkg-config fails
+    PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
+    PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
 
-CPPFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
-CPPFLAGS += $(shell pkg-config --cflags libsystemd)
+    CPPFLAGS += $(USER_INCDIR) $(PKG_CPP)
+    LDLIBS   += $(USER_LIBDIR) $(PKG_LIB)
 
-
-LDLIBS += $(USER_LIBDIR)
-LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
-LDLIBS += $(shell pkg-config --libs libsystemd)
-
+endif
 
 PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin
