@@ -1,0 +1,3 @@
+usr/share/man/*
+usr/share/polkit-1/*
+lib/systemd/system/xvfb.service

@@ -5,58 +5,68 @@ Maintainer: James Hothersall <james@wkgtk-html2pdf.com>
 Homepage: https://wkgtk-html2pdf.com
 Build-Depends: debhelper-compat (= 13),
                libwebkit2gtk-4.1-dev,
+               libwebkitgtk-6.0-dev,
                libpodofo-dev,
                libjson-c-dev,
                pkgconf,
-               libgtk-3-dev,
                libsystemd-dev,
                libx11-dev,
                libwayland-dev
 Standards-Version: 4.7.2
 
+# --- THE COMMON ASSETS (The "Interface" and Shared State) ---
+Package: wkgtk-html2pdf-common
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, xvfb, systemd, adduser
+Description: Professional headless HTML-to-PDF engine (common files)
+ This package provides the engine-agnostic assets, templates, and
+ systemd service units required for the wkgtk-html2pdf suite.
+
+# --- THE CLI TOOL ---
 Package: wkgtk-html2pdf
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, libwk2gtkpdf0 (= ${binary:Version})
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         wkgtk-html2pdf-common (= ${source:Version}),
+         libwk2gtkpdf6-0 | libwk2gtkpdf4-0
 Description: Professional headless HTML-to-PDF engine (CLI tool)
- A modern, feature-rich replacement for wkhtmltopdf built on WebKit2GTK.
+ A modern, feature-rich replacement for wkhtmltopdf built on WebKit.
  This command-line utility provides high-fidelity PDF generation with
  advanced features for professional document automation.
- .
- Key features:
-  * Native PDF Outlines: Uses PoDoFo post-processing to inject true
-    bookmarks and internal link annotations based on document structure.
-  * Headless Automation: Seamlessly manages Xvfb rendering via systemd
-    and Polkit for secure use on servers and CI/CD pipelines.
-  * Design Guard: Built-in validation for CSS overflows and font
-    consistency.
-  * Precise Layouts: Standard ISO and US templates with visual
-    margin-helpers to eliminate unwanted blank page artifacts.
 
-
-Package: libwk2gtkpdf0
+# --- THE GTK3 ENGINE ---
+Package: libwk2gtkpdf4-0
 Section: libs
 Architecture: any
-# Essential for the sd-bus calls and service management
-Depends: ${shlibs:Depends}, ${misc:Depends}, xvfb, systemd, adduser
-Description: WebKit-based HTML to PDF rendering library (shared library)
- This package provides the core shared library used for headless PDF
- generation. It bridges the gap between modern WebKit2GTK rendering and
- the fixed-layout requirements of the PDF format.
- .
- The library includes an integrated system service to manage Xvfb
- instances on-demand, ensuring high availability and concurrency
- safety in non-GUI environments without requiring root privileges.
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, wkgtk-html2pdf-common (= ${source:Version})
+Provides: libwk2gtkpdf-engine
+Conflicts: libwk2gtkpdf6-0
+Replaces: libwk2gtkpdf6-0
+Description: WebKit-based HTML to PDF rendering library (GTK3 Engine)
+ This package provides the legacy WebKit2GTK 4.1 (GTK3) implementation.
+ It bridges the gap between modern WebKit rendering and
+ fixed-layout PDF requirements.
 
-Package: libwk2gtkpdf0-dev
+# --- THE GTK4 ENGINE ---
+Package: libwk2gtkpdf6-0
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}, wkgtk-html2pdf-common (= ${source:Version})
+Provides: libwk2gtkpdf-engine
+Conflicts: libwk2gtkpdf4-0
+Replaces: libwk2gtkpdf4-0
+Description: WebKit-based HTML to PDF rendering library (GTK4 Engine)
+ This package provides the modern WebKitGTK 6.0 (GTK4) implementation.
+
+# --- THE DEVELOPMENT HEADERS ---
+Package: libwk2gtkpdf-dev
 Section: libdevel
 Architecture: any
-Depends: libwk2gtkpdf0 (= ${binary:Version}), ${misc:Depends}
+Multi-Arch: same
+Depends: libwk2gtkpdf6-0 (= ${binary:Version}) | libwk2gtkpdf4-0 (= ${binary:Version}),
+         ${misc:Depends}
 Description: WebKit-based HTML to PDF rendering library (development files)
  This package provides the C++ API for the wkgtk-html2pdf engine.
- It features a stateful DOM construction API (pretty_html) that
- facilitates the generation of well-formed, escaped HTML without
- manual string concatenation.
- .
- Developers can use this API to build complex, variable-data reports,
- manage document indexing via CSS coordinate mapping, and automate
- professional PDF workflows with native bookmarking support.
+ Includes support for both GTK3 and GTK4 engines via Pimpl isolation.

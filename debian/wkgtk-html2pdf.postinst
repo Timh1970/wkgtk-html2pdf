@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+# THE SYMLINK LOGIC:
+# Since we have two binaries (wkgtk-html2pdf-4 and wkgtk-html2pdf-6)
+# we point the generic command to the one that actually exists.
+
+if [ "$1" = "configure" ]; then
+    # Remove any existing symlink/file to avoid "already exists" errors
+    rm -f /usr/bin/wkgtk-html2pdf
+
+    if [ -x /usr/bin/wkgtk-html2pdf-6 ]; then
+        ln -s wkgtk-html2pdf-6 /usr/bin/wkgtk-html2pdf
+    elif [ -x /usr/bin/wkgtk-html2pdf-4 ]; then
+        ln -s wkgtk-html2pdf-4 /usr/bin/wkgtk-html2pdf
+    fi
+fi
+
+#DEBHELPER#
+exit 0
+

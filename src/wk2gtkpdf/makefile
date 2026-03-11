@@ -30,6 +30,8 @@ LDLIBS += $(shell pkg-config --libs x11)
 LDLIBS += $(shell pkg-config --libs wayland-client)
 
 
+PC_NAME ?= wk2gtkpdf.pc
+
 ifeq ($(USE_WEBKIT_6), 1)
     # Trixie path: We switch the pkg-config name and add our internal flag
     CXXFLAGS += -DUSE_WEBKIT_6
@@ -72,10 +74,13 @@ install:
 	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
 
 	# Pkg-config
+	# Pkg-config
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/
-	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
-	sed -i "s|@WEBKIT_PC_NAME@|$(WEBKIT_NAME)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf.pc
+	# Install using the dynamic PC_NAME
+	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+	# Apply sed directly to the newly named file
+	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+	sed -i "s|@WEBKIT_PC_NAME@|$(WEBKIT_NAME)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
 
 .PHONY: smoke-install
 smoke-install:
