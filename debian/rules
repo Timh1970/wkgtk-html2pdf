@@ -11,31 +11,41 @@ export DEB_HOST_MULTIARCH ?= $(shell dpkg-architecture -qDEB_HOST_MULTIARCH)
 
 # 2. Dual Build Logic
 override_dh_auto_build:
-	# --- Build GTK3 / WK4 version ---
-	$(MAKE) -C src/wk2gtkpdf clean
-	$(MAKE) -C src/cli clean
+	# --- Pass 1: GTK3 / WK4 ---
+	# Nuclear clean to start fresh
+	rm -f src/wk2gtkpdf/*.o src/cli/*.o
 	$(MAKE) -C src/wk2gtkpdf USE_WEBKIT_6=0
-	$(MAKE) -C src/wk2gtkpdf install DESTDIR=$(CURDIR)/debian/tmp-wk4 PC_NAME=wk2gtkpdf-4.pc LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
+	# Stash WK4 results
+	$(MAKE) -C src/wk2gtkpdf install \
+		DESTDIR=$(CURDIR)/debian/tmp-wk4 \
+		PC_NAME=wk2gtkpdf-4.pc \
+		LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
 
-	# Build WK4 CLI against libwk2gtkpdf-4
+	# Build CLI against WK4
+	$(MAKE) -C src/cli clean
 	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
-		CPPFLAGS="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf $(shell pkg-config --cflags webkit2gtk-4.1)" \
-		LDLIBS="-L$(CURDIR)/src/wk2gtkpdf -lwk2gtkpdf-4 $(shell pkg-config --libs webkit2gtk-4.1 libsystemd)"
+		LDLIBS="-L$(CURDIR)/src/wk2gtkpdf -lwk2gtkpdf-4 $(shell pkg-config --libs libsystemd)"
 	$(MAKE) -C src/cli install DESTDIR=$(CURDIR)/debian/tmp-wk4
 	mv $(CURDIR)/debian/tmp-wk4/usr/bin/wkgtk-html2pdf $(CURDIR)/debian/tmp-wk4/usr/bin/wkgtk-html2pdf-4
 
-	# --- Build GTK4 / WK6 version ---
-	$(MAKE) -C src/wk2gtkpdf clean
-	$(MAKE) -C src/cli clean
-	$(MAKE) -C src/wk2gtkpdf CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6"
-	$(MAKE) -C src/wk2gtkpdf install USE_WEBKIT_6=1 CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6" \
-		DESTDIR=$(CURDIR)/debian/tmp-wk6 PC_NAME=wk2gtkpdf-6.pc LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
+	# --- Pass 2: GTK4 / WK6 ---
+	# NUCLEAR CLEAN: Essential to prevent -fPIC and namespace errors
+	rm -f src/wk2gtkpdf/*.o src/cli/*.o
+	# Pass the flag into CXXFLAGS so the Makefile findstring triggers
+	$(MAKE) -C src/wk2gtkpdf CXXFLAGS="$(CXXFLAGS) -fPIC -DUSE_WEBKIT_6"
+	# Stash WK6 results
+	$(MAKE) -C src/wk2gtkpdf install \
+		CXXFLAGS="$(CXXFLAGS) -fPIC -DUSE_WEBKIT_6" \
+		DESTDIR=$(CURDIR)/debian/tmp-wk6 \
+		PC_NAME=wk2gtkpdf-6.pc \
+		LIBDIR=/usr/lib/$(DEB_HOST_MULTIARCH)
 
-	# Build WK6 CLI against libwk2gtkpdf-6
+	# Build CLI against WK6
+	$(MAKE) -C src/cli clean
 	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
-		USE_WEBKIT_6=1 CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6" \
+		CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6" \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
 		CPPFLAGS="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf $(shell pkg-config --cflags webkitgtk-6.0)" \
@@ -48,22 +58,19 @@ override_dh_auto_install:
 	:
 
 override_dh_install:
-	# 1. Engines (Note the new package names with hyphens -4-0 and -6-0)
-	dh_install -plibwk2gtkpdf-4-0 --sourcedir=debian/tmp-wk4 usr/lib/*/libwk2gtkpdf-4.so.*
-	dh_install -plibwk2gtkpdf-6-0 --sourcedir=debian/tmp-wk6 usr/lib/*/libwk2gtkpdf-6.so.*
+	# 1. Engines (Now they find -4 and -6 via their respective .install files)
+	dh_install -plibwk2gtkpdf-4-0 --sourcedir=debian/tmp-wk4
+	dh_install -plibwk2gtkpdf-6-0 --sourcedir=debian/tmp-wk6
 
-	# 2. Dev
-	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk4 usr/lib/*/pkgconfig/wk2gtkpdf-4.pc
-	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk6 usr/lib/*/pkgconfig/wk2gtkpdf-6.pc
-	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk6 usr/include/*
-	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk4 usr/lib/*/libwk2gtkpdf-4.so
-	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk6 usr/lib/*/libwk2gtkpdf-6.so
+	# 2. Dev (Grabs versioned .pc and .so from both)
+	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk4
+	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk6
 
-	# 3. Manual PC Symlink
+	# 3. Master PC Symlink
 	mkdir -p debian/libwk2gtkpdf-dev/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig
 	ln -sf wk2gtkpdf-6.pc debian/libwk2gtkpdf-dev/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig/wk2gtkpdf.pc
 
-	# 4. CLI Manual Install
+	# 4. CLI Manual Install (as before)
 	mkdir -p debian/wkgtk-html2pdf/usr/bin
 	cp -a debian/tmp-wk4/usr/bin/wkgtk-html2pdf-4 debian/wkgtk-html2pdf/usr/bin/
 	cp -a debian/tmp-wk6/usr/bin/wkgtk-html2pdf-6 debian/wkgtk-html2pdf/usr/bin/
@@ -78,11 +85,19 @@ override_dh_shlibdeps:
 	dh_shlibdeps -l$(CURDIR)/debian/tmp-wk4/usr/lib/$(DEB_HOST_MULTIARCH):$(CURDIR)/debian/tmp-wk6/usr/lib/$(DEB_HOST_MULTIARCH)
 
 override_dh_auto_clean:
-	$(MAKE) -C src/wk2gtkpdf clean || true
+	$(MAKE) CXXFLAGS="-DUSE_WEBKIT_6" -C src/wk2gtkpdf clean || true
+	$(MAKE) CXXFLAGS="-DUSE_WEBKIT_6" -C src/wk2gtkpdf distclean || true
+	$(MAKE) CXXFLAGS="-DUSE_WEBKIT_6" -C src/cli clean || true
+	$(MAKE) CXXFLAGS="-DUSE_WEBKIT_6" -C src/cli distclean || true
 	$(MAKE) -C src/cli clean || true
-	$(MAKE) -C src/wk2gtkpdf distclean || true
 	$(MAKE) -C src/cli distclean || true
+	$(MAKE) -C src/wk2gtkpdf clean || true
+	$(MAKE) -C src/wk2gtkpdf distclean || true
 	rm -rf $(CURDIR)/debian/tmp-wk4 $(CURDIR)/debian/tmp-wk6 $(CURDIR)/debian/tmp
 
 override_dh_installman:
 	dh_installman -pwkgtk-html2pdf-common
+	# Create symlinks so Lintian sees a manpage for the versioned binaries
+	mkdir -p debian/wkgtk-html2pdf-common/usr/share/man/man1
+	ln -sf wkgtk-html2pdf.1.gz debian/wkgtk-html2pdf-common/usr/share/man/man1/wkgtk-html2pdf-4.1.gz
+	ln -sf wkgtk-html2pdf.1.gz debian/wkgtk-html2pdf-common/usr/share/man/man1/wkgtk-html2pdf-6.1.gz
