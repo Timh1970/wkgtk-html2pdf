@@ -19,7 +19,7 @@ CONFIG -= qt
 #         /usr/include/webkitgtk-4.1
 
 
---- WEB KIT 6.0 / GTK4 ADAPTATION ---
+#--- WEB KIT 6.0 / GTK4 ADAPTATION ---
 INCLUDEPATH += \
     /usr/include/webkitgtk-6.0 \
     /usr/include/gtk-4.0 \
