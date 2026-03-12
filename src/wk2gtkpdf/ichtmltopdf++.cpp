@@ -688,26 +688,42 @@ namespace phtml {
         // WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
         WebKitWebView *web_view = 0;
 
-#ifdef USE_WEBKIT_6
-        // 1. Create the Headless settings first
-        WebKitSettings *settings = webkit_settings_new();
-        webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+        // #ifdef USE_WEBKIT_6
+        //         // 1. Create the Headless settings first
+        //         WebKitSettings *settings = webkit_settings_new();
+        //         webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
-        // 2. Create the ephemeral session
-        WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
+        //         // 2. Create the ephemeral session
+        //         WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
 
-        // 3. Create the WebView with BOTH the Session AND the Settings in one go
-        // This is the only way to ensure the child process starts "quietly"
-        web_view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, "settings", settings, NULL));
+        //         // 3. Create the WebView with BOTH the Session AND the Settings in one go
+        //         // This is the only way to ensure the child process starts "quietly"
+        //         web_view = WEBKIT_WEB_VIEW(
+        //             g_object_new(
+        //                 WEBKIT_TYPE_WEB_VIEW,
+        //                 "network-session",
+        //                 session,
+        //                 "settings",
+        //                 settings,
+        //                 "disable-sandbox",
+        //                 TRUE,
+        //                 NULL
+        //             )
+        //         );
 
-        // Cleanup local refs (the web_view now owns them)
-        g_object_unref(session);
-        g_object_unref(settings);
-#else
-        // WEBKIT 4.1 (GTK3) WAY:
+        //         // Cleanup local refs (the web_view now owns them)
+        //         g_object_unref(session);
+        //         g_object_unref(settings);
+        // #else
+        //         // WEBKIT 4.1 (GTK3) WAY:
+        //         WebKitWebContext *web_context = webkit_web_context_new_ephemeral();
+        //         web_view                      = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
+        // #endif
+
+        // TRY FOR BOTH
         WebKitWebContext *web_context = webkit_web_context_new_ephemeral();
         web_view                      = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
-#endif
+        /////
 
         WebKitUserContentManager *user_content_manager = 0;
         WebKitUserStyleSheet     *user_stylesheet      = 0;
