@@ -1,18 +1,34 @@
 [Unit]
-Description=Virtual Frame Buffer X Server
+Description=Virtual Frame Buffer X Server (wkgtk-html2pdf)
 Documentation=man:wkgtk-html2pdf(1)
 After=network.target
-ConditionPathExists=!/tmp/.X11-unix/X0
-ConditionPathIsSymbolicLink=!/etc/systemd/system/display-manager.service
+# Prevent starting if a Wayland session is already active
+ConditionEnvironment=!WAYLAND_DISPLAY
 
 [Service]
-ExecStart=/usr/bin/Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -nolisten unix -noreset
+# 1. The Environment (Essential for WebKit6/GTK4)
+Environment=DISPLAY=:99
+Environment=WEBKIT_FORCE_SANDBOX=0
+Environment=WEBKIT_DISABLE_COMPOSITING_MODE=1
+Environment=LIBGL_ALWAYS_SOFTWARE=1
+Environment=GSK_RENDERER=cairo
+Environment=GDK_BACKEND=x11
+Environment=GTK_USE_PORTAL=0
+Environment=GDK_DEBUG=no-portals
+
+# 2. The Command
+ExecStart=/usr/bin/Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -noreset
+
+# 3. The Privileges & Access
 User=xvfb
-StandardOutput=journal
-StandardError=journal
-ProtectSystem=strict
+Group=xvfb
+RuntimeDirectory=xvfb
+ReadWritePaths=/tmp/.X11-unix /tmp
+PrivateTmp=no
+
+# 4. Universal Security
+ProtectSystem=full
 ProtectHome=yes
-PrivateTmp=yes
 NoNewPrivileges=yes
 PrivateDevices=yes
 RestrictAddressFamilies=AF_UNIX

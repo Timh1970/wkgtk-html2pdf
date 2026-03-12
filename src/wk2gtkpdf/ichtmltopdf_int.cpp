@@ -202,18 +202,18 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
 #ifdef USE_WEBKIT_6
     // 1. WebKit6 / GTK4:
     // force the Sandbox OFF so it can see the Xvfb display socket.
-    setenv("WEBKIT_FORCE_SANDBOX", "0", 1);
+    // setenv("WEBKIT_FORCE_SANDBOX", "0", 1);
 
-    // 2. Disable the Compositor and Hardware Acceleration for Xvfb.
-    // This stops the EGL/DRI2 warnings from becoming fatal Trace Traps.
-    setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", 1);
+    // // 2. Disable the Compositor and Hardware Acceleration for Xvfb.
+    // // This stops the EGL/DRI2 warnings from becoming fatal Trace Traps.
+    // setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "1", 1);
 
-    setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
+    // setenv("LIBGL_ALWAYS_SOFTWARE", "1", 1);
 
-    // 3. Fake a D-Bus address if one isn't present to stop the "dbus-launch" error.
-    if (!getenv("DBUS_SESSION_BUS_ADDRESS")) {
-        setenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/dev/null", 0);
-    }
+    // // 3. Fake a D-Bus address if one isn't present to stop the "dbus-launch" error.
+    // if (!getenv("DBUS_SESSION_BUS_ADDRESS")) {
+    //     setenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/dev/null", 0);
+    // }
 
     // GTK4: No arguments, returns boolean
     if (gtk_init_check()) {
