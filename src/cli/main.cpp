@@ -127,7 +127,11 @@ int main(int argc, char *argv[]) {
                 break;
             }
             case longopt::OPT_VERSION: {
-                std::cout << appname << " " << APP_VERSION << std::endl;
+
+                std::cout << appname << ": v" << APP_VERSION << std::endl;
+                std::cout << "Engine: " << wk2gtkpdf_version() << std::endl;
+                return 0;
+
                 exit(0);
                 break;
             }

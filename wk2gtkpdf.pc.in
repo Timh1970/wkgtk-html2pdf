@@ -4,9 +4,9 @@ libdir=@LIBDIR@
 includedir=${prefix}/include
 
 Name: wk2gtkpdf
-Description: wk2gtkpdf is a library for creating portable document format (pdf) files from html.
+Description: Professional WebKit-based HTML to PDF rendering library
 Version: @VERSION@
 Conflicts:
-Libs: -L${libdir} -lwk2gtkpdf
+Libs: -L${libdir} -lwk2gtkpdf@ENGINE_SUFFIX@
 Cflags: -I${includedir}
 Requires.private: @WEBKIT_PC_NAME@ libpodofo json-c

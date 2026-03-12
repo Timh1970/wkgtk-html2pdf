@@ -4,9 +4,9 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 CXX = g++
 CXXFLAGS := -std=c++20 -Wall
-CXXFLAGS += $(shell pkg-config --cflags wk2gtkpdf)
+CXXFLAGS += $(shell pkg-config --cflags wk2gtkpdf-6)
 
-LDLIBS += $(shell pkg-config --libs wk2gtkpdf)
+LDLIBS += $(shell pkg-config --libs wk2gtkpdf-6)
 LDLIBS += -Wextra -O2  -m64 -pedantic-errors
 
 hellopdf: $(OBJECTS)

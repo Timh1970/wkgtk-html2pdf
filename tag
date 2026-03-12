@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# NOTE:  Do not use the generic bump script for this application, there are subtle differences.
+
 conf_file="version.conf"
 
 # Default suffix
@@ -74,10 +76,6 @@ EOF
 # Build version string
 name="wk2gtkpdf"
 version="$major.$minor.$patch"
-
-# Replace @VERSION@ in templates
-sed "s/@VERSION@/${version}/" ${name}.pc.in > ./src/${name}/${name}.pc
-
 
 # 1. Prepare the Debian-style date (Required for the footer)
 # Format: Mon, 22 Feb 2026 22:45:00 +0000

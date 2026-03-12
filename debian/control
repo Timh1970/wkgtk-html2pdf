@@ -4,14 +4,14 @@ Priority: optional
 Maintainer: James Hothersall <james@wkgtk-html2pdf.com>
 Homepage: https://wkgtk-html2pdf.com
 Build-Depends: debhelper-compat (= 13),
-               libwebkit2gtk-4.1-dev,
-               libwebkitgtk-6.0-dev,
-               libpodofo-dev,
-               libjson-c-dev,
-               pkgconf,
-               libsystemd-dev,
-               libx11-dev,
-               libwayland-dev
+	libwebkit2gtk-4.1-dev,
+	libwebkitgtk-6.0-dev,
+	libpodofo-dev,
+	libjson-c-dev,
+	pkgconf,
+	libsystemd-dev,
+	libx11-dev,
+	libwayland-dev
 Standards-Version: 4.7.2
 
 # --- THE COMMON ASSETS (The "Interface" and Shared State) ---
@@ -20,19 +20,19 @@ Architecture: all
 Multi-Arch: foreign
 Depends: ${misc:Depends}, xvfb, systemd, adduser
 Description: Professional headless HTML-to-PDF engine (common files)
- This package provides the engine-agnostic assets, templates, and
- systemd service units required for the wkgtk-html2pdf suite.
+	This package provides the engine-agnostic assets, templates, and
+	systemd service units required for the wkgtk-html2pdf suite.
 
 # --- THE CLI TOOL ---
 Package: wkgtk-html2pdf
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
-         wkgtk-html2pdf-common (= ${source:Version}),
-         libwk2gtkpdf6-0 | libwk2gtkpdf4-0
+	wkgtk-html2pdf-common (= ${source:Version}),
+	libwk2gtkpdf-6-0 | libwk2gtkpdf-4-0
 Description: Professional headless HTML-to-PDF engine (CLI tool)
- A modern, feature-rich replacement for wkhtmltopdf built on WebKit.
- This command-line utility provides high-fidelity PDF generation with
- advanced features for professional document automation.
+	A modern, feature-rich replacement for wkhtmltopdf built on WebKit.
+	This command-line utility provides high-fidelity PDF generation with
+	advanced features for professional document automation.
 
 # --- THE GTK3 ENGINE ---
 Package: libwk2gtkpdf-4-0
@@ -41,12 +41,10 @@ Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, wkgtk-html2pdf-common (= ${source:Version})
 Provides: libwk2gtkpdf-engine
-Conflicts: libwk2gtkpdf6-0
-Replaces: libwk2gtkpdf6-0
 Description: WebKit-based HTML to PDF rendering library (GTK3 Engine)
- This package provides the legacy WebKit2GTK 4.1 (GTK3) implementation.
- It bridges the gap between modern WebKit rendering and
- fixed-layout PDF requirements.
+	This package provides the legacy WebKit2GTK 4.1 (GTK3) implementation.
+	It bridges the gap between modern WebKit rendering and
+	fixed-layout PDF requirements.
 
 # --- THE GTK4 ENGINE ---
 Package: libwk2gtkpdf-6-0
@@ -55,17 +53,17 @@ Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}, wkgtk-html2pdf-common (= ${source:Version})
 Provides: libwk2gtkpdf-engine
-Conflicts: libwk2gtkpdf4-0
-Replaces: libwk2gtkpdf4-0
 Description: WebKit-based HTML to PDF rendering library (GTK4 Engine)
- This package provides the modern WebKitGTK 6.0 (GTK4) implementation.
+	This package provides the modern WebKitGTK 6.0 (GTK4) implementation.
+	allowing utilisation of the library from within GTK4 applications.
 
 # --- THE DEVELOPMENT HEADERS ---
 Package: libwk2gtkpdf-dev
 Section: libdevel
 Architecture: any
 Multi-Arch: same
-Depends: Depends: libwk2gtkpdf-6-0 (>= ${source:Version}) | libwk2gtkpdf-4-0 (>= ${source:Version}), ${misc:Depends}
+Depends: libwk2gtkpdf-6-0 (>= ${source:Version}) | libwk2gtkpdf-4-0 (>= ${source:Version}),
+	${misc:Depends}
 Description: WebKit-based HTML to PDF rendering library (development files)
- This package provides the C++ API for the wkgtk-html2pdf engine.
- Includes support for both GTK3 and GTK4 engines via Pimpl isolation.
+	This package provides the C++ API for the wkgtk-html2pdf engine.
+	Includes support for both GTK3 and GTK4 engines via Pimpl isolation.

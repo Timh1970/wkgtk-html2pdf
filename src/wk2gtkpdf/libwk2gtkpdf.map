@@ -8,6 +8,9 @@ LIBWK2GTKPDF_1.0 {
             icGTK::*;
             iclog::*;
             "wkJlog";
+
+            # Global namespace functions that aren't class members
+            phtml::process_nodes*;
         };
         # If you have any raw C functions like PDF_FreeAnchors
         PDF_FreeAnchors;

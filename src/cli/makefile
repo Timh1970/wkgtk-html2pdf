@@ -11,6 +11,9 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 USER_INCDIR ?= -I/usr/include/wk2gtkpdf
 USER_LIBDIR ?=
+
+CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
+
 # ONLY evaluate these if we aren't cleaning
 ifeq (,$(filter clean distclean,$(MAKECMDGOALS)))
 

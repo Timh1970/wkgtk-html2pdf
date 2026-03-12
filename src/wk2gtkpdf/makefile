@@ -26,9 +26,6 @@ LDLIBS += $(shell pkg-config --libs libsystemd)
 LDLIBS += $(shell pkg-config --libs x11)
 LDLIBS += $(shell pkg-config --libs wayland-client)
 
-
-PC_NAME ?= wk2gtkpdf.pc
-
 ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
     ENGINE_SUFFIX = -6
     WEBKIT_NAME = webkitgtk-6.0
@@ -71,14 +68,21 @@ install:
 	install -m 644 ../../templates/*.css $(DESTDIR)/usr/share/wk2gtkpdf/
 	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
 
-	# Pkg-config
+	# Pkg-config (Explicitly define the local shell variable for the recipe)
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	# Install using the dynamic PC_NAME
-	install -m 644 wk2gtkpdf.pc $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
-	# Apply sed directly to the newly named file
-	sed -i "s|@LIBDIR@|$(LIBDIR)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
-	sed -i "s|@WEBKIT_PC_NAME@|$(WEBKIT_NAME)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
-	sed -i "s|libwk2gtkpdf|wk2gtkpdf$(ENGINE_SUFFIX)|g" $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+	@pc_file="wk2gtkpdf$(ENGINE_SUFFIX).pc"; \
+	echo "prefix=/usr" > $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "exec_prefix=\$${prefix}" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "libdir=$(LIBDIR)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "includedir=\$${prefix}/include" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Name: wk2gtkpdf$(ENGINE_SUFFIX)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Description: Professional WebKit-based HTML to PDF engine" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Version: $(VERSION)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Requires.private: $(WEBKIT_NAME) libpodofo json-c" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Libs: -L\$${libdir} -lwk2gtkpdf$(ENGINE_SUFFIX)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
+	echo "Cflags: -I\$${includedir}" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file
+
 
 .PHONY: smoke-install
 smoke-install:
