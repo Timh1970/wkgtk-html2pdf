@@ -688,6 +688,15 @@ namespace phtml {
         // WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
         WebKitWebView *web_view = 0;
 
+        WebKitSettings *settings = webkit_web_view_get_settings(WEBKIT_WEB_VIEW(web_view));
+
+        // This is the "Industrial" kill-switch for Xvfb.
+        // It prevents the auxiliary process from crashing when it can't find EGL/DRI2.
+        webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
+
+        // Optional: Since it's a printer, we don't need smooth scrolling or fancy effects
+        webkit_settings_set_enable_smooth_scrolling(settings, FALSE);
+
 #ifdef USE_WEBKIT_6
         // WEBKIT 6.0 (GTK4) WAY:
         // 1. Create an ephemeral network session (The 6.0 replacement for ephemeral context)

@@ -29,8 +29,8 @@ struct WKGTK_init_impl {
 WKGTK_init::WKGTK_init()
     : m_pimpl(new WKGTK_init_impl()) {
 #ifdef USE_WEBKIT_6
-    // 1. WebKit6 / GTK4 is a "Snotty Cow" about headless environments.
-    // We must force the Sandbox OFF so it can see the Xvfb display socket.
+    // 1. WebKit6 / GTK4:
+    // force the Sandbox OFF so it can see the Xvfb display socket.
     setenv("WEBKIT_FORCE_SANDBOX", "0", 1);
 
     // 2. Disable the Compositor and Hardware Acceleration for Xvfb.
