@@ -688,26 +688,21 @@ namespace phtml {
         // WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
         WebKitWebView *web_view = 0;
 
-        WebKitSettings *settings = webkit_web_view_get_settings(WEBKIT_WEB_VIEW(web_view));
-
-        // This is the "Industrial" kill-switch for Xvfb.
-        // It prevents the auxiliary process from crashing when it can't find EGL/DRI2.
+#ifdef USE_WEBKIT_6
+        // 1. Create the Headless settings first
+        WebKitSettings *settings = webkit_settings_new();
         webkit_settings_set_hardware_acceleration_policy(settings, WEBKIT_HARDWARE_ACCELERATION_POLICY_NEVER);
 
-        // Optional: Since it's a printer, we don't need smooth scrolling or fancy effects
-        webkit_settings_set_enable_smooth_scrolling(settings, FALSE);
-
-#ifdef USE_WEBKIT_6
-        // WEBKIT 6.0 (GTK4) WAY:
-        // 1. Create an ephemeral network session (The 6.0 replacement for ephemeral context)
+        // 2. Create the ephemeral session
         WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
 
-        // 2. Create the WebView and link it to the session
-        // webkit_web_view_new_with_context is GONE. Use g_object_new instead.
-        web_view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, NULL));
+        // 3. Create the WebView with BOTH the Session AND the Settings in one go
+        // This is the only way to ensure the child process starts "quietly"
+        web_view = WEBKIT_WEB_VIEW(g_object_new(WEBKIT_TYPE_WEB_VIEW, "network-session", session, "settings", settings, NULL));
 
-        // Cleanup the local session ref (the web_view now owns it)
+        // Cleanup local refs (the web_view now owns them)
         g_object_unref(session);
+        g_object_unref(settings);
 #else
         // WEBKIT 4.1 (GTK3) WAY:
         WebKitWebContext *web_context = webkit_web_context_new_ephemeral();
