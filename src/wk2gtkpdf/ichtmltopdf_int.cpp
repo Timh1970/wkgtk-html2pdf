@@ -41,6 +41,7 @@ WKGTK_init::WKGTK_init()
 
     WKGTK_init_impl *p   = m_pimpl;
     m_pimpl->glob_Thread = std::thread([p]() {
+        g_set_prgname("ichtmltopdf");
         p->glob_loop = g_main_loop_new(nullptr, false);
         g_idle_add(p->silence_recent_files, nullptr);
         GtkRecentManager *manager = gtk_recent_manager_get_default();
