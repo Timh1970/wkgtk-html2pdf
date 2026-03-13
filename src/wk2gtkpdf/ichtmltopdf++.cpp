@@ -699,7 +699,7 @@ namespace phtml {
 
         // 3. Create the WebView with BOTH the Session AND the Settings in one go
         // This is the only way to ensure the child process starts "quietly"
-        m_view = WEBKIT_WEB_VIEW(
+        web_view = WEBKIT_WEB_VIEW(
             g_object_new(
                 WEBKIT_TYPE_WEB_VIEW,
                 "network-session",
