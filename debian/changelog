@@ -1,3 +1,9 @@
+wkgtk-html2pdf (0.1.8-1) trixie; urgency=medium
+
+  * Automated release: Version 0.1.8
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Fri, 13 Mar 2026 23:21:07 +0000
+
 wkgtk-html2pdf (0.1.7-1) trixie; urgency=medium
 
   * Automated release: Version 0.1.7

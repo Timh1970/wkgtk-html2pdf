@@ -205,12 +205,16 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
 
         sd_bus_unref(bus);
         setenv("DISPLAY", ":99", 1);
+
+        wkJlog << iclog::loglevel::debug << iclog::category::CORE
+               << "Disabling desktop sessions." << iclog::endl;
 #ifdef USE_WEBKIT_6
         gtk_disable_portals();
 #endif
         // TRY AND PREVENT PRINT CALLBACK WAITING FOR A DESKTOP ENVORONMENT ON DEBIAN
         g_setenv("GIO_USE_VFS", "local", TRUE);
         g_setenv("NO_AT_BRIDGE", "1", TRUE);
+        g_setenv("DBUS_SESSION_BUS_ADDRESS", "unix:path=/dev/null", TRUE);
     }
 
     g_set_prgname("ichtmltopdf");
