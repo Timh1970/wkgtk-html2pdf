@@ -11,7 +11,6 @@
 #include <systemd/sd-bus.h>
 #include <thread>
 #include <wayland-client.h>
-#define USE_WEBKIT_6
 #ifdef USE_WEBKIT_6
 #include <webkit/webkit.h>
 #else
@@ -38,7 +37,7 @@ WKGTK_init::WKGTK_init()
             // ... any other setup ...
         }
         p->init_cond.notify_one();
-
+        g_object_set(gtk_settings_get_default(), "gtk-recent-files-enabled", FALSE, NULL);
         // This is the GTK heart; it needs 'p' to stay valid
         g_main_loop_run(p->glob_loop);
     });
