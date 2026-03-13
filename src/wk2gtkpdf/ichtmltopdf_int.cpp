@@ -24,7 +24,17 @@ struct WKGTK_init_impl {
         std::thread             glob_Thread;
         std::mutex              init_mutex;
         std::condition_variable init_cond;
+
+        static gboolean silence_recent_files(gpointer);
 };
+
+gboolean WKGTK_init_impl::silence_recent_files(gpointer) {
+    GtkSettings *settings = gtk_settings_get_default();
+    if (settings) {
+        g_object_set(settings, "gtk-recent-files-enabled", FALSE, NULL);
+    }
+    return G_SOURCE_REMOVE; // Only run once
+}
 
 WKGTK_init::WKGTK_init()
     : m_pimpl(new WKGTK_init_impl()) {
@@ -32,16 +42,13 @@ WKGTK_init::WKGTK_init()
     WKGTK_init_impl *p   = m_pimpl;
     m_pimpl->glob_Thread = std::thread([p]() {
         p->glob_loop = g_main_loop_new(nullptr, false);
+        g_idle_add(p->silence_recent_files, nullptr);
+
         {
             std::lock_guard<std::mutex> lock(p->init_mutex);
             // ... any other setup ...
         }
         p->init_cond.notify_one();
-
-        GtkSettings *settings = gtk_settings_get_default();
-        if (settings) {
-            g_object_set(settings, "gtk-recent-files-enabled", FALSE, NULL);
-        }
         // This is the GTK heart; it needs 'p' to stay valid
         g_main_loop_run(p->glob_loop);
     });
