@@ -208,7 +208,10 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         setenv("DISPLAY", ":99", 1);
     }
 
-#
+    g_setenv("GIO_USE_VFS", "local", TRUE);
+    g_setenv("NO_AT_BRIDGE", "1", TRUE);
+    g_setenv("G_DBUS_CONFIG_FILE", "/dev/null", TRUE);
+
 #ifdef USE_WEBKIT_6
     // 1. WebKit6 / GTK4:
     // force the Sandbox OFF so it can see the Xvfb display socket.
