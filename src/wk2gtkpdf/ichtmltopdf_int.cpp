@@ -38,7 +38,6 @@ gboolean WKGTK_init_impl::silence_recent_files(gpointer) {
 
 WKGTK_init::WKGTK_init()
     : m_pimpl(new WKGTK_init_impl()) {
-    g_set_prgname("ichtmltopdf");
     WKGTK_init_impl *p   = m_pimpl;
     m_pimpl->glob_Thread = std::thread([p]() {
         p->glob_loop = g_main_loop_new(nullptr, false);
@@ -212,6 +211,7 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         setenv("DISPLAY", ":99", 1);
     }
 
+    g_set_prgname("ichtmltopdf");
     g_setenv("GIO_USE_VFS", "local", TRUE);
     g_setenv("NO_AT_BRIDGE", "1", TRUE);
     g_setenv("G_DBUS_CONFIG_FILE", "/dev/null", TRUE);
