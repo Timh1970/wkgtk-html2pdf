@@ -208,9 +208,19 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
     }
 
     g_set_prgname("ichtmltopdf");
+
+    // TRY AND PREVENT PRINT CALLBACK WAITING FOR A DESKTOP ENVORONMENT ON DEBIAN
     g_setenv("GIO_USE_VFS", "local", TRUE);
     g_setenv("NO_AT_BRIDGE", "1", TRUE);
-    g_setenv("G_DBUS_CONFIG_FILE", "/dev/null", TRUE);
+
+    // SHOULD NOT BE NEEDED
+    // g_setenv("G_DBUS_CONFIG_FILE", "/dev/null", TRUE);
+    // FORCE GTK to ignore portals globally for this process.
+    // This must happen BEFORE the first GTK/WebKit call in this thread.
+    g_setenv("GTK_USE_PORTAL", "0", TRUE);
+    g_setenv("GDK_DEBUG", "no-portals", TRUE);
+    // WebKit often ignores GTK_USE_PORTAL for proxy/network settings
+    g_setenv("XDG_PROXIES_DISABLED", "1", TRUE);
 
 #ifdef USE_WEBKIT_6
     // 1. WebKit6 / GTK4:
