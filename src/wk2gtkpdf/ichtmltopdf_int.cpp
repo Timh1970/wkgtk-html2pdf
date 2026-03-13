@@ -43,6 +43,10 @@ WKGTK_init::WKGTK_init()
     m_pimpl->glob_Thread = std::thread([p]() {
         p->glob_loop = g_main_loop_new(nullptr, false);
         g_idle_add(p->silence_recent_files, nullptr);
+        GtkRecentManager *manager = gtk_recent_manager_get_default();
+        if (manager) {
+            g_object_set(G_OBJECT(manager), "filename", "/dev/null", NULL);
+        }
 
         {
             std::lock_guard<std::mutex> lock(p->init_mutex);

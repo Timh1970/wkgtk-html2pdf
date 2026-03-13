@@ -699,15 +699,13 @@ namespace phtml {
 
         // 3. Create the WebView with BOTH the Session AND the Settings in one go
         // This is the only way to ensure the child process starts "quietly"
-        web_view = WEBKIT_WEB_VIEW(
+        m_view = WEBKIT_WEB_VIEW(
             g_object_new(
                 WEBKIT_TYPE_WEB_VIEW,
                 "network-session",
                 session,
                 "settings",
                 settings,
-                "disable-sandbox",
-                TRUE,
                 NULL
             )
         );
@@ -759,7 +757,6 @@ namespace phtml {
         WebKitPrintOperation *print_operation = webkit_print_operation_new(web_view);
         webkit_print_operation_set_print_settings(print_operation, print_settings);
         webkit_print_operation_set_page_setup(print_operation, page_setup);
-        g_object_set(G_OBJECT(print_operation), "track-print-status", FALSE, NULL);
         g_signal_connect(print_operation, "finished", G_CALLBACK(print_finished), impl);
         impl->m_print_operation = print_operation;
 
