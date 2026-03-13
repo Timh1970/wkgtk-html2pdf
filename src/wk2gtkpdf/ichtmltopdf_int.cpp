@@ -37,7 +37,11 @@ WKGTK_init::WKGTK_init()
             // ... any other setup ...
         }
         p->init_cond.notify_one();
-        g_object_set(gtk_settings_get_default(), "gtk-recent-files-enabled", FALSE, NULL);
+
+        GtkSettings *settings = gtk_settings_get_default();
+        if (settings) {
+            g_object_set(settings, "gtk-recent-files-enabled", FALSE, NULL);
+        }
         // This is the GTK heart; it needs 'p' to stay valid
         g_main_loop_run(p->glob_loop);
     });
