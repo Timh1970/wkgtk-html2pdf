@@ -161,22 +161,36 @@ icGTK &icGTK::init(WKGTKRunMode runMode) {
  */
 WKGTK_init icGTK_impl::handle_xvfb_daemon() {
 
-    char *display  = getenv("DISPLAY");
-    char *wayland  = getenv("WAYLAND_DISPLAY");
-    bool  headless = false;
+    char *display           = getenv("DISPLAY");
+    char *wayland           = getenv("WAYLAND_DISPLAY");
+    bool  display_connected = false;
 
     bool has_x11     = (display && display[0] != '\0');
     bool has_wayland = (wayland && wayland[0] != '\0');
 
-    if ((!has_x11 || XOpenDisplay(display) == nullptr) && (!has_wayland || wl_display_connect(wayland) == nullptr)) {
-        headless = true;
-        wkJlog << iclog::loglevel::info << iclog::category::CORE
-               << "No valid display found (X11/Wayland). Preparing headless mode..." << iclog::endl;
+    // 1. Try X11
+    if (has_x11) {
+        Display *x_disp = XOpenDisplay(display);
+        if (x_disp) {
+            display_connected = true;
+            XCloseDisplay(x_disp);
+        }
+    }
+
+    // 2. Try Wayland (if X11 failed)
+    if (!display_connected && has_wayland) {
+        struct wl_display *w_disp = wl_display_connect(wayland);
+        if (w_disp) {
+            display_connected = true;
+            wl_display_disconnect(w_disp);
+        }
     }
 
     sd_bus *bus = nullptr;
 
-    if (headless) {
+    if (!display_connected) {
+        wkJlog << iclog::loglevel::info << iclog::category::CORE
+               << "No valid display found (X11/Wayland). Preparing headless mode..." << iclog::endl;
 
         int r = sd_bus_open_system(&bus);
         if (r < 0) {

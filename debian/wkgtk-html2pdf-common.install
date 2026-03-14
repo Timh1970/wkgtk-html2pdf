@@ -1,3 +1,3 @@
-debian/50-wk2gtkpdf.rules        usr/share/polkit-1/rules.d/
-templates/*.css                  usr/share/wk2gtkpdf/
-overflow-monitor.js              usr/share/wk2gtkpdf/
+50-wk2gtkpdf.rules        usr/share/polkit-1/rules.d/
+templates/*.css           usr/share/wk2gtkpdf/
+overflow-monitor.js       usr/share/wk2gtkpdf/

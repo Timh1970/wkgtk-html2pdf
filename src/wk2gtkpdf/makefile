@@ -106,7 +106,7 @@ uninstall:
 	rm -f $(DESTDIR)$(LIBDIR)/$(APPLICATION)
 
 	# Remove Pkg-config
-	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/$(PC_NAME)
+	rm -f "$(DESTDIR)$(LIBDIR)/pkgconfig/wk2gtkpdf$(ENGINE_SUFFIX).pc"
 
 	# Remove Headers
 	rm -rf $(DESTDIR)/usr/include/wk2gtkpdf

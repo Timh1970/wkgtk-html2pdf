@@ -3,7 +3,6 @@
 #include "index_pdf.h"
 
 #include <algorithm>
-#include <atomic>
 #include <condition_variable>
 #include <cstring>
 #include <fstream>
@@ -42,18 +41,19 @@ const char *wk2gtkpdf_version() {
  *
  */
 namespace phtml {
+
     const char *js_code_classic =
         "window.indexPositions = []; "
         "window.targetData = {}; "
         "window.tocPage; "
 
         "let pages = document.querySelectorAll('.page'); "
-        "   for (let i = 0; i < pages.length; i++) { "
-        "       if (pages[i].hasAttribute(\"toc\")) { "
-        "           window.tocPage = { page: i }; "
-        "           break; "
-        "       } "
-        "   } "
+        "for (let i = 0; i < pages.length; i++) { "
+        "    if (pages[i].hasAttribute(\"toc\")) { "
+        "        window.tocPage = { page: i }; "
+        "        break; "
+        "    } "
+        "} "
 
         "function getPageNumber(element) { "
         "    let current = element; "
@@ -72,55 +72,50 @@ namespace phtml {
         "function getClosestPageElement(element) { "
         "    let current = element; "
         "    while (current) { "
-        "        if (current.classList && current.classList.contains('page')) { "
-        "            return current; "
-        "        } "
+        "        if (current.classList && current.classList.contains('page')) return current; "
         "        current = current.parentElement; "
         "    } "
         "    return null; "
         "} "
 
         "document.querySelectorAll('a').forEach(item => { "
-        "    if (item.hasAttribute('href'))  { "
+        "    if (item.hasAttribute('href')) { "
         "        const href = item.getAttribute('href'); "
         "        if (href.charAt(0) === '#') { "
         "            const id = href.substring(1); "
-        "            const rect = item.getBoundingClientRect(); "
         "            const pageElement = getClosestPageElement(item); "
-        "            if (!pageElement) { "
-        "                return; "
-        "            } "
+        "            if (!pageElement) return; "
         "            const pageRect = pageElement.getBoundingClientRect(); "
-        "            const x = rect.left - pageRect.left; "
-        "            const y = rect.top - pageRect.top; "
-        "            window.indexPositions.push ({ "
-        "                id: id, "
-        "                x: x, "
-        "                y: y, "
-        "                width: rect.width, "
-        "                height: rect.height, "
-        "                page: getPageNumber(item), "
-        "                page_width: pageRect.width, "
-        "                page_height: pageRect.height "
-        "            }); "
-        "        }; "
-        "    }; "
+        "            "
+        "            /* Fix for multi-line classic anchors */ "
+        "            const rects = item.getClientRects(); "
+        "            for (let i = 0; i < rects.length; i++) { "
+        "                const r = rects[i]; "
+        "                window.indexPositions.push({ "
+        "                    id: id, "
+        "                    x: r.left - pageRect.left, "
+        "                    y: r.top - pageRect.top, "
+        "                    width: r.width, "
+        "                    height: r.height, "
+        "                    page: getPageNumber(item), "
+        "                    page_width: pageRect.width, "
+        "                    page_height: pageRect.height "
+        "                }); "
+        "            } "
+        "        } "
+        "    } "
         "}); "
 
         "document.querySelectorAll('[id]').forEach(elt => { "
         "    const id = elt.getAttribute('id'); "
         "    const rect = elt.getBoundingClientRect(); "
         "    const pageElement = getClosestPageElement(elt); "
-        "    if (!pageElement) { "
-        "        return; "
-        "    } "
+        "    if (!pageElement) return; "
         "    const pageRect = pageElement.getBoundingClientRect(); "
-        "    const x = rect.left - pageRect.left; "
-        "    const y = rect.top - pageRect.top; "
         "    window.targetData[id] = { "
         "        title: elt.innerText, "
-        "        x: x, "
-        "        y: y, "
+        "        x: rect.left - pageRect.left, "
+        "        y: rect.top - pageRect.top, "
         "        width: rect.width, "
         "        height: rect.height, "
         "        page: getPageNumber(elt), "
@@ -141,12 +136,12 @@ namespace phtml {
         "window.tocPage; "
 
         "let pages = document.querySelectorAll('.page'); "
-        "   for (let i = 0; i < pages.length; i++) { "
-        "       if (pages[i].hasAttribute(\"toc\")) { "
-        "           window.tocPage = { page: i }; "
-        "           break; "
-        "       } "
-        "   } "
+        "for (let i = 0; i < pages.length; i++) { "
+        "    if (pages[i].hasAttribute(\"toc\")) { "
+        "        window.tocPage = { page: i }; "
+        "        break; "
+        "    } "
+        "} "
 
         "function getPageNumber(element) { "
         "    let current = element; "
@@ -165,9 +160,7 @@ namespace phtml {
         "function getClosestPageElement(element) { "
         "    let current = element; "
         "    while (current) { "
-        "        if (current.classList && current.classList.contains('page')) { "
-        "            return current; "
-        "        } "
+        "        if (current.classList && current.classList.contains('page')) return current; "
         "        current = current.parentElement; "
         "    } "
         "    return null; "
@@ -175,46 +168,41 @@ namespace phtml {
 
         "document.querySelectorAll('.index-item').forEach(item => { "
         "    const link = item.querySelector('a'); "
-        "    if(link) { "
-        "        if (link.hasAttribute('href'))  { "
-        "            const href = link.getAttribute('href'); "
-        "            const id = href.substring(1); "
-        "            const rect = item.getBoundingClientRect(); "
-        "            const pageElement = getClosestPageElement(item); "
-        "                if (!pageElement) { "
-        "                    return; "
-        "                } "
-        "            const pageRect = pageElement.getBoundingClientRect(); "
-        "            const x = rect.left - pageRect.left; "
-        "            const y = rect.top - pageRect.top; "
-        "            window.indexPositions.push ({ "
+        "    if(link && link.hasAttribute('href')) { "
+        "        const href = link.getAttribute('href'); "
+        "        const id = href.substring(1); "
+        "        const pageElement = getClosestPageElement(item); "
+        "        if (!pageElement) return; "
+        "        const pageRect = pageElement.getBoundingClientRect(); "
+        "        "
+        "        /* NEW: Split multi-line links into individual rectangles */ "
+        "        const rects = link.getClientRects(); "
+        "        for (let i = 0; i < rects.length; i++) { "
+        "            const r = rects[i]; "
+        "            window.indexPositions.push({ "
         "                id: id, "
-        "                x: x, "
-        "                y: y, "
-        "                width: rect.width, "
-        "                height: rect.height, "
+        "                x: r.left - pageRect.left, "
+        "                y: r.top - pageRect.top, "
+        "                width: r.width, "
+        "                height: r.height, "
         "                page: getPageNumber(item), "
         "                page_width: pageRect.width, "
         "                page_height: pageRect.height "
         "            }); "
-        "        }; "
-        "    }; "
+        "        } "
+        "    } "
         "}); "
 
         "document.querySelectorAll('[id]').forEach(elt => { "
         "    const id = elt.getAttribute('id'); "
         "    const rect = elt.getBoundingClientRect(); "
         "    const pageElement = getClosestPageElement(elt); "
-        "    if (!pageElement) { "
-        "        return; "
-        "    } "
+        "    if (!pageElement) return; "
         "    const pageRect = pageElement.getBoundingClientRect(); "
-        "    const x = rect.left - pageRect.left; "
-        "    const y = rect.top - pageRect.top; "
         "    window.targetData[id] = { "
         "        title: elt.innerText, "
-        "        x: x, "
-        "        y: y, "
+        "        x: rect.left - pageRect.left, "
+        "        y: rect.top - pageRect.top, "
         "        width: rect.width, "
         "        height: rect.height, "
         "        page: getPageNumber(elt), "
@@ -316,9 +304,10 @@ namespace phtml {
             std::mutex              *wait_mutex         = nullptr;
             std::condition_variable *wait_cond          = nullptr;
             int                     *wait_data          = nullptr;
+            WebKitWebView           *m_web_view         = nullptr;
             GtkPrintSettings        *m_print_settings   = nullptr;
             WebKitPrintOperation    *m_print_operation  = nullptr;
-            GMainLoop               *main_loop          = nullptr;
+            GMainLoop               *m_innerLoop        = nullptr;
             char                    *m_destFile         = nullptr;
 
             /**
@@ -345,6 +334,7 @@ namespace phtml {
                 delete[] out_uri;
                 delete[] key_file_data;
                 delete[] default_stylesheet;
+                delete[] m_destFile;
                 wait_cond  = nullptr;
                 wait_mutex = nullptr;
                 wait_data  = nullptr;
@@ -357,6 +347,26 @@ namespace phtml {
                     PDF_FreeAnchors(list);
                     m_indexData = nullptr;
                 }
+
+                // if (m_innerLoop) {
+                //     g_main_loop_unref(m_innerLoop);
+                //     m_innerLoop = nullptr;
+                // }
+
+                // if (m_print_operation) {
+                //     g_object_unref(m_print_operation);
+                //     m_print_operation = nullptr;
+                // }
+
+                // if (m_web_view) {
+                //     g_object_unref(m_web_view);
+                //     m_web_view = nullptr;
+                // }
+
+                // if (m_print_settings) {
+                //     g_object_unref(m_print_settings);
+                //     m_print_settings = nullptr;
+                // }
 
                 std::ifstream stat_stream("/proc/self/statm", std::ios_base::in);
                 unsigned long size, resident, share, text, lib, data, dt;
@@ -376,16 +386,6 @@ namespace phtml {
             void  make_pdf_ext();
 
             static int cb_worker(void *p);
-            // void  add_index_entry(
-            //      const char *id,
-            //      double      x,
-            //      double      y,
-            //      double      w,
-            //      double      h,
-            //      double      pw,
-            //      double      ph,
-            //      int         pg
-            //  );
     };
 
     /**
@@ -403,8 +403,8 @@ namespace phtml {
                << "Print operation finished." << iclog::endl;
 
         // This is what breaks the loop in cb_worker
-        if (impl->main_loop) {
-            g_main_loop_quit(impl->main_loop);
+        if (impl->m_innerLoop) {
+            g_main_loop_quit(impl->m_innerLoop);
         }
 
         impl->m_processing = false;
@@ -485,24 +485,25 @@ namespace phtml {
         if (indexPositions && json_object_get_type(indexPositions) == json_type_array) {
             size_t len = json_object_array_length(indexPositions);
 
-            // Clear any potential stale data
+            // 1. CLEAR STALE DATA COMPLETELY
             if (impl->m_indexData) {
                 PDF_AnchorList oldList = {impl->m_indexData, impl->m_indexDataCount};
                 PDF_FreeAnchors(oldList);
-                impl->m_indexData = nullptr;
+                impl->m_indexData      = nullptr;
+                impl->m_indexDataCount = 0;
             }
 
-            // Reallocate raw array to match JSON count
-            impl->m_indexData      = (PDF_Anchor *)realloc(impl->m_indexData, sizeof(PDF_Anchor) * len);
+            // 2. ALLOCATE FRESH
             impl->m_indexDataCount = len;
+            // calloc ensures all pointers (linkName, title) start as NULL
+            impl->m_indexData      = (PDF_Anchor *)calloc(len, sizeof(PDF_Anchor));
 
             for (size_t i = 0; i < len; ++i) {
                 json_object *val = json_object_array_get_idx(indexPositions, i);
                 PDF_Anchor  &a   = impl->m_indexData[i];
-                std::memset(&a, 0, sizeof(PDF_Anchor));
 
-                const char *id = json_object_get_string(json_object_object_get(val, "id"));
-                a.linkName     = id ? strdup(id) : strdup("");
+                const char *id_str = json_object_get_string(json_object_object_get(val, "id"));
+                a.linkName         = id_str ? strdup(id_str) : strdup("");
 
                 // Map the 'index' (source) data
                 a.index.xPos        = json_object_get_double(json_object_object_get(val, "x"));
@@ -514,42 +515,31 @@ namespace phtml {
                 a.index.pageNo      = json_object_get_int(json_object_object_get(val, "page"));
 
                 wkJlog << iclog::loglevel::debug << iclog::category::CORE
-                       << "Finding Index: " << (id ? id : "null") << " -> page: " << a.index.pageNo
+                       << "Finding Index: " << (id_str ? id_str : "null") << " -> page: " << a.index.pageNo
                        << " pos: (" << a.index.xPos << "," << a.index.yPos << ")" << iclog::endl;
             }
         }
 
-        // Extract targetData (the target id)
+        // 3. MATCH TARGETS (Using Hash Lookup)
+        // 3. MATCH TARGETS (Using Hash Lookup)
         json_object *targets = json_object_object_get(root, "targetData");
-
         if (targets) {
             for (size_t i = 0; i < impl->m_indexDataCount; ++i) {
-                PDF_Anchor &s = impl->m_indexData[i];
+                PDF_Anchor  &s          = impl->m_indexData[i];
+                json_object *target_val = nullptr;
 
-                // ...and for EACH anchor, we hunt through the JSON targets
-                json_object_object_foreach(targets, key, val) {
-                    if (std::strcmp(s.linkName, key) == 0) {
-                        // MATCH FOUND: This anchor 's' now knows its 'target'
-                        const char *title = json_object_get_string(json_object_object_get(val, "title"));
+                // json-c direct lookup by key (s.linkName) is much faster than a loop
+                if (json_object_object_get_ex(targets, s.linkName, &target_val)) {
+                    const char *t_title = json_object_get_string(json_object_object_get(target_val, "title"));
 
-                        // Clean up any old ghost strings before strdup
-                        if (s.target.title)
-                            free((void *)s.target.title);
-
-                        s.target.title       = title ? strdup(title) : strdup("");
-                        s.target.xPos        = json_object_get_double(json_object_object_get(val, "x"));
-                        s.target.yPos        = json_object_get_double(json_object_object_get(val, "y"));
-                        s.target.w           = json_object_get_double(json_object_object_get(val, "width"));
-                        s.target.h           = json_object_get_double(json_object_object_get(val, "height"));
-                        s.target.page_width  = json_object_get_double(json_object_object_get(val, "page_width"));
-                        s.target.page_height = json_object_get_double(json_object_object_get(val, "page_height"));
-                        s.target.pageNo      = json_object_get_int(json_object_object_get(val, "page"));
-
-                        // WE DO NOT BREAK the outer loop, because another anchor
-                        // might point here too!
-                        // We can break this INNER loop though, as we found the target for 's'.
-                        break;
-                    }
+                    s.target.title       = t_title ? strdup(t_title) : strdup("");
+                    s.target.xPos        = json_object_get_double(json_object_object_get(target_val, "x"));
+                    s.target.yPos        = json_object_get_double(json_object_object_get(target_val, "y"));
+                    s.target.w           = json_object_get_double(json_object_object_get(target_val, "width"));
+                    s.target.h           = json_object_get_double(json_object_object_get(target_val, "height"));
+                    s.target.page_width  = json_object_get_double(json_object_object_get(target_val, "page_width"));
+                    s.target.page_height = json_object_get_double(json_object_object_get(target_val, "page_height"));
+                    s.target.pageNo      = json_object_get_int(json_object_object_get(target_val, "page"));
                 }
             }
         }
@@ -663,9 +653,9 @@ namespace phtml {
 
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
                << "Applying print settings" << iclog::endl;
-        GtkPrintSettings *print_settings = gtk_print_settings_new();
-        gtk_print_settings_set_printer(print_settings, "Print to File");
-        gtk_print_settings_set(print_settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
+        impl->m_print_settings = gtk_print_settings_new();
+        gtk_print_settings_set_printer(impl->m_print_settings, "Print to File");
+        gtk_print_settings_set(impl->m_print_settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
 
         GtkPageSetup *page_setup = gtk_page_setup_new();
 
@@ -677,17 +667,12 @@ namespace phtml {
             GKeyFile *key_file = g_key_file_new();
             g_key_file_load_from_data(key_file, impl->key_file_data, (gsize)-1, G_KEY_FILE_NONE, NULL);
             gtk_page_setup_load_key_file(page_setup, key_file, NULL, NULL);
-            gtk_print_settings_load_key_file(print_settings, key_file, NULL, NULL);
+            gtk_print_settings_load_key_file(impl->m_print_settings, key_file, NULL, NULL);
 
             g_key_file_free(key_file);
         }
 
-        gtk_print_settings_set(print_settings, GTK_PRINT_SETTINGS_OUTPUT_URI, impl->out_uri);
-
-        impl->m_print_settings = print_settings;
-
-        // WebKitWebContext         *web_context          = webkit_web_context_new_ephemeral();
-        WebKitWebView *web_view = 0;
+        gtk_print_settings_set(impl->m_print_settings, GTK_PRINT_SETTINGS_OUTPUT_URI, impl->out_uri);
 
 #ifdef USE_WEBKIT_6
         // 1. Create the Headless settings first
@@ -699,7 +684,7 @@ namespace phtml {
 
         // 3. Create the WebView with BOTH the Session AND the Settings in one go
         // This is the only way to ensure the child process starts "quietly"
-        web_view = WEBKIT_WEB_VIEW(
+        impl->m_web_view = WEBKIT_WEB_VIEW(
             g_object_new(
                 WEBKIT_TYPE_WEB_VIEW,
                 "network-session",
@@ -716,15 +701,10 @@ namespace phtml {
 #else
         // WEBKIT 4.1 (GTK3) WAY:
         WebKitWebContext *web_context = webkit_web_context_new_ephemeral();
-        web_view                      = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
+        impl->m_web_view              = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
 #endif
 
-        WebKitUserContentManager *user_content_manager = 0;
-        WebKitUserStyleSheet     *user_stylesheet      = 0;
-
-        // web_view = WEBKIT_WEB_VIEW(webkit_web_view_new_with_context(web_context));
-
-        WebKitSettings *view_settings = webkit_web_view_get_settings(web_view);
+        WebKitSettings *view_settings = webkit_web_view_get_settings(impl->m_web_view);
         webkit_settings_set_enable_javascript(view_settings, false);
         webkit_settings_set_enable_page_cache(view_settings, false);
         webkit_settings_set_enable_html5_database(view_settings, false);
@@ -735,8 +715,8 @@ namespace phtml {
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
                    << "Injecting style sheet:\n"
                    << impl->default_stylesheet << iclog::endl;
-            user_content_manager = webkit_user_content_manager_new();
-            user_stylesheet      = webkit_user_style_sheet_new(
+            WebKitUserContentManager *user_content_manager = webkit_user_content_manager_new();
+            WebKitUserStyleSheet     *user_stylesheet      = webkit_user_style_sheet_new(
                 impl->default_stylesheet,
                 WEBKIT_USER_CONTENT_INJECT_ALL_FRAMES,
                 WEBKIT_USER_STYLE_LEVEL_USER,
@@ -744,68 +724,87 @@ namespace phtml {
                 NULL
             );
             webkit_user_content_manager_add_style_sheet(user_content_manager, user_stylesheet);
-            g_object_set_property(G_OBJECT(web_view), "user-content-manager", (GValue *)(user_content_manager));
+            if (user_stylesheet) {
+                webkit_user_style_sheet_unref(user_stylesheet);
+            }
+            g_object_set_property(G_OBJECT(impl->m_web_view), "user-content-manager", (GValue *)(user_content_manager));
+            g_object_unref(user_content_manager);
         } else {
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
                    << "Injecting stylesheet: No explicit style sheet set; skipping:"
                    << iclog::endl;
         }
 
-        g_object_ref_sink(G_OBJECT(web_view));
+        // g_object_ref_sink(G_OBJECT(impl->m_web_view));
 
         // WebKit2GTK print is async - schedules work and returns immediately
-        WebKitPrintOperation *print_operation = webkit_print_operation_new(web_view);
-        webkit_print_operation_set_print_settings(print_operation, print_settings);
-        webkit_print_operation_set_page_setup(print_operation, page_setup);
-        g_signal_connect(print_operation, "finished", G_CALLBACK(print_finished), impl);
-        impl->m_print_operation = print_operation;
+        impl->m_print_operation = webkit_print_operation_new(impl->m_web_view);
+        g_object_ref_sink(impl->m_print_operation);
+
+        webkit_print_operation_set_print_settings(impl->m_print_operation, impl->m_print_settings);
+        webkit_print_operation_set_page_setup(impl->m_print_operation, page_setup);
+        g_signal_connect(impl->m_print_operation, "finished", G_CALLBACK(print_finished), impl);
 
         // INNER LOOP: Created here, runs until WebKit2GTK print completes
-        GMainLoop *main_loop = g_main_loop_new(nullptr, false);
-        impl->main_loop      = main_loop;
-        g_signal_connect(web_view, "load-changed", G_CALLBACK(web_view_load_changed), impl);
+        impl->m_innerLoop = g_main_loop_new(nullptr, false);
+        // impl->main_loop      = main_loop;
+        g_signal_connect(impl->m_web_view, "load-changed", G_CALLBACK(web_view_load_changed), impl);
         if (impl->html_txt != NULL) {
             // webkit_web_view_load_html(web_view, impl->html_txt, "file:///tmp");
             wkJlog << iclog::loglevel::debug << iclog::category::CORE
                    << "Setting base URI: " << impl->in_uri
                    << iclog::endl;
-            webkit_web_view_load_html(web_view, impl->html_txt, impl->in_uri);
+            webkit_web_view_load_html(impl->m_web_view, impl->html_txt, impl->in_uri);
             // webkit_web_view_load_html(web_view, impl->html_txt, impl->base_uri);
         } else {
-            webkit_web_view_load_uri(web_view, impl->in_uri);
+            webkit_web_view_load_uri(impl->m_web_view, impl->in_uri);
         }
 
         // Run inner loop until print callback signals completion
-        g_main_loop_run(main_loop);
+        g_main_loop_run(impl->m_innerLoop);
 
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
                << "Performing PDF generation loop cleanup operations."
                << iclog::endl;
 
-#ifdef USE_WEBKIT_6
-        // GTK4: No gtk_widget_destroy. Unreffing the view triggers its
-        // internal cleanup of the NetworkSession and WebsiteDataManager.
-        if (WEBKIT_IS_WEB_VIEW(web_view)) {
-            g_object_unref(web_view);
-            web_view = nullptr;
+        g_signal_handlers_disconnect_by_data(impl->m_print_operation, impl);
+        g_signal_handlers_disconnect_by_data(impl->m_web_view, impl);
+        // --- THE MAGIC CLEANUP BLOCK ---
+
+        // 1. Kill the loop first so nothing else can trigger
+        if (impl->m_innerLoop) {
+            g_main_loop_unref(impl->m_innerLoop);
+            impl->m_innerLoop = nullptr;
         }
-#else
-        // WebKit 4.1 / GTK3: Manual destruction and context cleanup
-        if (GTK_IS_WIDGET(web_view)) {
-            gtk_widget_destroy(GTK_WIDGET(web_view));
-            web_view = nullptr;
+
+        // 2. Kill the Print Operation
+        if (impl->m_print_operation) {
+            g_object_unref(impl->m_print_operation);
+            impl->m_print_operation = nullptr;
         }
+
+// #ifdef USE_WEBKIT_6
+//         // GTK4: No gtk_widget_destroy. Unreffing the view triggers its
+//         // internal cleanup of the NetworkSession and WebsiteDataManager.
+//         if (WEBKIT_IS_WEB_VIEW(impl->m_web_view)) {
+//             g_object_unref(impl->m_web_view);
+//             impl->m_web_view = nullptr;
+//         }
+// #else
+//         // WebKit 4.1 / GTK3: Manual destruction and context cleanup
+//         if (GTK_IS_WIDGET(impl->m_web_view)) {
+//             gtk_widget_destroy(GTK_WIDGET(impl->m_web_view));
+//             impl->m_web_view = nullptr;
+//         }
+#ifndef USE_WEBKIT_6
         if (web_context) {
             g_object_unref(web_context);
             web_context = nullptr;
         }
 #endif
-
-        // Print Operation cleanup (Identical in both versions)
-        if (impl->m_print_operation) {
-            g_object_unref(impl->m_print_operation);
-            impl->m_print_operation = nullptr;
-        }
+        wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
+               << "Cleanup complete; exiting worker callback."
+               << iclog::endl;
 
         std::mutex              *wait_mutex = impl->wait_mutex;
         std::condition_variable *wait_cond  = impl->wait_cond;
@@ -820,16 +819,14 @@ namespace phtml {
             wait_cond->notify_one(); // or notify_all()
         }
 
-        wkJlog << iclog::loglevel::debug << iclog::category::CORE << iclog_FUNCTION
-               << "Cleanup complete; exiting worker callback."
-               << iclog::endl;
-
         return G_SOURCE_REMOVE;
     }
 
     static void cstring_cpy(const char *src, char *&dest) {
-        delete[] dest;
-        dest = nullptr;
+        if (dest != nullptr) {
+            delete[] dest;
+            dest = nullptr;
+        }
 
         if (!src)
             return;

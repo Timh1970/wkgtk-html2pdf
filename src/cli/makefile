@@ -14,15 +14,15 @@ USER_LIBDIR ?=
 
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
-# ONLY evaluate these if we aren't cleaning
-ifeq (,$(filter clean distclean,$(MAKECMDGOALS)))
+# Detect Engine
+ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
+	ENGINE_SUFFIX = -6
+else
+	ENGINE_SUFFIX = -4
+endif
 
-    # Detect Engine
-    ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
-        ENGINE_SUFFIX = -6
-    else
-        ENGINE_SUFFIX = -4
-    endif
+# ONLY evaluate these if we aren't cleaning
+ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
 
     PC_NAME = wk2gtkpdf$(ENGINE_SUFFIX)
 

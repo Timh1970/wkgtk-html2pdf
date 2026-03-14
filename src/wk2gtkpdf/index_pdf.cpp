@@ -6,7 +6,6 @@
 #include <regex>
 #include <string>
 #include <vector>
-
 using std::vector;
 using namespace PoDoFo;
 
@@ -82,7 +81,6 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 
     return levels;
 }
-
 #ifdef PODOFO_010
 
 // Build nested outline structure
