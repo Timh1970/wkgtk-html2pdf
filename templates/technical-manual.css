@@ -1,0 +1,302 @@
+/*
+ *   TECHNICAL DOCUMENTATION BASELINE (DPI-LOCKED)
+ *   Target: 12pt body, 96/72 Parity
+ */
+:root {
+    /* Typographic Scale */
+    --font-size-base: 12pt;
+    --line-height-base: 16pt;
+    /* Prevents "doubling" in dense technical text */
+    /* Semantic Colors (High Contrast for PDF/A) */
+    --color-text: #1a1a1a;
+    --color-heading: #000000;
+    --color-accent: #0056b3;
+    /* IEEE-style blue */
+    --color-border: #dddddd;
+    --font-weight: 400;
+    --font-mono: "Liberation Mono", Menlo, Monaco, Consolas, monospace;
+    --font-sans: "Verdana" system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", , Arial, sans-serif;
+}
+
+/* 1. Global Reset for WebKit Parser */
+* {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+}
+
+body {
+    font-family: Arial;
+    font-weight: 400;
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+    color: var(--color-heading);
+    font-weight: 700;
+    margin-bottom: 9pt;
+}
+
+h1 {
+    font-size: 24pt;
+    border-bottom: 1pt solid var(--color-border);
+    padding-bottom: 5pt;
+    line-height: 30pt;
+}
+
+h2 {
+    font-size: 18pt;
+    margin-top: 18pt;
+    line-height: 22.5pt;
+}
+
+h3 {
+    font-size: 14pt;
+    margin-top: 18pt;
+    color: var(--color-accent);
+    line-height: 18pt;
+}
+
+h4 {
+    font-size: 12pt;
+    margin-top: 18pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+}
+
+/* 3. The Paragraph & Content Block */
+p {
+    margin-bottom: 12pt;
+    text-align: left;
+}
+
+/* 4. Technical Code & Preformatted Blocks */
+code, pre {
+    font-family: var(--font-mono);
+    font-size: 10pt;
+    line-height: 15pt;
+    /* Mono usually looks larger than Sans, so we step down */
+    background-color: #f5f5f5;
+}
+
+pre {
+    padding: 10pt;
+    border: 0.5pt solid var(--color-border);
+    border-radius: 2pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 10pt 0;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* PAGE INDEX                                                                 */
+/*                                                                            */
+/******************************************************************************/
+ul.index {
+    background: inherit;
+    padding: inherit;
+    list-style-type: none;
+}
+
+ol>li.header {
+    line-height: 15pt;
+    margin: 0;
+    padding-left: 6pt;
+    margin-left: 16pt;
+    font-size: 13.5pt;
+    margin-top: 9pt;
+}
+
+li.index-item {
+    margin-top: 4.5pt;
+    margin-bottom: 4.5pt;
+    font-size: 10.5pt;
+}
+
+/* Indent each index level */
+ul.index.leaders {
+    margin-left: 15pt;
+    padding: 0;
+    overflow-x: hidden;
+    list-style: none;
+
+}
+
+ul.index.leaders>li {
+    margin-left: 20pt;
+}
+
+/* ol>li {
+    margin: 0;
+    padding-top: 4.5000pt
+} */
+ol.index {
+    background: none;
+}
+
+ul.leaders li:not(.index-branch):before {
+    float: left;
+    width: 0;
+    white-space: nowrap;
+    content:
+        ". . . . . . . . . . . . . . . . . . . . . . . . . . "
+        ". . . . . . . . . . . . . . . . . . . . . . . . . . "
+        ". . . . . . . . . . . . . . . . . . . . . . . . . . "
+        ". . . . . . . . . . . . . . . . . . . . . . . . . ."
+}
+
+ul.leaders span:first-child {
+    padding-right: 12pt;
+    background: white
+}
+
+ul.leaders span+span {
+    float: right;
+    padding-left: 12pt;
+    background: white
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* AUTOMATIC PAGE NUMBERING                                                   */
+/*                                                                            */
+/******************************************************************************/
+div.page.number {
+    counter-reset: page 0;
+}
+
+/* Increment and Show for the .number page AND every page AFTER it */
+div.page.number,
+div.page.number~div.page {
+    counter-increment: page;
+}
+
+div.page.number div.subpage::after,
+div.page.number~div.page div.subpage::after {
+    display: block;
+    content: " Page - " counter(page);
+    position: absolute;
+    bottom: 0pt;
+    right: 0pt;
+    z-index: 999;
+    padding: 1.5pt 6pt;
+    border-right: 1.5pt solid #23b8e7;
+    font-size: 9pt;
+}
+
+.warning {
+    padding: 6pt 0 6pt 0;
+}
+
+.warning-box {
+    background-color: #fff9db;
+    /* Soft yellow */
+    width: auto;
+    border-left: 3.75pt solid #fcc419;
+    /* Bold yellow stripe */
+    margin: 15pt 0;
+    padding-left: 6pt;
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #856404;
+    font-size: 10.5pt;
+    padding-top: 8pt;
+    padding-bottom: 8pt;
+    padding-right: 12pt;
+}
+
+.warning-box strong {
+    margin-right: 4.5pt;
+    /* This creates the "breathing room" after the word WARNING: */
+    flex-shrink: 0;
+    /* Prevents the label from squishing on narrow pages */
+}
+
+.warning-icon {
+    font-size: 24pt;
+    margin-right: 11.25pt;
+}
+
+.note-box {
+    background-color: #e7f5ff;
+    /* Soft blue */
+    width: auto;
+    border-left: 3.75pt solid #339af0;
+    /* Bold blue stripe */
+    margin: 15pt 0;
+    padding: 7.5pt 11.25pt;
+    /* Added vertical padding for better text flow */
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #1864ab;
+    /* Darker blue for text contrast */
+    font-size: 10.5pt;
+    line-height: 1.4;
+}
+
+.note-icon {
+    font-size: 24pt;
+    margin-right: 11.25pt;
+    /* Optional: use a Unicode Info symbol like 'ℹ' or an icon font */
+}
+
+.important-box {
+    background-color: #f8f0fc;
+    /* Very soft violet */
+    width: auto;
+    border-left: 3.75pt solid #ae3ec9;
+    /* Bold violet stripe */
+    margin: 15pt 0;
+    padding: 8pt 11.25pt;
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #4b0082;
+    /* Deep Indigo for text contrast */
+    font-size: 10.5pt;
+    line-height: 1.4;
+}
+
+.important-box strong {
+    margin-right: 4.5pt;
+    flex-shrink: 0;
+}
+
+.important-icon {
+    font-size: 24pt;
+    margin-right: 11.25pt;
+}
+
+/* High-contrast purple to distinguish from Red Overflow */
+.design-helper-inline-liar {
+    outline: 2pt dashed #ae3ec9 !important;
+    outline-offset: -2pt;
+    position: relative;
+}
+
+.design-helper-inline-liar::after {
+    content: "PX UNIT";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #ae3ec9;
+    color: white;
+    font-size: 7pt;
+    padding: 1pt 3pt;
+    z-index: 10001;
+    pointer-events: none;
+}
+
+/* Remove Underline for print */
+@media print {
+    a {
+        /* color: black !important; */
+        text-decoration-line: none !important;
+    }
+}

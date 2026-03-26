@@ -41,7 +41,7 @@ namespace phtml {
             html_tree *new_node_f(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
             // Pass content as raw pointers
-            void set_node_content(const char *content, bool lineBreak = false, bool escapeSpecialChars = true);
+            void set_node_content(const char *content, bool lineBreak = false, bool escapeSpecialChars = false);
             void set_node_content_f(const char *format, ...) __attribute__((format(printf, 2, 3)));
 
             // Access the final master string as a C-string

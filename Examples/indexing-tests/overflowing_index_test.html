@@ -5,7 +5,8 @@
         <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css">
         <style>
             .index-item {
-                border: 1px solid #000;
+                /* border: 1px solid #000;
+border-color: green; */
                 /* padding: 5px;
                 margin: 10px 0; */
                 overflow-wrap: normal;
@@ -129,6 +130,61 @@
 
     </body>
     <script>
+
+    (function finalSurgicalAudit() {
+        // 1. Cleanup
+        document.querySelectorAll('.surgical-debug-box').forEach(el => el.remove());
+
+        const getClosestPage = (el) => {
+            while (el && !el.classList?.contains('page')) el = el.parentElement;
+            return el;
+        };
+
+        // 2. We iterate the ROW, not the LINK
+        document.querySelectorAll('.index-item').forEach(item => {
+            const link = item.querySelector('a');
+            if (!link) return;
+
+            const id = link.getAttribute('href').substring(1);
+
+            // 3. getClientRects on the BLOCK-LEVEL item is 100% reliable
+            // across Firefox, Chrome, and Webkit.
+            const fragments = item.getClientRects();
+
+            Array.from(fragments).forEach(frag => {
+                // Find the page for this specific row-fragment
+                const probeX = frag.left + 2;
+                const probeY = frag.top + 2;
+                const target = document.elementFromPoint(probeX, probeY);
+                const actualPage = getClosestPage(target) || getClosestPage(item);
+
+                if (!actualPage) return;
+                const pageRect = actualPage.getBoundingClientRect();
+
+                const debugBox = document.createElement('div');
+                debugBox.className = 'surgical-debug-box';
+
+                // 4. No more 'stretching' math needed - the fragment IS the row
+                debugBox.style.cssText = `
+                    position: fixed;
+                    top: ${frag.top}px;
+                    left: ${frag.left}px;
+                    width: ${frag.width}px;
+                    height: ${frag.height}px;
+                    background: rgba(174, 62, 201, 0.2);
+                    border: 1px solid #ae3ec9;
+                    pointer-events: none;
+                    z-index: 100000;
+                `;
+                document.body.appendChild(debugBox);
+            });
+        });
+    })();
+
+
+</script>
+
+<!-- <script>
         console.log("Starting JavaScript extraction");
 
         // Initialize the global objects
@@ -259,6 +315,6 @@
         // Log all page elements for debugging
         console.log("All page elements:", document.querySelectorAll('.page'));
 
-    </script>
+    </script> -->
 
 </html>

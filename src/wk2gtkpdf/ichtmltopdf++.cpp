@@ -166,26 +166,91 @@ namespace phtml {
         "    return null; "
         "} "
 
+        // TESTED TO WORK EXACTLY THE SAME AS THE ONE BELOW, BUT THE ONE BELOW SHOULD BE MORE ACCURATE
+        // NOTE: WHILE IT ONLY SCRAPES UP INDEX-ITEM ELEMENTS IT GETS THE BOUNDING BOX OF THE
+        // CHLID ANCHOR.
+        // "document.querySelectorAll('.index-item').forEach(item => { "
+        // "    const link = item.querySelector('a'); "
+        // "    if(link && link.hasAttribute('href')) { "
+        // "        const href = link.getAttribute('href'); "
+        // "        const id = href.substring(1); "
+        // "        const pageElement = getClosestPageElement(item); "
+        // "        if (!pageElement) return; "
+        // "        const pageRect = pageElement.getBoundingClientRect(); "
+        // "        "
+        // "        /* NEW: Split multi-line links into individual rectangles */ "
+        // "        const rects = link.getClientRects(); "
+        // "        for (let i = 0; i < rects.length; i++) { "
+        // "            const r = rects[i]; "
+        // "            window.indexPositions.push({ "
+        // "                id: id, "
+        // "                x: r.left - pageRect.left, "
+        // "                y: r.top - pageRect.top, "
+        // "                width: r.width, "
+        // "                height: r.height, "
+        // "                page: getPageNumber(item), "
+        // "                page_width: pageRect.width, "
+        // "                page_height: pageRect.height "
+        // "            }); "
+        // "        } "
+        // "    } "
+        // "}); "
+
+        // THIS VERSION DETECTS ANCHORS THAT SPAN MOR THAN ONE PAGE AND FLOW NEXT TO EACH OTHER
+        // NOTE: WHILE IT ONLY SCRAPES UP INDEX-ITEM ELEMENTS IT GETS THE BOUNDING BOX OF THE
+        // CHLID ANCHOR.
+        // "document.querySelectorAll('.index-item').forEach(item => { "
+        // "    const link = item.querySelector('a'); "
+        // "    if(link && link.hasAttribute('href')) { "
+        // "        const href = link.getAttribute('href'); "
+        // "        const id = href.substring(1); "
+        // "        const rects = link.getClientRects(); "
+        // "        "
+        // "        for (let i = 0; i < rects.length; i++) { "
+        // "            const r = rects[i]; "
+        // "            /* Find the page for THIS fragment using the mid-point */ "
+        // "            const midX = r.left + (r.width / 2); "
+        // "            const midY = r.top + (r.height / 2); "
+        // "            const target = document.elementFromPoint(midX, midY); "
+        // "            const actualPage = target ? getClosestPageElement(target) : getClosestPageElement(link); "
+        // "            "
+        // "            if (!actualPage) continue; "
+        // "            const pageRect = actualPage.getBoundingClientRect(); "
+        // "            "
+        // "            window.indexPositions.push({ "
+        // "                id: id, "
+        // "                x: r.left - pageRect.left, "
+        // "                y: r.top - pageRect.top, "
+        // "                width: r.width, "
+        // "                height: r.height, "
+        // "                page: getPageNumber(actualPage), "
+        // "                page_width: pageRect.width, "
+        // "                page_height: pageRect.height "
+        // "            }); "
+        // "        } "
+        // "    } "
+        // "}); "
+
+        // TAKE 3
         "document.querySelectorAll('.index-item').forEach(item => { "
         "    const link = item.querySelector('a'); "
         "    if(link && link.hasAttribute('href')) { "
-        "        const href = link.getAttribute('href'); "
-        "        const id = href.substring(1); "
-        "        const pageElement = getClosestPageElement(item); "
-        "        if (!pageElement) return; "
-        "        const pageRect = pageElement.getBoundingClientRect(); "
-        "        "
-        "        /* NEW: Split multi-line links into individual rectangles */ "
-        "        const rects = link.getClientRects(); "
+        "        const id = link.getAttribute('href').substring(1); "
+        "        /* SURGERY: Map the ROW fragments, not the LINK text */ "
+        "        const rects = item.getClientRects(); "
         "        for (let i = 0; i < rects.length; i++) { "
         "            const r = rects[i]; "
+        "            const target = document.elementFromPoint(r.left + 2, r.top + 2); "
+        "            const actualPage = getClosestPageElement(target) || getClosestPageElement(item); "
+        "            if (!actualPage) continue; "
+        "            const pageRect = actualPage.getBoundingClientRect(); "
         "            window.indexPositions.push({ "
         "                id: id, "
         "                x: r.left - pageRect.left, "
         "                y: r.top - pageRect.top, "
         "                width: r.width, "
         "                height: r.height, "
-        "                page: getPageNumber(item), "
+        "                page: getPageNumber(actualPage), "
         "                page_width: pageRect.width, "
         "                page_height: pageRect.height "
         "            }); "
@@ -229,58 +294,58 @@ namespace phtml {
      * the template_maker utility.
      **/
     static const PaperSize isoPaperSizes[52]{
-        {"A0",      841,  1189},
-        {"A1",      594,  841 },
-        {"A2",      420,  594 },
-        {"A3",      297,  420 },
-        {"A4",      210,  297 },
-        {"A5",      148,  210 },
-        {"A6",      105,  148 },
-        {"A7",      74,   105 },
-        {"A8",      52,   74  },
-        {"A9",      37,   52  },
-        {"A10",     26,   37  },
-        {"SRA0",    900,  1280},
-        {"SRA1",    640,  900 },
-        {"SRA2",    450,  640 },
-        {"SRA3",    320,  450 },
-        {"SRA4",    225,  320 },
-        {"B0",      1000, 1414},
-        {"B1",      707,  1000},
-        {"B2",      500,  707 },
-        {"B3",      353,  500 },
-        {"B4",      250,  353 },
-        {"B5",      176,  250 },
-        {"B6",      125,  176 },
-        {"B7",      88,   125 },
-        {"B8",      62,   88  },
-        {"B9",      44,   62  },
-        {"B10",     31,   44  },
-        {"C0",      917,  1297},
-        {"C1",      648,  917 },
-        {"C2",      458,  648 },
-        {"C3",      324,  458 },
-        {"C4",      229,  324 },
-        {"C5",      162,  229 },
-        {"C6",      114,  162 },
-        {"C7",      81,   114 },
-        {"C8",      57,   81  },
-        {"C9",      40,   57  },
-        {"C10",     28,   40  },
-        {"ANSIA",   216,  279 },
-        {"ANSIB",   279,  432 },
-        {"ANSIC",   432,  559 },
-        {"ANSID",   559,  864 },
-        {"ANSIE",   864,  1118},
-        {"Letter",  216,  279 },
-        {"Legal",   216,  356 },
-        {"Tabloid", 279,  432 },
-        {"ArchA",   229,  305 },
-        {"ArchB",   305,  457 },
-        {"ArchC",   457,  610 },
-        {"ArchD",   610,  914 },
-        {"ArchE",   914,  1219},
-        {nullptr,   0,    0   }
+        {"A0",      841.0222,  1188.8611},
+        {"A1",      593.7250,  841.0222 },
+        {"A2",      419.8056,  593.7250 },
+        {"A3",      296.6861,  419.8056 },
+        {"A4",      209.9028,  296.6861 }, // The magic 296.68 (841pt)
+        {"A5",      147.8139,  209.9028 },
+        {"A6",      104.7750,  147.8139 },
+        {"A7",      73.7306,   104.7750 },
+        {"A8",      51.8583,   73.7306  },
+        {"A9",      36.6889,   51.8583  },
+        {"A10",     25.7528,   36.6889  },
+        {"SRA0",    899.9361,  1279.8778},
+        {"SRA1",    639.9389,  899.9361 },
+        {"SRA2",    449.7917,  639.9389 },
+        {"SRA3",    319.9694,  449.7917 },
+        {"SRA4",    224.7194,  319.9694 },
+        {"B0",      1000.1250, 1413.9306},
+        {"B1",      706.9667,  1000.1250},
+        {"B2",      499.8861,  706.9667 },
+        {"B3",      352.7778,  499.8861 },
+        {"B4",      249.7667,  352.7778 },
+        {"B5",      175.6833,  249.7667 },
+        {"B6",      124.8833,  175.6833 },
+        {"B7",      87.8417,   124.8833 },
+        {"B8",      61.7361,   87.8417  },
+        {"B9",      43.7444,   61.7361  },
+        {"B10",     30.6917,   43.7444  },
+        {"C0",      916.8694,  1296.8111},
+        {"C1",      647.7000,  916.8694 },
+        {"C2",      457.9056,  647.7000 },
+        {"C3",      323.8500,  457.9056 },
+        {"C4",      228.9528,  323.8500 },
+        {"C5",      161.9250,  228.9528 },
+        {"C6",      113.9472,  161.9250 },
+        {"C7",      80.7861,   113.9472 },
+        {"C8",      56.7972,   80.7861  },
+        {"C9",      39.8639,   56.7972  },
+        {"C10",     27.8694,   39.8639  },
+        {"ANSIA",   215.9000,  279.4000 }, // Perfect 612x792pt
+        {"ANSIB",   279.4000,  431.8000 },
+        {"ANSIC",   431.8000,  558.8000 },
+        {"ANSID",   558.8000,  863.6000 },
+        {"ANSIE",   863.6000,  1117.6000},
+        {"Letter",  215.9000,  279.4000 }, // 11 inches exactly
+        {"Legal",   215.9000,  355.6000 }, // 14 inches exactly
+        {"Tabloid", 279.4000,  431.8000 }, // 17 inches exactly
+        {"ArchA",   228.6000,  304.8000 },
+        {"ArchB",   304.8000,  457.2000 },
+        {"ArchC",   457.2000,  609.6000 },
+        {"ArchD",   609.6000,  914.4000 },
+        {"ArchE",   914.4000,  1219.2000},
+        {nullptr,   0.0,       0.0      }
     };
 
     /******************************************************************************/
@@ -347,26 +412,6 @@ namespace phtml {
                     PDF_FreeAnchors(list);
                     m_indexData = nullptr;
                 }
-
-                // if (m_innerLoop) {
-                //     g_main_loop_unref(m_innerLoop);
-                //     m_innerLoop = nullptr;
-                // }
-
-                // if (m_print_operation) {
-                //     g_object_unref(m_print_operation);
-                //     m_print_operation = nullptr;
-                // }
-
-                // if (m_web_view) {
-                //     g_object_unref(m_web_view);
-                //     m_web_view = nullptr;
-                // }
-
-                // if (m_print_settings) {
-                //     g_object_unref(m_print_settings);
-                //     m_print_settings = nullptr;
-                // }
 
                 std::ifstream stat_stream("/proc/self/statm", std::ios_base::in);
                 unsigned long size, resident, share, text, lib, data, dt;
@@ -604,11 +649,12 @@ namespace phtml {
                                                 ? js_code_enhanced
                                                 : js_code_classic;
 
+                    // Evaluate JS to extract positions
+
                     wkJlog << iclog::loglevel::debug << iclog::category::CORE
                            << "Extracting coordinates using:\n"
                            << js_to_run
                            << iclog::endl;
-                    // Evaluate JS to extract positions
                     webkit_web_view_evaluate_javascript(
                         web_view,
                         js_to_run, // script
@@ -658,6 +704,8 @@ namespace phtml {
         gtk_print_settings_set(impl->m_print_settings, GTK_PRINT_SETTINGS_OUTPUT_FILE_FORMAT, "pdf");
 
         GtkPageSetup *page_setup = gtk_page_setup_new();
+        gtk_page_setup_set_top_margin(page_setup, 0, GTK_UNIT_MM);
+        gtk_page_setup_set_bottom_margin(page_setup, 0, GTK_UNIT_MM);
 
         if (impl->key_file_data != NULL) {
 
@@ -1146,9 +1194,14 @@ namespace phtml {
         cstring_cpy(printSettings.c_str(), m_pimpl->key_file_data);
     }
 
-    void PDFprinter::layout(unsigned width, unsigned height) {
-        std::string o      = (width > height) ? "landscape" : "portrait";
-        std::string szName = std::to_string(width) + "x" + std::to_string(height) + "mm";
+    void PDFprinter::layout(double width_mm, double height_mm) {
+        std::string o = (width_mm > height_mm) ? "landscape" : "portrait";
+
+        std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
+
+        double corrected_h = std::floor(height_mm * (72.0 / 25.4)) / (72.0 / 25.4);
+        double corrected_w = std::floor(width_mm * (72.0 / 25.4)) / (72.0 / 25.4);
+
         // We use a generic PPDName for custom sizes;
         // Cairo/WebKit just needs the raw dimensions.
         std::string printSettings(
@@ -1162,8 +1215,8 @@ namespace phtml {
             "[Page Setup]\n"
             "PPDName=Custom\n"
             "DisplayName=" + std::string(szName) + "\n"
-            "Width=" + std::to_string(width) + "\n"
-            "Height=" + std::to_string(height) + "\n"
+            "Width=" + std::to_string(corrected_w) + "\n"
+            "Height=" + std::to_string(corrected_h) + "\n"
             "MarginTop=0\n"
             "MarginBottom=0\n"
             "MarginLeft=0\n"
@@ -1185,6 +1238,7 @@ namespace phtml {
      */
 
     void PDFprinter_impl::make_pdf_int() {
+
         // DIRECTLY CREATE THE PDF
         if (m_doIndex == index_mode::OFF && m_destFile) {
             // Use std::string as a local "calculator" only
@@ -1192,8 +1246,10 @@ namespace phtml {
             full_uri             += m_destFile;
             cstring_cpy(full_uri.c_str(), out_uri);
         }
+        std::string tempFile;
+        // PREVENT TEMP FILE GENERATION OVERRIDE IN TEST MODE
 
-        std::string tempFile = "/tmp/" + generate_uuid_string();
+        tempFile = "/tmp/" + generate_uuid_string();
 
         // POST PROCESS (index or create blob)
         if ((m_doIndex != index_mode::OFF) || m_makeBlob) {
@@ -1233,11 +1289,13 @@ namespace phtml {
                << "Exited PDF genertation process thread." << iclog::endl;
 
         // CREATE INDEX (if requested)
-        if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
+        if (!tempFile.empty()) {
+            if ((m_doIndex == index_mode::CLASSIC) || (m_doIndex == index_mode::ENHANCED)) {
 
-            index_pdf idx(m_indexData, m_indexDataCount, m_tocPage);
-            idx.create_anchors(tempFile.c_str(), m_destFile);
-            std::remove(tempFile.c_str());
+                index_pdf idx(m_indexData, m_indexDataCount, m_tocPage);
+                idx.create_anchors(tempFile.c_str(), m_destFile);
+                std::remove(tempFile.c_str());
+            }
         }
 
         // GENERATE BLOB (if requested)

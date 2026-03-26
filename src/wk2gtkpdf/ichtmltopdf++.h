@@ -47,8 +47,8 @@ struct PDF_Blob {
 
 struct PaperSize {
         const char *sizeName;
-        unsigned    shortMM;
-        unsigned    longMM;
+        double      shortMM;
+        double      longMM;
 };
 
 PDF_API const char *wk2gtkpdf_version();
@@ -62,7 +62,7 @@ PDF_API void        PDF_FreeBlob(PDF_Blob blob);
 enum class index_mode {
     OFF,
     CLASSIC,
-    ENHANCED
+    ENHANCED,
 };
 
 namespace phtml {
@@ -91,7 +91,7 @@ namespace phtml {
              */
             PDF_API void     make_pdf();
             PDF_API void     layout(const char *pageSize, const char *oreintation);
-            PDF_API void     layout(unsigned width, unsigned height);
+            PDF_API void     layout(double width, double height);
             /**
              * @brief get_blob
              * Returns a Binary Large Object (PDF data).

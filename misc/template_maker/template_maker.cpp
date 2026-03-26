@@ -1,9 +1,10 @@
 #include <fstream>
 #include <getopt.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
-#include <vector>
-void create_stylesheet(std::string name, int w, int h, std::string orientation, int margin);
+
+void create_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV);
 
 /**
  * @brief main
@@ -13,9 +14,10 @@ void create_stylesheet(std::string name, int w, int h, std::string orientation, 
  */
 int main(int argc, char *argv[]) {
 
-    int margin       = 6;
-    int value        = 0;
-    int option_index = 0;
+    double marginH      = 16.9;
+    double marginV      = 15.8;
+    int    value        = 0;
+    int    option_index = 0;
 
     static struct option long_options[] = {
         {"help",   no_argument,       0, 'h'},
@@ -36,7 +38,8 @@ int main(int argc, char *argv[]) {
                         exit(1);
                     }
                 }
-                margin = atoi(optarg);
+                marginH = atoi(optarg);
+                marginV = atoi(optarg);
             } break;
             case ':': // Missing argument
                 std::cout << "ERROR: Option -" << (char)optopt << " requires an argument." << std::endl;
@@ -49,172 +52,146 @@ int main(int argc, char *argv[]) {
     }
 
     struct PaperSize {
-            std::string sizeName;
-            uint        shortMM;
-            uint        longMM;
+            const char *sizeName;
+            double      shortMM;
+            double      longMM;
     };
 
-    const std::vector<PaperSize> isoPaperSizes = {
-        {"A0",      841,  1189},
-        {"A1",      594,  841 },
-        {"A2",      420,  594 },
-        {"A3",      297,  420 },
-        {"A4",      210,  297 },
-        {"A5",      148,  210 },
-        {"A6",      105,  148 },
-        {"A7",      74,   105 },
-        {"A8",      52,   74  },
-        {"A9",      37,   52  },
-        {"A10",     26,   37  },
-        {"SRA0",    900,  1280},
-        {"SRA1",    640,  900 },
-        {"SRA2",    450,  640 },
-        {"SRA3",    320,  450 },
-        {"SRA4",    225,  320 },
-        {"B0",      1000, 1414},
-        {"B1",      707,  1000},
-        {"B2",      500,  707 },
-        {"B3",      353,  500 },
-        {"B4",      250,  353 },
-        {"B5",      176,  250 },
-        {"B6",      125,  176 },
-        {"B7",      88,   125 },
-        {"B8",      62,   88  },
-        {"B9",      44,   62  },
-        {"B10",     31,   44  },
-        {"C0",      917,  1297},
-        {"C1",      648,  917 },
-        {"C2",      458,  648 },
-        {"C3",      324,  458 },
-        {"C4",      229,  324 },
-        {"C5",      162,  229 },
-        {"C6",      114,  162 },
-        {"C7",      81,   114 },
-        {"C8",      57,   81  },
-        {"C9",      40,   57  },
-        {"C10",     28,   40  },
-        {"ANSIA",   216,  279 },
-        {"ANSIB",   279,  432 },
-        {"ANSIC",   432,  559 },
-        {"ANSID",   559,  864 },
-        {"ANSIE",   864,  1118},
-        {"Letter",  216,  279 },
-        {"Legal",   216,  356 },
-        {"Tabloid", 279,  432 },
-        {"ArchA",   229,  305 },
-        {"ArchB",   305,  457 },
-        {"ArchC",   457,  610 },
-        {"ArchD",   610,  914 },
-        {"ArchE",   914,  1219}
+    static const PaperSize isoPaperSizes[52]{
+        {"A0",      841.0222,  1188.8611},
+        {"A1",      593.7250,  841.0222 },
+        {"A2",      419.8056,  593.7250 },
+        {"A3",      296.6861,  419.8056 },
+        {"A4",      209.9028,  296.6861 }, // The magic 296.68 (841pt)
+        {"A5",      147.8139,  209.9028 },
+        {"A6",      104.7750,  147.8139 },
+        {"A7",      73.7306,   104.7750 },
+        {"A8",      51.8583,   73.7306  },
+        {"A9",      36.6889,   51.8583  },
+        {"A10",     25.7528,   36.6889  },
+        {"SRA0",    899.9361,  1279.8778},
+        {"SRA1",    639.9389,  899.9361 },
+        {"SRA2",    449.7917,  639.9389 },
+        {"SRA3",    319.9694,  449.7917 },
+        {"SRA4",    224.7194,  319.9694 },
+        {"B0",      1000.1250, 1413.9306},
+        {"B1",      706.9667,  1000.1250},
+        {"B2",      499.8861,  706.9667 },
+        {"B3",      352.7778,  499.8861 },
+        {"B4",      249.7667,  352.7778 },
+        {"B5",      175.6833,  249.7667 },
+        {"B6",      124.8833,  175.6833 },
+        {"B7",      87.8417,   124.8833 },
+        {"B8",      61.7361,   87.8417  },
+        {"B9",      43.7444,   61.7361  },
+        {"B10",     30.6917,   43.7444  },
+        {"C0",      916.8694,  1296.8111},
+        {"C1",      647.7000,  916.8694 },
+        {"C2",      457.9056,  647.7000 },
+        {"C3",      323.8500,  457.9056 },
+        {"C4",      228.9528,  323.8500 },
+        {"C5",      161.9250,  228.9528 },
+        {"C6",      113.9472,  161.9250 },
+        {"C7",      80.7861,   113.9472 },
+        {"C8",      56.7972,   80.7861  },
+        {"C9",      39.8639,   56.7972  },
+        {"C10",     27.8694,   39.8639  },
+        {"ANSIA",   215.9000,  279.4000 }, // Perfect 612x792pt
+        {"ANSIB",   279.4000,  431.8000 },
+        {"ANSIC",   431.8000,  558.8000 },
+        {"ANSID",   558.8000,  863.6000 },
+        {"ANSIE",   863.6000,  1117.6000},
+        {"Letter",  215.9000,  279.4000 }, // 11 inches exactly
+        {"Legal",   215.9000,  355.6000 }, // 14 inches exactly
+        {"Tabloid", 279.4000,  431.8000 }, // 17 inches exactly
+        {"ArchA",   228.6000,  304.8000 },
+        {"ArchB",   304.8000,  457.2000 },
+        {"ArchC",   457.2000,  609.6000 },
+        {"ArchD",   609.6000,  914.4000 },
+        {"ArchE",   914.4000,  1219.2000},
+        {nullptr,   0.0,       0.0      }
     };
-    for (const auto &size : isoPaperSizes) {
-        create_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait", margin);
-    }
-    for (const auto &size : isoPaperSizes) {
-        create_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape", margin);
+    for (const PaperSize &size : isoPaperSizes) {
+        if (size.sizeName == nullptr)
+            break;
+        // Portrait
+        create_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait", marginH, marginV);
+        // Landscape (Swap the Point-aligned dimensions)
+        create_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape", marginH, marginV);
     }
 
     return (0);
 }
 
-void create_stylesheet(std::string name, int w, int h, std::string orientation, int margin) {
-
-    std::cout << "Generating stylesheet for " << name << ": " << w << " x " << h << std::endl;
-
-    std::string css = R"(/******************************************************************************/
-/*                                                                            */
-/*  PDF LAYOUT CONFIGURATION                                                  */
-/*  ------------------------                                                  */
-/*  The only setting that should be adjusted in this file is the page margin  */
-/*                                                                            */
-/*      - Sizes are in mm                                                     */
-/*      - If you require different margins then you should make copies of     */
-/*        this style sheet, retain them in this folder, and link them as      */
-/*        needed.                                                             */
-/*                                                                            */
-/******************************************************************************/
-
-:root {
-    --page-width: )" + std::to_string(w)
-                      + R"(;
-    --page-height: )" + std::to_string(h)
-                      + R"(;
-    --page-margin: )" + std::to_string(margin)
-                      + R"(;
+template <typename... Args>
+std::string build_string(Args &&...args) {
+    std::ostringstream oss;
+    // Set fixed precision for our high-precision doubles
+    oss << std::fixed << std::setprecision(4);
+    (oss << ... << args);
+    return oss.str();
 }
 
-@page {
-    size: var(--page-width)mm var(--page-height)mm;
-    margin: 0;
-}
+void create_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV) {
 
-/* End of layout configuration */
+    std::cout << "Generating stylesheet for " << name << " (" << orientation << ")" << std::endl;
 
+    std::string css = build_string(
+        /* clang-format off */
+        ":root {\n",
+        "    --page-width: ", w, ";\n",
+        "    --page-height: ", h, ";\n",
+        "    --page-margin-h: ", marginH, ";\n",
+        "    --page-margin-v: ", marginV, ";\n",
+        "}\n\n",
+        "* { box-sizing: border-box; margin: 0; padding: 0; }\n\n",
+        "@page {\n",
+        "    size: calc(var(--page-width) * 1mm) calc(var(--page-height) * 1mm);\n",
+        "    margin: 0;\n",
+        "}\n\n",
+        "html, body {\n",
+        "    width: calc(var(--page-width) * 1mm);\n",
+        "    margin: 0; padding: 0;\n",
+        "    background-color: transparent !important;\n",
+        "}\n\n",
+        ".page {\n",
+        "    width: calc(var(--page-width) * 1mm);\n",
+         /* The Safety Shave (0.1mm) prevents ghosting */
+        "    height: calc((var(--page-height) * 0.998) * 1mm);\n",
+        "    background-color: white !important;\n",
+        "    display: grid;\n",
+        /* The Grid Cage: [Margin] [Content] [Margin] */
+        "    grid-template-columns: calc(var(--page-margin-h) * 1mm) 1fr calc(var(--page-margin-h) * 1mm);\n",
+        "    grid-template-rows: calc(var(--page-margin-v) * 1mm) 1fr calc(var(--page-margin-v) * 1mm);\n",
+        "    break-after: page;\n",
+        "    position: relative;\n",
+        "    overflow: hidden;\n",
+        "    border-radius: 0;\n",
+        "    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);\n",
+        "}\n\n",
+        ".subpage {\n",
+        /* Bolt to Row 2, Column 2 */
+        "    grid-area: 2 / 2 / 3 / 3;\n",
+        "    display: flex;\n",
+        "    flex-direction: column;\n",
+        "    position: relative;\n",
+        "    overflow: hidden;\n",
+        /* Helper border for design phase */
+        "    border: 0.5mm solid blue;\n",
+        "}\n\n",
+        "@media print {\n",
+        "    .page { border: none; box-shadow: none; }\n",
+        "    .subpage { border: none; }\n",
+        "}\n"
+        /* clang-format -on */
+        );
 
-/******************************************************************************/
-/*                                                                            */
-/*  REQUIRED                                                                  */
-/*  --------                                                                  */
-/*  Only modify if you understand the implications                            */
-/*                                                                            */
-/******************************************************************************/
-html, body {
-    width: calc(var(--page-width) * 1mm);
-    height: calc((var(--page-height) * .999) * 1mm);
-}
-
-body {
-    margin: 0;
-    padding: 0;
-    background-color: white;
-    font-family: Arial, sans-serif;
-}
-
-* {
-    box-sizing: border-box;
-}
-
-.page {
-    height: calc((var(--page-height) * .999) * 1mm);
-    width: calc(var(--page-width) * 1mm);
-    padding: calc(var(--page-margin) * 1mm);
-    border: 0.5mm #D3D3D3 solid;
-    border-radius: 0;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.subpage {
-    /* show the margin (form design helper, not printed) */
-    border: .5mm blue solid;
-    /* Height needs to be slightly shorter to prevent creation of a blank page */
-    height: calc(((var(--page-height) - (var(--page-margin) * 2)) *.999) * 1mm);
-    width: calc((var(--page-width) - (var(--page-margin) * 2)) * 1mm);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-@media print {
-    .page {
-        margin: 0;
-        border: none;
-        box-shadow: none;
-        background: white;
-    }
-
-    .subpage {
-        /* Critical for correct page rendering - prevents extra blank pages */
-        border: .5mm white solid;
-    }
-}
-/* End of required section */
-
-)";
-
-    std::string   filename = name + "-" + orientation + ".css";
+    std::string filename = name + "-" + orientation + ".css";
     std::ofstream file(filename);
     if (file) {
         file << css;
         file.close();
     }
 }
+
+

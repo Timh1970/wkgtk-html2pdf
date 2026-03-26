@@ -58,6 +58,7 @@ SOURCES += \
         Examples/demo_jobsheet.cpp \
         Examples/greyscale/greyscale.cpp \
         Examples/hello-page/hello_pdf.cpp \
+        Examples/html-tests/gridtest.cpp \
         Examples/indexing-tests/indextest.cpp \
         misc/template_maker/template_maker.cpp \
         src/cli++/main.cpp \

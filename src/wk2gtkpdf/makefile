@@ -67,6 +67,7 @@ install:
 	install -d $(DESTDIR)/usr/share/wk2gtkpdf
 	install -m 644 ../../templates/*.css $(DESTDIR)/usr/share/wk2gtkpdf/
 	install -m 644 ../../overflow-monitor.js $(DESTDIR)/usr/share/wk2gtkpdf/
+	install -m 644 ../../overflow-monitor-pedantic.js $(DESTDIR)/usr/share/wk2gtkpdf/
 
 	# Pkg-config (Explicitly define the local shell variable for the recipe)
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig

@@ -1,3 +1,4 @@
+temp/       export-ignore
 debian/     export-ignore
 debian.bak/ export-ignore
 .git*       export-ignore
