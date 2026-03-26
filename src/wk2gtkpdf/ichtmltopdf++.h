@@ -115,8 +115,6 @@ namespace phtml {
             PDF_API PDF_AnchorList get_anchors();
 
         private:
-            // This is the ONLY variable the user's compiler sees.
-            // It is 8 bytes. It never changes size.
             PDFprinter_impl *m_pimpl;
     };
 } // namespace phtml

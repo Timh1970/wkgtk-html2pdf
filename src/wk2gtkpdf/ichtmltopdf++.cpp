@@ -166,72 +166,6 @@ namespace phtml {
         "    return null; "
         "} "
 
-        // TESTED TO WORK EXACTLY THE SAME AS THE ONE BELOW, BUT THE ONE BELOW SHOULD BE MORE ACCURATE
-        // NOTE: WHILE IT ONLY SCRAPES UP INDEX-ITEM ELEMENTS IT GETS THE BOUNDING BOX OF THE
-        // CHLID ANCHOR.
-        // "document.querySelectorAll('.index-item').forEach(item => { "
-        // "    const link = item.querySelector('a'); "
-        // "    if(link && link.hasAttribute('href')) { "
-        // "        const href = link.getAttribute('href'); "
-        // "        const id = href.substring(1); "
-        // "        const pageElement = getClosestPageElement(item); "
-        // "        if (!pageElement) return; "
-        // "        const pageRect = pageElement.getBoundingClientRect(); "
-        // "        "
-        // "        /* NEW: Split multi-line links into individual rectangles */ "
-        // "        const rects = link.getClientRects(); "
-        // "        for (let i = 0; i < rects.length; i++) { "
-        // "            const r = rects[i]; "
-        // "            window.indexPositions.push({ "
-        // "                id: id, "
-        // "                x: r.left - pageRect.left, "
-        // "                y: r.top - pageRect.top, "
-        // "                width: r.width, "
-        // "                height: r.height, "
-        // "                page: getPageNumber(item), "
-        // "                page_width: pageRect.width, "
-        // "                page_height: pageRect.height "
-        // "            }); "
-        // "        } "
-        // "    } "
-        // "}); "
-
-        // THIS VERSION DETECTS ANCHORS THAT SPAN MOR THAN ONE PAGE AND FLOW NEXT TO EACH OTHER
-        // NOTE: WHILE IT ONLY SCRAPES UP INDEX-ITEM ELEMENTS IT GETS THE BOUNDING BOX OF THE
-        // CHLID ANCHOR.
-        // "document.querySelectorAll('.index-item').forEach(item => { "
-        // "    const link = item.querySelector('a'); "
-        // "    if(link && link.hasAttribute('href')) { "
-        // "        const href = link.getAttribute('href'); "
-        // "        const id = href.substring(1); "
-        // "        const rects = link.getClientRects(); "
-        // "        "
-        // "        for (let i = 0; i < rects.length; i++) { "
-        // "            const r = rects[i]; "
-        // "            /* Find the page for THIS fragment using the mid-point */ "
-        // "            const midX = r.left + (r.width / 2); "
-        // "            const midY = r.top + (r.height / 2); "
-        // "            const target = document.elementFromPoint(midX, midY); "
-        // "            const actualPage = target ? getClosestPageElement(target) : getClosestPageElement(link); "
-        // "            "
-        // "            if (!actualPage) continue; "
-        // "            const pageRect = actualPage.getBoundingClientRect(); "
-        // "            "
-        // "            window.indexPositions.push({ "
-        // "                id: id, "
-        // "                x: r.left - pageRect.left, "
-        // "                y: r.top - pageRect.top, "
-        // "                width: r.width, "
-        // "                height: r.height, "
-        // "                page: getPageNumber(actualPage), "
-        // "                page_width: pageRect.width, "
-        // "                page_height: pageRect.height "
-        // "            }); "
-        // "        } "
-        // "    } "
-        // "}); "
-
-        // TAKE 3
         "document.querySelectorAll('.index-item').forEach(item => { "
         "    const link = item.querySelector('a'); "
         "    if(link && link.hasAttribute('href')) { "
@@ -455,22 +389,13 @@ namespace phtml {
         impl->m_processing = false;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////
-    /**
-     * @brief INDEXABLE PDF
-     */
-
-    // --- EXPERIMENTAL CODE START ---
-    // Added JavaScript extraction for index and anchor positions
-    // This code is experimental and may need refinement
-
     /**
      * @brief javascript_callback
      * @param web_view
      * @param result
      * @param user_data
      *
-     * This is a callback used to grab the physical coordinates of of the
+     * Grab the physical coordinates of of the
      * anchors so that we can use them to create links.
      */
     static void javascript_callback(
@@ -684,14 +609,11 @@ namespace phtml {
     ////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief cb_worker
-     * @param p
+     * @brief PDFprinter_impl::cb_worker
+     * @param p - cast to pimpl
      * @return
      *
-     * This is a callback for Webkit2GTK that actually generates the PDF
-     *
-     * @note It is **NOT** threadsafe as Webkit2GTK is event driven and handles
-     * calls in a queue.
+     * Callback to generate PDF from HTML
      */
     int PDFprinter_impl::cb_worker(void *p) {
 
@@ -831,19 +753,6 @@ namespace phtml {
             impl->m_print_operation = nullptr;
         }
 
-// #ifdef USE_WEBKIT_6
-//         // GTK4: No gtk_widget_destroy. Unreffing the view triggers its
-//         // internal cleanup of the NetworkSession and WebsiteDataManager.
-//         if (WEBKIT_IS_WEB_VIEW(impl->m_web_view)) {
-//             g_object_unref(impl->m_web_view);
-//             impl->m_web_view = nullptr;
-//         }
-// #else
-//         // WebKit 4.1 / GTK3: Manual destruction and context cleanup
-//         if (GTK_IS_WIDGET(impl->m_web_view)) {
-//             gtk_widget_destroy(GTK_WIDGET(impl->m_web_view));
-//             impl->m_web_view = nullptr;
-//         }
 #ifndef USE_WEBKIT_6
         if (web_context) {
             g_object_unref(web_context);
@@ -936,28 +845,6 @@ namespace phtml {
 
         delete m_pimpl;
     }
-
-    // void PDFprinter_impl::add_index_entry(const char *id, double x, double y, double w, double h, double pw, double ph, int pg) {
-    //     // 1. Grow the array if needed (Manual Vector)
-    //     if (m_indexDataCount >= m_indexDataCapacity) {
-    //         m_indexDataCapacity = (m_indexDataCapacity == 0) ? 10 : m_indexDataCapacity * 2;
-    //         m_indexData         = (PDF_Anchor *)realloc(m_indexData, sizeof(PDF_Anchor) * m_indexDataCapacity);
-    //     }
-
-    //     // 2. Initialise the new slot
-    //     PDF_Anchor &a = m_indexData[m_indexDataCount++];
-    //     std::memset(&a, 0, sizeof(PDF_Anchor));
-
-    //     // 3. Store the data (Deep copy the ID string)
-    //     a.linkName          = strdup(id ? id : "");
-    //     a.index.xPos        = x;
-    //     a.index.yPos        = y;
-    //     a.index.w           = w;
-    //     a.index.h           = h;
-    //     a.index.page_width  = pw;
-    //     a.index.page_height = ph;
-    //     a.index.pageNo      = pg;
-    // }
 
     /**
      * @brief PDFprinter::read_file
