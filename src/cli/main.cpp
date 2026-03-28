@@ -20,7 +20,7 @@ const char *calibANSIA =
     "    box-sizing: border-box; "
     "    margin: 0; "
     "    padding: 0; "
-    "    font-family: Arial, Helvetica, sans-serif; "
+    "    font-family: \"Liberation Sans\", sans-serif; "
     "    font-size: 10pt; "
     "} "
     "@page { "
@@ -75,7 +75,7 @@ const char *calibA4 =
     "    box-sizing: border-box; "
     "    margin: 0; "
     "    padding: 0; "
-    "    font-family: Arial, Helvetica, sans-serif; "
+    "    font-family: \"Liberation Sans\", sans-serif; "
     "    font-size: 10pt; "
     "} "
 
@@ -92,7 +92,7 @@ const char *calibA4 =
 
     ".page { "
     "    width: 209.9028mm; "
-    "    height: 296.0927mm; "
+    "    height: 840pt; "
     "    background-color: white !important; "
     "    display: grid; "
     "    grid-template-columns: 16.9mm 1fr 16.9mm; "

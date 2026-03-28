@@ -2,6 +2,32 @@ let canvas, ctx;
 const allIssues = new Set();
 const realFonts = [];
 
+
+const sheet = new CSSStyleSheet();
+sheet.replaceSync(`
+    .design-helper-inline-liar {
+        outline: 2pt dashed #ae3ec9 !important;
+        outline-offset: -2pt;
+        position: relative;
+    }
+
+    .design-helper-inline-liar::after {
+        content: attr(data-label);
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: #ae3ec9;
+        color: white;
+        font-size: 7pt;
+        padding: 1pt 3pt;
+        z-index: 10001;
+        pointer-events: none;
+    }
+`);
+
+document.adoptedStyleSheets = [sheet];
+
+
 async function applyTextShave() {
     const ua = navigator.userAgent;
     let browserTest = coefficient();
@@ -128,7 +154,7 @@ function coefficient() {
     }
     // 5. Generic Chromium (Chrome, Edge, Brave)
     if (/Chrome/.test(ua)) {
-        conlole.log("Chrome detected")
+        console.log("Chrome detected")
         const version = parseInt(ua.match(/Chrome\/(\d+)/)?.[1] || 0);
         let res = (version >= 140 ? 0.972 : 0.988);
         return {
@@ -213,8 +239,10 @@ const checkDesignIssues = async (element) => {
     // Check overflow on the element itself
     if (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth) {
         issues.push('OVERFLOW');
-        element.style.border = "3pt solid red";
-    }
+        //element.style.border = "3pt solid red";
+        element.style.outline = "8pt solid red";
+           element.style.outlineOffset = "1pt"; // Pulls it inside so it doesn't bleed off-page
+       }
 
     return issues;
 };
@@ -316,29 +344,31 @@ const observer = new ResizeObserver(async (entries) => {
                     inlineDodgy.push(`INLINE_PX: ${identifier}`);
 
                     // SNITCH: Apply the visual highlight
+                    el.setAttribute('data-label', 'INLINE_PX');
                     el.classList.add('design-helper-inline-liar');
                 }
 
-                if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
+                if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
                     const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
                     inlineDodgy.push(`INLINE_EM: ${identifier}`);
 
                     // SNITCH: Apply the visual highlight
+                    el.setAttribute('data-label', 'INLINE_EM');
+
                     el.classList.add('design-helper-inline-liar');
                 }
                 if (/:\s*\d+\.(?!(0|25|5|75)0*\s*pt)\d+pt/.test(styleAttr)) {
                     const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
                     inlineDodgy.push(`DIRTY_PRECISION: ${identifier}`);
 
-                    // SNITCH: Apply the visual highlight
+
+                    el.setAttribute('data-label', 'DIRTY_PRECISION');
                     el.classList.add('design-helper-inline-liar');
                 }
 
             });
             return [...new Set(inlineDodgy)];
         };
-
-
 
         // Then inside the observer's requestAnimationFrame:
         const pxIssues = scanForLiarUnits();
@@ -352,8 +382,6 @@ const observer = new ResizeObserver(async (entries) => {
         updateStatusPanel(Array.from(allIssues));
     });
 });
-
-
 
 const createDesignStatusPanel = () => {
     const panel = document.createElement('div');

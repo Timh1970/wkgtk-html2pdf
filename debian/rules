@@ -59,8 +59,8 @@ override_dh_auto_install:
 
 override_dh_install:
 	# 1. Engines (Now they find -4 and -6 via their respective .install files)
-	dh_install -plibwk2gtkpdf-4-0 --sourcedir=debian/tmp-wk4
-	dh_install -plibwk2gtkpdf-6-0 --sourcedir=debian/tmp-wk6
+	dh_install -plibwk2gtkpdf-4-1 --sourcedir=debian/tmp-wk4
+	dh_install -plibwk2gtkpdf-6-1 --sourcedir=debian/tmp-wk6
 
 	# 2. Dev (Grabs versioned .pc and .so from both)
 	dh_install -plibwk2gtkpdf-dev --sourcedir=debian/tmp-wk4

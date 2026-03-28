@@ -132,6 +132,43 @@ std::string build_string(Args &&...args) {
     return oss.str();
 }
 
+/**
+ * @brief create_stylesheet
+ * @param name
+ * @param w
+ * @param h
+ * @param orientation
+ * @param marginH
+ * @param marginV
+ *
+ * @note The section entitled PREVENT WEBKIT INTERAL ROUNDING
+ * may seeem a little convoluted but it is necessary to give
+ * webkit a number that it does not need to calculate internally
+ * because doing so causes rounding errors.
+ *
+ * We have not solved the rounding errors by doing this, we have
+ * just taken control of them. This is what we are doing:
+ *
+ * - Convert mm to pixels
+ * - Round down the pixel result
+ * - Convert the rounded value back to points and knock a point off
+ *
+ *
+ *  1. The mm to pt Calculation (The Creep Problem)
+ *     This ensures Internal Consistency.
+ *
+ *  The Goal: You want your 12pt font and your 18pt line-height to fit perfectly into your page margins.
+ *  The Reason: If you don't define the page in points, the browser has to "guess" how many 18pt lines fit into a 297mm page. Because
+ *  is *, that infinite decimal causes the "creep" where line 40 is slightly further down than line 1.
+ *  The Result: Total vertical harmony for your text.
+ *
+ *  2. The mm to px Calculation (The Overflow Problem)
+ *     This ensures External Compatibility (with Webkit/Blink).
+ *
+ *  The Goal: To stop the "Ghost Page" (the 44th blank page).
+ *  The Reason: Browsers don't actually "paint" in points or millimetres; they paint in Pixels. Webkit calculates the total page height in pixels and floors it (snaps to the nearest physical pixel). If your "Pure Math" height is even 0.001pt taller than Webkit’s "Floored Pixel" height, the engine thinks the content has overflowed the page.
+ *  The Result: You are pre-calculating the browser's "Hard Ceiling."
+ */
 void create_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV) {
 
     std::cout << "Generating stylesheet for " << name << " (" << orientation << ")" << std::endl;
@@ -143,8 +180,25 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    --page-height: ", h, ";\n",
         "    --page-margin-h: ", marginH, ";\n",
         "    --page-margin-v: ", marginV, ";\n",
+        "    --default-font-size: 12;\n",
+        "    --default-line-height: 1.5;\n",
+        "    --default-font-family: \"Liberation Sans\", sans-serif;\n",
+        "    /* --- DO NOT CHANGE THESE VALUES --- */\n",
+        /* --- PREVENT WEBKIT INTERNAL ROUNDING --- */
+        /* 2. Calculate Pure Height in Pixels (96 DPI) */
+        "    --height-pure-px: calc(var(--page-height) * 96 / 25.4);\n",
+        /* 3. The Webkit Floor: Snap down to the nearest physical pixel */
+        "    --height-floored-px: round(down, var(--height-pure-px), 1);\n",
+        /* 4. Convert back to Points and apply the 1pt 'Safety Shave' */
+        "    --webkit-height-val: calc(var(--height-floored-px) * 0.75);\n",
         "}\n\n",
-        "* { box-sizing: border-box; margin: 0; padding: 0; }\n\n",
+        "* {\n",
+        "    box-sizing: border-box;\n",
+        "    margin: 0; padding: 0;\n",
+        "    line-height: calc((var(--default-line-height) * var(--default-font-size)) * 1pt);\n",
+        "    font-family: var(--default-font-family);\n",
+        "    font-size: calc(var(--default-font-size) * 1pt);\n",
+        "}\n\n",
         "@page {\n",
         "    size: calc(var(--page-width) * 1mm) calc(var(--page-height) * 1mm);\n",
         "    margin: 0;\n",
@@ -153,11 +207,12 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    width: calc(var(--page-width) * 1mm);\n",
         "    margin: 0; padding: 0;\n",
         "    background-color: transparent !important;\n",
+        "    font-family: \"Liberation Sans\", sans-serif;\n",
         "}\n\n",
         ".page {\n",
         "    width: calc(var(--page-width) * 1mm);\n",
-         /* The Safety Shave (0.1mm) prevents ghosting */
-        "    height: calc((var(--page-height) * 0.998) * 1mm);\n",
+        /* The Safety Shave (0.1mm) prevents ghosting */
+        "    height: calc(var(--webkit-height-val) * 1pt);\n",
         "    background-color: white !important;\n",
         "    display: grid;\n",
         /* The Grid Cage: [Margin] [Content] [Margin] */
@@ -177,11 +232,11 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    position: relative;\n",
         "    overflow: hidden;\n",
         /* Helper border for design phase */
-        "    border: 0.5mm solid blue;\n",
+        "    outline: 1pt solid blue;\n",
         "}\n\n",
         "@media print {\n",
         "    .page { border: none; box-shadow: none; }\n",
-        "    .subpage { border: none; }\n",
+        "    .subpage { outline: none; }\n",
         "}\n"
         /* clang-format -on */
         );

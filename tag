@@ -101,12 +101,12 @@ fi
 
 
 # For the GTK3 / WK4 version
-SHLIBS_FILE4="debian/libwk2gtkpdf-4-0.shlibs"
-echo "libwk2gtkpdf-4 0 libwk2gtkpdf-4-0 (>= ${version})" > "$SHLIBS_FILE4"
+SHLIBS_FILE4="debian/libwk2gtkpdf-4-${major}.shlibs"
+echo "libwk2gtkpdf-4 ${major} libwk2gtkpdf-4-${major} (>= ${version})" > "$SHLIBS_FILE4"
 
 # For the GTK4 / WK6 version
-SHLIBS_FILE6="debian/libwk2gtkpdf-6-0.shlibs"
-echo "libwk2gtkpdf-6 0 libwk2gtkpdf-6-0 (>= ${version})" > "$SHLIBS_FILE6"
+SHLIBS_FILE6="debian/libwk2gtkpdf-6-${major}.shlibs"
+echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "$SHLIBS_FILE6"
 
 
 

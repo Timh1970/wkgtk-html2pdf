@@ -1,6 +1,10 @@
 wkgtk-html2pdf (1.0.2-1) trixie; urgency=medium
 
-  * Automated release: Version 1.0.2
+  * New upstream release.
+  * Bump SONAME to 1 due to ABI breakage:
+    - Changed layout precision from int to double to fix 1000+ page stability.
+  * Update symbols file for new precision types.
+  * Minor cleanup of redundant, commented out code.
 
  -- James Hothersall <james@wkgtk-html2pdf.com>  Thu, 26 Mar 2026 14:28:52 +0000
 

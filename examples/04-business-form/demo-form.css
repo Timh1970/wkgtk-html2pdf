@@ -1,0 +1,120 @@
+* {
+    box-sizing: border-box;
+    margin: 0pt;
+    font-size: 10.5pt;
+    line-height: 13pt;
+}
+
+br {
+    display: block;
+    /* Forces it to behave as a layout break, not a character */
+    content: "";
+    /* Ensures no "invisible" glyph is rendered */
+    margin: 0;
+    padding: 0;
+}
+
+div.container {
+    display: grid;
+    grid-template-rows: 50pt 1fr;
+}
+
+div.heading {
+    grid-area: 1 / 1 / 1 / 1;
+}
+
+div.form {
+    grid-area: 2 / 1 / 2 / 1;
+}
+
+table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    height: 16pt;
+    text-align: left;
+    font-size: 12pt;
+    font-style: normal;
+    color: white;
+    font-weight: bold;
+    font-family: "Liberation Sans";
+    background-color: purple;
+    border: 1pt solid purple;
+    padding-left: 8pt;
+    overflow: hidden;
+}
+
+td {
+    box-sizing: border-box;
+    height: 17pt;
+    padding-left: 8pt;
+    overflow: hidden;
+}
+
+td.label {
+    background-color: #F5F5F5;
+    border: 1pt solid #F5F5F5;
+}
+
+td.field,
+td.faultfield {
+    border: 1pt solid #E0E0E0;
+}
+
+body {
+    font-family: "Liberation Sans";
+    font-size: 10.5pt;
+    line-height: 14pt
+}
+
+h1.doctitle {
+    vertical-align: middle;
+    padding-left: 18pt;
+    display: inline;
+}
+
+img.logo {
+    vertical-align: middle;
+    width: auto;
+    height: auto;
+    max-width: 320pt;
+    max-height: 50pt;
+}
+
+h2 {
+    margin: 18pt 0 10pt 0;
+    font-size: 18pt;
+    line-height: 12pt;
+}
+
+h4.ref {
+    display: inline;
+    vertical-align: top;
+    position: absolute;
+    right: 0;
+    font-size: 7.5pt;
+    padding: 15pt;
+}
+
+.code {
+    font-family: "Liberation Mono";
+    padding-left: 30pt;
+    color: green;
+}
+
+.inline-code,
+inline-code {
+    font-family: "Liberation Mono";
+    color: green;
+}
+
+.nested-code,
+nested-code {
+    display: block;
+    padding-left: 30pt;
+    font-family: "Liberation Mono";
+    color: green;
+}

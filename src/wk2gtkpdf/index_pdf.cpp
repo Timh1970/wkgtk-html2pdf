@@ -218,7 +218,7 @@ void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
         // --- BEGIN EXPERIMENTAL --- //
         // ORIGINAL
         // double src_top_pts    = (cssSrcH - a.index.yPos) * scaleSrc;
-        // NEW
+        // NEW  (shave is purely for ergonomic reasons - if it causes problems it can be removed).
         double src_top_pts    = (cssSrcH - (a.index.yPos - (a.index.page_height * 0.004))) * scaleSrc;
         // --- END EXPERIMENTAL --- //
         double src_w_pts      = a.index.w * scaleSrc;

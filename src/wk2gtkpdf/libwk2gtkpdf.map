@@ -1,25 +1,39 @@
 LIBWK2GTKPDF_1.0 {
     global:
-        # Only export the names you actually want the world to see
-        extern "C++" {
-            phtml::PDFprinter::*;
-            phtml::html_tree::*;
-            phtml::encode_image::*;
-            icGTK::*;
-            iclog::*;
-            "wkJlog";
-
-            # Global namespace functions that aren't class members
-            phtml::process_nodes*;
-        };
-        # If you have any raw C functions like PDF_FreeAnchors
-        PDF_FreeAnchors;
+        # --- C Linkage & Globals ---
+        PDF_Free*;
         wk2gtkpdf_version;
         LOG_LEVEL;
         LOG_IGNORE;
-        PDF_FreeBlob;
-        PDF_FreeHTML;
+        wkJlog;
+
+        # --- C++ Mangled Prefixes ---
+        # Note: K for const (obviously!)
+        # The Printer & Tree classes
+        _ZN5phtml10PDFprinter*;
+        _ZNK5phtml10PDFprinter*;
+
+        _ZN5phtml9html_tree*;
+        _ZNK5phtml9html_tree*;
+
+        _ZN5phtml12encode_image*;
+        _ZNK5phtml12encode_image*;
+
+        _ZN5phtml13process_nodes*;
+
+        # The Logger (iclog::logstream)
+        # This catches C1/C2 (ctors), D1/D2 (dtors), flush, and ALL operator<<
+        _ZN5iclog9logstream*;
+
+        # The Logger Helpers (iclog::endl and standalone operator<<)
+        _ZN5iclog4endl*;
+        _ZN5iclogls*;
+
+        # GTK Init
+        _ZN5icGTK4init*;
+
     local:
-        # Hide everything else, including PoDoFo and std::regex leaks
+        # This is what kills those 7 "streambuf_internal" symbols
+        # because they start with _ZN5iclog18streambuf_internal
         *;
 };
