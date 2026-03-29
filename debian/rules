@@ -45,11 +45,10 @@ override_dh_auto_build:
 	# Build CLI against WK6
 	$(MAKE) -C src/cli clean
 	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
-		$(shell dpkg-buildflags --export=cmdline) \
 		CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6" \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
-		CPPFLAGS="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf $(shell pkg-config --cflags webkitgtk-6.0)" \
+		CPPFLAGS="-Wdate-time -D_FORTIFY_SOURCE=2 -I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf $(shell pkg-config --cflags webkitgtk-6.0)" \
 		LDLIBS="-L$(CURDIR)/src/wk2gtkpdf -lwk2gtkpdf-6 $(shell pkg-config --libs webkitgtk-6.0 libsystemd)"
 	$(MAKE) -C src/cli install DESTDIR=$(CURDIR)/debian/tmp-wk6
 	mv $(CURDIR)/debian/tmp-wk6/usr/bin/wkgtk-html2pdf $(CURDIR)/debian/tmp-wk6/usr/bin/wkgtk-html2pdf-6
@@ -81,6 +80,9 @@ override_dh_install:
 
 	# 6. Examples
 	dh_installexamples -plibwk2gtkpdf-dev
+
+override_dh_installsysusers:
+	dh_installsysusers -pwkgtk-html2pdf-common
 
 override_dh_installsystemd:
 	dh_installsystemd -pwkgtk-html2pdf-common --name=xvfb
