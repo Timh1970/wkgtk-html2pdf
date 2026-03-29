@@ -78,6 +78,9 @@ override_dh_install:
 	# 5. Common Assets
 	dh_install -pwkgtk-html2pdf-common
 
+	# 6. Examples
+	dh_installexamples -plibwk2gtkpdf-dev
+
 override_dh_installsystemd:
 	dh_installsystemd -pwkgtk-html2pdf-common --name=xvfb
 
