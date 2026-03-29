@@ -1,6 +1,13 @@
+wkgtk-html2pdf (1.0.9-1) sid; urgency=medium
+
+  * Automated release: Version 1.0.9
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sun, 29 Mar 2026 23:31:15 +0100
+
 wkgtk-html2pdf (1.0.8-1) trixie; urgency=medium
 
   * Automated release: Version 1.0.8
+  * Resolve delivery fix after crash while uploading
 
  -- James Hothersall <james@wkgtk-html2pdf.com>  Sun, 29 Mar 2026 22:04:53 +0100
 

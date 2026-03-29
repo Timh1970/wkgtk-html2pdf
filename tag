@@ -83,7 +83,7 @@ DEB_DATE=$(date -R)
 
 # 2. Build the new Header and Footer
 # Note: 'unstable' or 'trixie' is the target distribution
-CHANGELOG_HEADER="wkgtk-html2pdf (${version}-1) trixie; urgency=medium"
+CHANGELOG_HEADER="wkgtk-html2pdf (${version}-1) sid; urgency=medium"
 CHANGELOG_FOOTER=" -- James Hothersall <james@wkgtk-html2pdf.com>  $DEB_DATE"
 
 # 3. Prepend to the existing changelog
