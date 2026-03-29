@@ -45,6 +45,7 @@ override_dh_auto_build:
 	# Build CLI against WK6
 	$(MAKE) -C src/cli clean
 	LD_LIBRARY_PATH=$(CURDIR)/src/wk2gtkpdf $(MAKE) -C src/cli \
+		$(shell dpkg-buildflags --export=cmdline) \
 		CXXFLAGS="$(CXXFLAGS) -DUSE_WEBKIT_6" \
 		USER_INCDIR="-I$(CURDIR)/src -I$(CURDIR)/src/wk2gtkpdf" \
 		USER_LIBDIR="-L$(CURDIR)/src/wk2gtkpdf" \
