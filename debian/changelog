@@ -1,3 +1,15 @@
+wkgtk-html2pdf (1.0.7-1) trixie; urgency=medium
+
+  * Automated release: Version 1.0.7
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sun, 29 Mar 2026 21:29:43 +0100
+
+wkgtk-html2pdf (1.0.6-2) trixie; urgency=medium
+
+  * New source-only upload to fix previous upload metadata conflicts.
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sun, 29 Mar 2026 21:21:23 +0100
+
 wkgtk-html2pdf (1.0.6-1) trixie; urgency=medium
 
   * Automated release: Version 1.0.6

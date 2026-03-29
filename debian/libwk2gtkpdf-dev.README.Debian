@@ -1,0 +1,36 @@
+libwk2gtkpdf for Debian
+-----------------------
+
+Headless Operation & Xvfb Service
+=================================
+
+This library is designed to automatically handle headless environments. 
+If no $DISPLAY environment variable is detected, the library will attempt 
+to start the 'xvfb.service' provided by the wkgtk-html2pdf-common package.
+
+To enable this automated startup without root privileges, the calling 
+user must be a member of the 'xvfb' system group:
+
+    sudo usermod -aG xvfb <username>
+
+After adding the user to the group, a logout/login (or a new shell 
+session) is required for the changes to take effect.
+
+Rendering Engine (GTK4/WebKit6)
+===============================
+
+When running via the xvfb.service, the environment is forced to use 
+software rendering (GSK_RENDERER=software) to ensure compatibility 
+across all server environments, including those without a GPU.
+
+Customization
+=============
+
+If you need to override the default Xvfb resolution or rendering 
+settings, do not edit the system service directly. Instead, use 
+a systemd drop-in file:
+
+    sudo systemctl edit xvfb.service
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  [CURRENT_DATE_HERE]
+
