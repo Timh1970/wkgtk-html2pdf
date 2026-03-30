@@ -1,6 +1,8 @@
 Source: wkgtk-html2pdf
 Section: utils
 Priority: optional
+Vcs-Browser: https://github.com
+Vcs-Git: https://github.com.git
 Maintainer: James Hothersall <james@wkgtk-html2pdf.com>
 Homepage: https://wkgtk-html2pdf.com
 Build-Depends: debhelper-compat (= 13),
