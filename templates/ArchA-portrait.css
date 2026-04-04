@@ -6,16 +6,21 @@
     --default-font-size: 12;
     --default-line-height: 1.5;
     --default-font-family: "Liberation Sans", sans-serif;
-    /* --- DO NOT CHANGE THESE VALUES --- */
+    /* --- INTERNAL CALCULATIONS (explicit) --- */
     --height-pure-px: calc(var(--page-height) * 96 / 25.4);
     --height-floored-px: round(down, var(--height-pure-px), 1);
-    --webkit-height-val: calc(var(--height-floored-px) * 0.75);
+    --webkit-height-val: calc(var(--height-floored-px) * 0.75pt);
+    --margin-v-pure-px: calc(var(--page-margin-v) * 96 / 25.4);
+    --margin-v-floored: calc(round(down, var(--margin-v-pure-px), 1) * 0.75pt);
+    --lh-pure-px: calc(var(--default-font-size) * var(--default-line-height) * 96 / 72);
+    --lh-floored-px: round(down, var(--lh-pure-px), 1);
+    --real-line-height: calc(var(--lh-floored-px) * 0.75pt);
 }
 
 * {
     box-sizing: border-box;
     margin: 0; padding: 0;
-    line-height: calc((var(--default-line-height) * var(--default-font-size)) * 1pt);
+    line-height: var(--real-line-height);
     font-family: var(--default-font-family);
     font-size: calc(var(--default-font-size) * 1pt);
 }
@@ -29,16 +34,15 @@ html, body {
     width: calc(var(--page-width) * 1mm);
     margin: 0; padding: 0;
     background-color: transparent !important;
-    font-family: "Liberation Sans", sans-serif;
 }
 
 .page {
     width: calc(var(--page-width) * 1mm);
-    height: calc(var(--webkit-height-val) * 1pt);
+    height: var(--webkit-height-val);
     background-color: white !important;
     display: grid;
     grid-template-columns: calc(var(--page-margin-h) * 1mm) 1fr calc(var(--page-margin-h) * 1mm);
-    grid-template-rows: calc(var(--page-margin-v) * 1mm) 1fr calc(var(--page-margin-v) * 1mm);
+    grid-template-rows: var(--margin-v-floored) 1fr var(--margin-v-floored);
     break-after: page;
     position: relative;
     overflow: hidden;

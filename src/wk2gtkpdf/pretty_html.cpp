@@ -115,7 +115,7 @@ phtml::html_tree::html_tree(const char *htmlTag, bool includeHeader)
     : m_pimpl(new html_tree_impl(htmlTag)) {
     // INITIALISE THE MASTER PAGE (Only happens once)
     if (includeHeader) {
-        // Only add the "poison" if we're going to a web server
+        // Only add if we're going to a web server
         m_pimpl->m_htmlPage = "Content-type:text/html\r\n\r\n<!DOCTYPE html>\n";
     } else {
         // Just the clean DocType for local files

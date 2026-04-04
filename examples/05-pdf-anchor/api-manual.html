@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <title>wkgtk-html2pdf Manual</title>
+        <!-- <link rel="stylesheet" href="manual.css"> -->
+        <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css" crossorigin="anonymous">
+        <link rel="stylesheet" href="/usr/share/wk2gtkpdf/technical-manual.css">
+        <link rel="stylesheet" href="api-manual.css">
+        <!-- <link rel="stylesheet" href="manual.bak.css"> -->
+
+        <!-- <link rel="stylesheet" href="https://www.w3schools.com"> -->
+
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    </head>
+
+    <body>
+        <div class="page">
+            <div class="subpage">
+                <h1 class="title">wkgtk-html2pdf technical manual</h1>
+                <hr class="frontpage">
+
+                <h1 class="title">Typeseetting with HTML</h1>
+                <ul class="inverse">
+                    <li style="padding-top: 0px !important;"><h1>- Document development</h1></li>
+                    <li style="padding-bottom: 15pt !important;"><h1>- Using the C++ API</h1></li>
+
+                </ul>
+                <h2>rev V0.1.09.20260312_01</h2>
+            </div>
+        </div>
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page i - Index Page                                                     -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page" toc>
+            <div class="subpage debug-grid">
+                <h1>Index</h1>
+                <ul class="index">
+                    <li class="header index-item"><a href="#introduction">1. INTRODUCTION</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"><a href="#introduction"> <span>Introduction</span><span>1.0</span></a></li>
+                            <li class="index-item"><a href="#review-manual"> <span>Reading this manual</span><span>1.1</span></a></li>
+                            <li class="index-item"><a href="#intro-abi"> <span>Architectural Philosophy - Built for Stability</span><span>1.2</span></a></li>
+                        </ul>
+                    </li>
+
+                    <li class="header index-item"><a href="#cli">2. COMMAND LINE INTERFACE:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#basic-usage"> <span>Basic usage</span> <span>2.1</span></a> </li>
+                            <li class="index-item"> <a href="#cli-options"> <span>Command line options</span> <span>2.2</span></a> </li>
+                        </ul>
+                    </li>
+                    <li class="header index-item"><a href="#optimising-html">3. OPTIMISING HTML:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#key-principles"> <span>Key principles</span> <span>3.1</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#stylesheet-use"> <span>Stylesheet utilisation</span> <span>3.1.1</span></a> </li>
+                                    <li class="index-item"> <a href="#class-use"> <span>Page declaration</span> <span>3.1.2</span></a> </li>
+                                    <li class="index-item"> <a href="#monitor-overflow"> <span>Overflow monitoring utility</span> <span>3.1.3</span></a> </li>
+                                    <li class="index-item"> <a href="#use-units"> <span>Units</span> <span>3.1.4</span></a> </li>
+                                    <li class="index-item"> <a href="#avoid-common-issues"> <span>Avoid Common Issues</span> <span>3.1.5</span></a> </li>
+                                    <li class="index-item"> <a href="#best-practices"> <span>Best Practices</span> <span>3.1.6</span></a> </li>
+
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#example-a4-template"> <span>Quickstart example</span> <span>3.2</span></a> </li>
+                        </ul>
+                    </li>
+                    <li class="header index-item"><a href="#anchors">4. LINKS/ANCHORS:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#anchor-classic"> <span>Classic anchors</span> <span>4.1</span></a> </li>
+                            <li class="index-item"> <a href="#anchor-enhanced"> <span>Enhanced anchors</span> <span>4.2</span></a> </li>
+                            <li class="index-item"> <a href="#sidebar-indexing"> <span>Sidebar Indexing</span> <span>4.3</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#index-criteria"> <span>Indexing Criteria</span> <span>4.3.1</span></a> </li>
+
+                                    <li class="index-item"> <a href="#enhanced-v-classic"> <span>Enhanced vs. Classic - The Clickable Area</span> <span>4.3.2</span></a> </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#indexing-page"> <span>Index page</span> <span>4.4</span></a> </li>
+                        </ul>
+                    </li>
+                    <li class="header index-item"><a href="#artefacts">5. ARTEFACTS:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#cli-image-artefacts"> <span>Images</span> <span>5.1</span></a> </li>
+                            <li class="index-item"> <a href="#cli-externlinks"> <span>External Links</span> <span>5.2</span></a> </li>
+                            <li class="index-item"> <a href="#cli-externlinks"> <span>Vector Graphics</span> <span>5.3</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#layering-vectors"> <span>Layering & Compositing</span> <span>5.3.1</span></a> </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <ul class="index" start="6">
+                    <li class="header index-item"><a href="#jshelper">6. PAGE DESIGN HELPER:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#css-stylesheets"> <span>Style sheets</span> <span>6.1</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#customtemplates"> <span>Customising Templates</span> <span>6.1.1</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#custompgsz"> <span>Customising The Page Size</span> <span>6.1.1.1</span></a> </li>
+                                            <li class="index-item"> <a href="#synctypras"> <span>Typography/Raster Synchronising</span> <span>6.1.1.2</span></a> </li>
+                                            <li class="index-item"> <a href="#elemcalc"> <span>Element Calculations</span> <span>6.1.1.3</span></a> </li>
+
+                                        </ul>
+                                    </li>
+                                    <li class="index-item"> <a href="#usingpgtemplates"> <span>Using page templates</span> <span>6.1.2</span></a> </li>
+
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#jsutility"> <span>JavaScript helper utility</span> <span>6.2</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#jshelperreq"> <span>Monitored Issues</span> <span>6.2.1</span></a> </li>
+                                    <li class="index-item"> <a href="#jshelperfonts"> <span>Font Management</span> <span>6.2.2</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#fontofres"> <span>How to Resolve Overflows</span> <span>6.2.2.1</span></a> </li>
+
+                                        </ul>
+                                    </li>
+                                    <li class="index-item"> <a href="#google-fonts"> <span>Using Google Fonts and CDN's</span> <span>6.2.3</span></a> </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="header index-item"><a href="#hints">7. HINTS AND TIPS:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#page-numbering"> <span>Page Numbering</span> <span>7.1</span></a> </li>
+                            <li class="index-item"> <a href="#no-link-underline"> <span>Fomatting hyperlinks for PDF</span> <span>7.2</span></a> </li>
+                            <li class="index-item"> <a href="#hide-margin"> <span>Removing the page margin for viewing</span> <span>7.3</span></a> </li>
+                            <li class="index-item"> <a href="#baslinetemplate"> <span>The Reference Baseline Template</span> <span>7.4</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#tmplateprovisions"> <span>Provisions</span> <span>7.4.1</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#tmplatenotebox"> <span>Note Box</span> <span>7.4.1.1</span></a> </li>
+                                            <li class="index-item"> <a href="#tmplateimportantbox"> <span>Important Box</span> <span>7.4.1.2</span></a> </li>
+                                            <li class="index-item"> <a href="#tmplatewarn"> <span>Warning Box</span> <span>7.4.1.3</span></a> </li>
+                                            <li class="index-item"> <a href="#templateindex"> <span>Index</span> <span>7.4.1.4</span></a> </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#ide-setup"> <span>Development Environment Setup</span> <span>7.5</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#ide-pulsar"> <span>Pulsar Edit</span> <span>7.5.1</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#pulsarsnippets"> <span>Pulsar Edit Snippets</span> <span>7.5.1.1</span></a> </li>
+                                            <li class="index-item"> <a href="#vscodesnippet"> <span>VSCode Snippets</span> <span>7.5.1.2</span></a> </li>
+                                        </ul>
+                                    </li>
+                                    <li class="index-item"> <a href="#ide-vim"> <span>Vim and Browser</span> <span>7.5.2</span></a> </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <ul class="index">
+                    <li class="header index-item"><a href="#calibration">8. CALIBRATION:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#why-calibrate"> <span>Why calibrated</span> <span>8.1</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#calibrate-duao-output"> <span>The Dual-Output Strategy</span> <span>8.1.1</span></a> </li>
+                                    <li class="index-item"> <a href="#calibrate-when"> <span>When to Calibrate</span> <span>8.1.2</span></a> </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#calibrate-how"> <span>When to Calibrate</span> <span>8.2</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#calibrate-creep"> <span>Creep Validation</span> <span>8.2.1</span></a> </li>
+                                    <li class="index-item"> <a href="#calibrate-browser"> <span>Testing Browser Calibration</span> <span>8.2.2</span></a> </li>
+                                    <li class="index-item"> <a href="#calibrate-printer"> <span>Testing Printer Calibration</span> <span>8.2.3</span></a> </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#qualcon"> <span>Quality Control</span> <span>8.3</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#structinteg"> <span>Structural Integrity</span> <span>8.3.1</span></a> </li>
+                                    <li class="index-item"> <a href="#enginteg"> <span>Engine Integrity</span> <span>8.3.2</span></a> </li>
+                                    <li class="index-item"> <a href="#indinteg"> <span>Index Integrity</span> <span>8.3.3</span></a> </li>
+
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="header index-item"><a href="#capi">9. C++ API:</a></li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <a href="#api-concepts"> <span>Key Concepts</span> <span>9.1</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#api-wall"> <span>The Binary Wall (Pimpl)</span> <span>9.1.1</span></a> </li>
+                                    <li class="index-item"> <a href="#api-thread-safety"> <span>Thread Safety & Initialization</span> <span>9.1.2</span></a> </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#api-htmldom"> <span>The html_tree Class (DOM Construction)</span> <span>9.2</span></a> </li>
+                            <li class="index-item"> <a href="#api-rendering"> <span>The PDFprinter Class (Rendering)</span> <span>9.3</span></a> </li>
+                            <li class="index-item"> <a href="#api-blobs"> <span>Working with BLOBs</span> <span>9.4</span></a> </li>
+                            <li class="index-item"> <a href="#api-variadic-helpers"> <span>Variadic Helpers</span> <span>9.5</span></a> </li>
+                            <li class="index-item"> <a href="#api-indexing"> <span>Indexing Configuration</span> <span>9.6</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#api-index-mode"> <span>The index_mode Enum</span> <span>9.6.1</span></a> </li>
+                                    <li class="index-item"> <a href="#api-implementation"> <span>API Implementation</span> <span>9.6.2</span></a> </li>
+                                    <li class="index-item"> <a href="#api-strategic-index"> <span>Strategic Usage</span> <span>9.6.3</span></a> </li>
+                                </ul>
+                            </li>
+                            <li class="index-item"> <a href="#gtk-dev"> <span>GTK Development</span> <span>9.7</span></a> </li>
+                            <li class="index-branch">
+                                <ul class="leaders index">
+                                    <li class="index-item"> <a href="#gtkheadlessdev"> <span>Headless applications</span> <span>9.7.1</span></a> </li>
+                                    <li class="index-item"> <a href="#gtkappdev"> <span>GTK Applications</span> <span>9.7.2</span></a> </li>
+                                    <li class="index-item"> <a href="#headlessdaemon"> <span>Headless Daemons</span> <span>9.7.3</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#servicedev"> <span>Service development</span> <span>9.7.3.1</span></a> </li>
+
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 1 - INTRODUCTION                                                   -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page number">
+            <div class="subpage">
+                <h1 id="introduction">1. Introduction</h1>
+                <p>
+                    <b>wkgtk-html2pdf</b> is a powerful and easy-to-use API for converting HTML content into high-quality PDF documents using WebKitGTK. Developed as a modern alternative to legacy tools like wkhtmltopdf—which has been archived since
+                    2023—this project fills the gap for reliable, up-to-date HTML-to-PDF conversion. It provides a clean, intuitive C++ API that simplifies HTML generation by eliminating the need for string literals and explicit closing tags, making
+                    it ideal for embedding in applications. The tool supports advanced features such as internal anchors, links, and nested sidebar indexing, enabling the creation of structured, navigable PDFs. A simple command-line interface is also
+                    available for quick, one-off conversions. With its focus on maintainability and modern development practices, wkgtk-html2pdf is designed to be a reliable choice for developers seeking a dependable solution for PDF generation.
+                </p>
+                <p>
+                    This project is entirely inspired by wkhtmltopdf as when we were searching for a replacement we simply could not find one, and even the paid for options seemed overly complex where they needn't be and severely lacking where they
+                    should. We have tried to iron out some of the issues we have encountered along the way and have produced this manual to assist with those unavoidable issues that must be worked around. We hope that you find this project useful and
+                    we would be very much appreciative of any contribution, be that funding, documentation, testing, or design.
+                </p>
+                <p>
+                    wkgtk-html2pdf includes a set of built-in, pre-configured CSS templates for all standard ISO and US paper sizes, ensuring compatibility and consistency across different regions and use cases. These templates are designed to
+                    prevent
+                    the generation of extraneous blank pages by precisely defining page dimensions, margins, and layout constraints using CSS custom properties.
+                </p>
+
+                <p>
+                    Each template uses a clean, modular structure with variables for page width, height, and margin, allowing for easy customization while maintaining reliable output. A lightweight JavaScript utility is included to monitor content
+                    overflow in real time—when content exceeds the available space, the subpage border turns red; when it fits perfectly, the border turns green. This visual feedback helps you quickly identify and resolve layout issues before
+                    conversion.
+                </p>
+
+                <p>
+                    The templates also include print-specific CSS rules that ensure clean, artefact-free output when the HTML is rendered to PDF, while maintaining visual guides during development for easier debugging and refinement.
+                </p>
+
+
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 2 - CLI                                                            -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    In <b>wkgtk-html2pdf</b> we have endeavoured to create a system that does not require you to learn additional languages; all you should need is a reasonable understanding of HTML.
+                </p>
+
+
+                <h2 id="review-manual">1.1 Reading this manual</h2>
+                <p>
+                    This manual is a self fulfilling prophecy as it is developed entirely using wkgtk-html2pdf so the layout the code that is used to write it is in itself a tutorial. If you are uncertain about how something is done then is worth
+                    reviewing the HTML and CSS used to generate it.
+                </p>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        The strict guidance in this manual is intended for the generation of high quality reliable screen to print multi page technical manuals and other mission critical documents. For non critical documents and forms it may not be
+                        necessary to adhere to certain aspects.
+                    </div>
+                </div>
+                <h2 id="intro-abi">1.2 Architectural Philosophy: Built for Stability</h2>
+                <p>
+                    Unlike many wrapper libraries that expose internal dependencies to the host application, wkgtk-html2pdf is engineered with a strict Binary Interface (ABI).
+                    We utilize the Pimpl (Pointer to Implementation) idiom throughout the C++ API to create a "firewall" between the library's internal logic and your application. This tedious but essential design choice provides several critical
+                    benefits:
+                </p>
+                <ul class="box">
+                    <li>
+                        <b>Zero Dependency Leakage</b> - Your project does not need to link against, or even be aware of, the specific versions of WebKitGTK, PoDoFo, or GLib used internally.
+                    </li>
+                    <li>
+                        <b>Upgrade Without Recompilation</b> - You can swap the underlying library (.so or .dll) for a newer version containing security patches or performance internal improvements without ever needing to recompile your main
+                        application.
+                    </li>
+                    <li>
+                        <b>Sovereign Memory Management</b> - By avoiding C++ Smart Pointers in the public headers, which often cause ABI breakage across different compiler versions, we use raw-pointer handles and explicit cleanup functions
+                        (<b>PDF_FreeHTML</b>, <b>PDF_FreeBlob</b>). This ensures the library remains stable across different development environments and toolchains.
+                    </li>
+                </ul>
+
+                <h1 id="cli">2. Command line interface (CLI)</h1>
+                <p>
+                    The CLI is the simplest way to get started with wkgtk-html2pdf. It allows you to convert HTML files into PDFs with minimal setup.
+                </p>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h2 id="basic-usage">2.1 Basic Usage </h2>
+                <p>
+                    To generate a PDF using the default settings use the following command:
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>html2pdf -i input.html -o output.pdf</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Generate a basic pdf with default settings (A4 portrait).</div>
+
+
+
+                <h2 id="cli-options">2.2 Command line options</h2>
+                <p>The following options are available for the cli.</p>
+                <table class=fixed>
+                    <col width="112.5pt">
+                    <tr>
+                        <th>Option</th>
+                        <th>Description</th>
+                    </tr>
+
+                    <tr>
+                        <td class="field">-h, --help</td>
+                        <td class="field">Display the help message with all available options.</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field">-v, --verbose </td>
+                        <td class="field">Set the log level (1-7), with higher values providing more detailed output. Logs are written to the system journal.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-i, --infile</td>
+                        <td class="field">Specify the source HTML file to convert.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-o, --outfile</td>
+                        <td class="field">Specify the output PDF file name.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">-O, --orientation</td>
+                        <td class="field">Set page orientation: portrait or landscape.</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field" style="border-bottom:none;">-s, --size</td>
+                        <td class="field">Set the page size (Default A4)</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (A):</b> A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (B):</b> B0, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- ISO (C):</b> C0, C1, C2, C3, C4, C5, C6, C7, C8, C9, C10</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"> <b>- US:</b> Letter, Legal, Tabloid</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- ANSI:</b> ANSIA, ANSIB, ANSIC, ANSID, ANSIE</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- Architectural:</b> ArchA, ArchB, ArchC, ArchD, ArchE</td>
+                    </tr>
+                    <tr>
+                        <td class="field" style="border-top:none; border-bottom:none;"></td>
+                        <td class="field"><b>- Other:</b> SRA0, SRA1, SRA2, SRA3, SRA4</td>
+                    </tr>
+
+                    <tr>
+                        <td class="field">--index</td>
+                        <td class="field">Create anchor points for indexing: <b>classic</b> or <b>enhanced</b> for nested sidebar indexing.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="field"> -r --relative-uri</td>
+                        <td class="field">look for resources such as images in, or relative to, the current working folder.
+                        </td>
+                    </tr>
+
+                </table>
+
+            </div>
+        </div>
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 3 - HTML OPTIMISATION                                              -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h1 id="optimising-html">3. Optimising HTML</h1>
+                <p>
+                    To generate a clean, professional PDF, you must optimize your HTML to ensure it aligns with the desired page size and layout. The output is entirely governed by the CSS and HTML structure, so the quality of the final PDF depends
+                    on how well your content is designed.
+                </p>
+                <h2 id="key-principles">3.1 Key Principles</h2>
+                <h3 id="stylesheet-use">3.1.1 Use the correct stylesheet</h3>
+                <ol class="box">
+                    <li>Each stylesheet is named according to the page size and orientation it supports (e.g. A4-portrait.css, ANSIA-landscape.css).</li>
+                    <li>Link to the appropriate stylesheet in your HTML:</li>
+                </ol>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css"&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Applying the Style Sheet for A4 portrait.</div>
+
+                <h3 id="class-use">3.1.2 Use the correct classes</h3>
+                <ol class="box">
+                    <li>Use the <b>.page</b> class to define the overall page</li>
+                    <li>Use the <b>.subpage</b> class to define content areas.</li>
+                </ol>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;div class="page"&gt;
+    &lt;div class="subpage"&gt;
+        &lt;!-- Your page content here --&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Initialising page boundaries</div>
+
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 4 - HTML OPTIMISATION (cont.)                                      -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+
+                <h3 id="monitor-overflow">3.1.3 Monitor the overflow</h3>
+                <ol class="box">
+                    <li class="box">If you are not using our linter then Include the JavaScript utility to monitor content overflow.</li>
+                    <li class="box">If overflow is detected the margin turns red.</li>
+                </ol>
+                <p>This script provides real-time feedback, helping you identify and fix layout issues before conversion (<a href="#jsutility">See Section 6.2</a>).</p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;script src="/usr/share/wk2gtkpdf/overflow-monitor.js&gt;&lt;script&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Declaring the JavaScript to monitor the overflow.</div>
+
+                <h3 id="use-units">3.1.4 Units: Points vs. Pixels</h3>
+                <p>
+                    While web design traditionally relies on pixels (<b>px</b>), high-stakes typesetting and desktop publishing require points (<b>pt</b>).
+
+                </p>
+                <p>
+                    The primary reason for this distinction is sub-pixel rounding. Because a physical screen cannot render "half a pixel," the engine must round fractional values up or down. In standard HTML-to-PDF generators, these tiny rounding
+                    errors accumulate over a large document, causing significant "creep" where content shifts further out of alignment with every passing page.
+                </p>
+                <p>
+                    Our bundled templates are specifically engineered to isolate these rounding issues to the individual page level, preventing cumulative drift. However, to achieve a document that is truly pixel-perfect and indistinguishable between
+                    the Linter Viewer and the final PDF, you should always define measurements in points. Using points bypasses the browser's display scaling and ensures your layout remains 1:1 with the physical print dimensions.
+                </p>
+                <p>
+                    The Conversion Rule: To convert your existing web measurements to the required print standard, simply multiply any pixel value by 0.75 (e.g., 16px * 0.75 = 12pt).
+                </p>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        While you can manually convert pixels to points using the 0.75 multiplier, our commercial <b>Refinery Linter</b> can automate this process across entire stylesheets.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 5 - ANCHORS                                                        -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h3 id="avoid-common-issues">3.1.5 Avoid common issues</h3>
+                <p>
+                    By designing your HTML and CSS carefully, you have full control over the final PDF output. Avoid common issues: Mismatched stylesheets, incorrect classes, or content overflow can lead to blank pages, cut-off content, or incorrect
+                    scaling.
+                </p>
+                <p>
+                    The overflow detection script helps you identify and fix layout issues before conversion.
+                </p>
+                <h3 id="best-practices">3.1.6 Best Practices</h3>
+                <ol class="box">
+                    <li class="box"><b>Always test the layout</b> - Use the overflow detection script to ensure content fits within the page.
+                        Adjust the CSS or content as needed to avoid overflow.
+                    <li class="box"><b>Use the correct stylesheet</b> - Ensure the stylesheet matches the CLI arguments (page size and orientation).
+                    <li class="box"><b>Keep it consistent</b> - Use the same page size and orientation in both the CSS and CLI arguments.</li>
+                </ol>
+
+                <h3 id="example-a4-template">3.2 Quick start - A4 Portrait Layout</h3>
+                <p>
+                    Below is a minimal, single-page example utilizing the built-in overflow monitor and missing-font detector.
+                </p>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;!DOCTYPE html>
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait.css"&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div class="page"&gt;
+            &lt;div class="subpage"&gt;
+                &lt;h1&gt;My Document&lt;/h1&gt;
+                &lt;p&gt;This content will be rendered in A4 portrait format.&lt;/p&gt;
+            &lt;/div>
+        &lt;/div>
+    &lt;/body>
+    &lt;script src="/usr/share/wk2gtkpdf/overflow-monitor.js&gt;&lt;script&gt;
+&lt;/html&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Minimal single page example.</div>
+
+            </div>
+        </div>
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 6 - ANCHORS - INDEXING                                             -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+
+                <p>
+                    Each declaration of a <b>.page</b> and <b>.subpage</b> container will create a new page. Blank pages can also be inserted by declaring a <b>.page</b> and <b>.subpage</b> container.
+                </p>
+                <h1 id="anchors">4. Anchors</h1>
+                <p>
+                    wkgtk-html2pdf offers two indexing modes to generate the PDF sidebar navigation: Classic and Enhanced.
+                </p>
+
+                <h2 id="anchor-classic">4.1 Classic mode</h2>
+                <p>
+                    In Classic mode, the engine automatically scrapes all internal anchors (any <b>&lt;a&gt;</b> tag where the href starts with <b>#</b>) and includes them in the PDF index. This is ideal for simple documents where every link is a
+                    significant navigation point.
+                </p>
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;!-- Automatically indexed in Classic Mode --&gt;
+&lt;li>&lt;a href="#reference">Reference&lt;/a>&lt;/li>
+&lt;p>&lt;a href="#section1"&gt;Section 1&lt;/a&gt;&lt;/p&gt;
+&lt;div&gt;&lt;a href="#appendix"&gt;Appendix&lt;/a&gt;&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">All these anchors are valid.</div>
+                <h2 id="anchor-enhanced">4.2 Enhanced mode</h2>
+                <p>
+                    Enhanced mode (--index enhanced) is a professional-grade feature that allows for selective indexing. Only elements explicitly marked with the <b>index-item</b> class,class will appear in the PDF sidebar. This prevents "index
+                    noise" in documents with many internal cross-references.
+                </p>
+                <h5>Example:</h5>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;!-- This will be included --&gt;
+&lt;li class="index-item"&gt;&lt;a href="#reference"&gt;&lt;span&gt;Reference&lt;/span&gt;&lt;span&gt;A1&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+
+&lt;!-- This will be ignored --&gt;
+&lt;p&gt;&lt;a href="#section1"&gt;Section 1&lt;/a&gt;&lt;/p&gt;
+
+&lt;!-- This will be included (container type doesn't matter) --&gt;
+&lt;div class="index-item"&gt;&lt;a href="#appendix"&gt;Appendix&lt;/a&gt;&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 7 - SIDEBAR INDEXING                                               -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h2 id="sidebar-indexing">4.3 Sidebar indexing</h2>
+                <p>
+                    Most users of technical manuals rely heavily on the PDF sidebar (bookmarks) for navigation. This persistent tree structure is far more practical for digital consultation than a traditional printed index page. Regardless of whether
+                    you choose Classic or Enhanced mode, wkgtk-html2pdf automatically constructs a hierarchical sidebar by analysing your HTML structure.
+                </p>
+                <p>
+                    A unique feature of the wkgtk-html2pdf engine is its ability to generate an index from a visible Single Source of Truth. Unlike traditional generators that rely on "header scraping" or hidden metadata declarations, our engine
+                    builds the navigation tree directly from the visible numbering system within your document.
+                </p>
+                <p>
+                    By using the section numbers as the primary data point, the hierarchy is nested automatically. This eliminates the need for manual indexing declarations and prevents document "reflow" issues; if the number is visible on the page,
+                    it is accurately reflected in the sidebar. This ensures 1:1 parity between the printed table of contents and the digital navigation tree.
+                </p>
+                <h3 id="index-criteria">4.3.1 Indexing Criteria</h3>
+                <p>For an item to appear in the PDF sidebar index, it must satisfy two conditions:
+                <ol class="box">
+                    <li><b>Unique Linkage</b> - The source anchor must reference a target with a unique ID <br>(e.g. &lt;a href=#mylink&gt;)</li>
+                    <li><b>Numbered Hierarchy</b> - The target element must contain a number. To create nested levels<br> (e.g., Section 1.1 inside Section 1.0), use a period separator.</li>
+                </ol>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;a href=#setup_guide&gt;Go to Setup&lt;/a&gt;
+&lt;h2 id=setup_guide&gt;1.1 System Setup&lt;/h2&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Creating an index item.</div>
+                <p>
+                    The engine will parse "1.1" and automatically nest this bookmark under "1.0" in the PDF sidebar.
+                </p>
+
+                <h3 id="enhanced-v-classic">4.3.2 Enhanced vs. Classic: The Interactive Hit-Box</h3>
+                <p>
+                    The primary functional difference between Classic and Enhanced modes is the management of the "Clickable Area."
+                </p>
+                <p>
+                    In Classic Mode, only the text within an anchor <b>&lt;a&gt;</b> is interactive. This often leaves the rest of the line—such as dot leaders or page numbers—inert.
+                </p>
+                <div>
+                    <img class="fullwidth" src="IndexSidebar.png" alt="Index Sidebar Image">
+                    <div class="code-caption">Sample pdf with sidebar index.</div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    The easiest way to determine the difference it to see it by compiling this manual in in both <b>enhanced</b> and <b>classic</b>mode and click on the links within the index.
+                </p>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        This manual is developed to compile in enhanced mode, in classic mode you may notice additional unexpected items in the pdf bookmark bar; this is normal and expected behaviour.
+                    </div>
+                </div>
+                <p>
+                    Enhanced Mode solves this by expanding the interactive hit-box to the entire container. By wrapping your anchor in an element with the .index-item class, the engine ensures the entire line becomes a clickable link in the final
+                    PDF.
+                </p>
+                <p>
+                    To enable enhanced indexing, simply wrap your anchor as follows:
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;span class="index-item"&gt;&lt;a href="#section-target" &gt;4.3.1 Technical Specifications&lt;/a&gt&lt;/span&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Enabling the link in <b>enhanced</b> indexing mode.</div>
+                <p>
+                    Why use enhanced mode:
+                </p>
+
+                <ul class="box">
+                    <li><b>Touch Accuracy</b> - Makes navigation significantly easier on tablets or touch-enabled PDF readers.</li>
+                    <li><b>Nesting Logic</b> - The engine uses the visible number (e.g., 4.3.1) within the .index-item to automatically determine the correct nesting depth (Section 4 -> 4.3 -> 4.3.1) in the sidebar.</li>
+                </ul>
+                <p>
+                    Unlike many PDF generators, wkgtk-html2pdf supports redundant indexing. You can place multiple .index-item links targeting the same section ID across different pages without "coordinate ghosting." Our engine uniquely maps each
+                    physical instance to the target, ensuring that every link remains perfectly interactive regardless of document length.
+
+                </p>
+
+
+
+
+
+
+
+
+
+
+                <h2 id="indexing-page">4.4 Index page</h2>
+                <p>
+                    If you have an index page then attaching it to the sidebar is as simple as declaring <b>toc</b> within the page element.
+                </p>
+
+            </div>
+        </div>
+
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <!--                                                                         -->
+        <!-- Page 9 - ARTEFACTS                                                      -->
+        <!--                                                                         -->
+        <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+        <div class="page">
+            <div class="subpage">
+                <h5>Example:</h5>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;div class="page toc"&gt;
+    &lt;div class="subpage"&gt;
+        &lt;!-- Your page content here --&gt;
+    &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">A page declared as the commencement of the table of contents.</div>
+                <p>
+                    The table of contents should be declared exactly once per document.
+                </p>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong> If it is declared more than once the the first declaration that wkgtk-html2pdf finds will be used and the rest will be ignored.
+                    </div>
+                </div>
+
+                <p>
+                    When you declare a Table of Contents/Index page it will be attached to the top level <b>"Contents"</b> bookmark within the index.
+                </p>
+                <h1 id="artefacts">5. Artefacts</h1>
+                <h2 id="cli-image-artefacts">5.1 Images</h2>
+                <p>
+                    wkgtk-html2pdf offers flexible support for image assets. Whether your project relies on remote, local, or embedded resources, the engine ensures high-fidelity reproduction in the final PDF.
+                </p>
+                <ul class="box">
+                    <li><b>Remote URLs</b> - Images served via HTTP/HTTPS work "out of the box." When generating the PDF, the engine fetches and embeds these assets automatically.</li>
+                    <li><b>Local & Relative Paths</b> - Static and relative paths are fully supported. When using relative paths, ensure the assets are within the working directory and invoke the -r flag (no argument required) on the CLI to grant the
+                        engine access to the local file system. </li>
+                    <li><b>Base64 Encoding</b> For self-contained documents, you may embed images directly into your HTML using Base64 encoding.</li>
+
+                </ul>
+
+                <p>
+                    If you are viewing the HTML version of this manual, the randomised image following demonstrates a live remote fetch that will be locked into the PDF upon generation.
+                </p>
+
+
+
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <div>
+                    <img class="fullwidth" style="max-height: 150pt;" src="https://picsum.photos/200/300" alt="Randomised Generic Image">
+                    <div class="code-caption">Example: A remote asset embedded at runtime.</div>
+                </div>
+
+
+                <div>
+                    <img class="fullwidth" style="max-height: 150pt;" src="static-test-image.jpg" alt="Test Image">
+                </div>
+                <div class="code-caption">An image from a static path.</div>
+                <h2 id="cli-externlinks">5.2 Remote artefacts</h2>
+                <p>
+                    The engine supports most standard remote assets typically declared in the HTML &lt;head&gt;, such as external stylesheets and scripts. However, there is one critical exception: the &lt;base&gt; element.
+                </p>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Do not use the &lt;base&gt; tag. Directing the engine to a base URL will currently break the internal indexing and coordinate mapping. This may be addressed in a future release.
+                    </div>
+                </div>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;base href="https://www.foo.bar"&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Do <b>not</b> use base URL's.</div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h2 id="svgimages">5.3 SVG (Vector Graphics)</h2>
+
+                <p>
+                    wkgtk-html2pdf is a high-fidelity vector engine. To ensure the smallest possible file size and 100% text searchability, we recommend using Pure Vector SVGs (paths, shapes, and text).
+                </p>
+
+
+                <div>
+                    <svg width="400" height="200" viewBox="0 0 400 200" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Test Background -->
+                        <rect width="100%" height="100%" fill="#f9f9f9" stroke="#ccc" stroke-width="1" />
+
+                        <!-- 'Engine' Box (Tests rx/ry rounding and hex fills) -->
+                        <rect x="50" y="50" width="120" height="100" rx="10" fill="#e7f5ff" stroke="#339af0" stroke-width="2" />
+                        <text x="110" y="105" font-family="sans-serif" font-size="14" text-anchor="middle" fill="#1864ab">Engine</text>
+
+                        <!-- Connection Line with Marker (Tests arrowhead/coordinate tracking) -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+                            </marker>
+                        </defs>
+                        <line x1="170" y1="100" x2="220" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)" />
+
+                        <!-- 'Output' Box -->
+                        <rect x="230" y="50" width="120" height="100" rx="10" fill="#fff9db" stroke="#fcc419" stroke-width="2" />
+                        <text x="290" y="105" font-family="sans-serif" font-size="14" text-anchor="middle" fill="#856404">PDF Output</text>
+
+                        <!-- Figure Caption (Tests italic font-style) -->
+                        <text x="200" y="180" font-family="sans-serif" font-size="12" text-anchor="middle" font-style="italic" fill="#666">Fig 5.1: Vector Asset Test</text>
+                    </svg>
+                </div>
+
+                <div class="code-caption">An example vector graphic.</div>
+
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>Avoid embedding raster images (PNG/JPG) inside SVG files. Our engine prioritises vector integrity; nesting bitmaps within vector containers can trigger full-page rasterisation in the PDF, which
+                        disables text selection and impacts render precision.
+                    </div>
+                </div>
+                <h3 id="layering-vectors">5.3.1 Layering & Compositing</h3>
+                <p>
+                    To maintain 100% text searchability and vector precision when overlaying diagrams on photographs, do not embed the image inside an SVG. Instead, use standard HTML/CSS layering.
+                </p>
+                <p>
+                    <b>Best Practice</b> - Place your background image using an &lt;img&gt; tag or CSS background-image, then use absolute positioning to overlay your SVG or text elements. This ensures the PDF engine treats the layers independently,
+                    keeping your text crisp and your file size lean.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;div style="position: relative; width: 400pt; height: 300pt;"&gt;
+    &lt;img src="engine-part.jpg" style="width: 100%;"&gt;
+    &lt;svg style="position: absolute; top: 0; left: 0;"&gt;
+        &lt;!-- Vector callouts here --&gt;
+    &lt;/svg&gt;
+&lt;/div&gt;</code></pre>
+                        <div class="code-caption">Example vector overlaying an image.</div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+
+        <div class="page">
+            <div class="subpage">
+                <h1 id="jshelper">6. Page design helper</h1>
+                <p>
+                    When converting or generating HTML that works seamlessly as a PDF there are several issues that may lead to unexpected results. While not an exhaustive list the following are most common:
+                </p>
+                <ol class="box">
+                    <li><b>Unexpected extra pages</b> - It is not unusual for developers to become extremely frustrated at the fact that they have an extra blank page at the end of their document even though they have done everything
+                        right.</li>
+                    <li><b>Overflow</b> - Content is often missing or going off the page.</li>
+                </ol>
+                <p>
+                    This section covers our minimal JavaScript linter that has been developed to detect the most common issues when developing PDF's using HTML.
+                </p>
+                <p>
+                    The JavaScript linter and the styleSheets work together to set up and test the page layout and contents
+                </p>
+                <h2 id="css-stylesheets">6.1 CSS Style sheets</h2>
+                <p>
+                    When you include the appropriate template for your desired page size and declare a <b>.page</b> and <b>.subpage</b> &lt;div&gt; element. You will note that you now have something on screen that represents the page size of the PDF
+                    you are developing. This will include a margin outlined in blue.
+                </p>
+                <p>
+                    When wkgtk-html2pdf is installed locally copies of all of the style sheets are located in <i>/usr/share/wk2gtkpdf/</i> and can be linked thus:
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>/usr/share/wk2gtkpdf/templates</code></pre>
+                    </div>
+                </div>
+
+                <div class="code-caption">Default path of the wkgtk-html2pdf stylesheets.</div>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        If you are a designer with no access to the the application you can link to or use the templates hosted on our servers instead.
+                    </div>
+                </div>
+
+
+
+
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+
+                <p>
+                    For a full list of themplates see <a href="https://wkgtk-html2pdf.com/templates/">https://wkgtk-html2pdf/templates</a>
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;link="stylesheet" href="https://wkgtk-html2pdf/templates/A4-portrait.css&gt;"</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Page template link example.</div>
+
+                <h3 id="customtemplates">6.1.1 Customising Templates</h3>
+                <p>
+                    By default the template margins are set to the IEEE standard for technical documenatation (Horizontal: 16.9mm; Vertical: 15.8mm) however this can easily be modified in the page template stylesheet to whatever best suits your
+                    requirements.
+                </p>
+
+                <p>
+                    To change the margins modify the values assigned to the following variables in the appropriate template:
+                </p>
+                <ul class="box">
+                    <li><b>--page-margin-h</b> - changes the left and right margins.</li>
+                    <li><b>--page-margin-v</b> - changes the upper and lower margins.</li>
+                </ul>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        The margin is measured in millimetres(mm).
+                    </div>
+                </div>
+                <h4 id="custompgsz">6.1.1.1 Customising the page size </h4>
+                <p>
+                    Careful consideration is required when defining custom page sizes; your dimensions must result in a whole number of points to prevent the rendering engine from drifting. The high-precision millimetre values used in our templates
+                    are calculated specifically to achieve a perfect, integer Point (pt) value based on the 72 DPI (Points Per Inch) standard.
+                </p>
+                <p>
+                    For <b>US/Imperial</b> page sizes it is a simple matter of dividing the page size by 72.
+                </p>
+                <div class="center">
+                    <div class="math-container">
+                        <span class="math-label">Points</span>
+                        <span class="math-operator">&times;</span>
+                        <span class="math-label">72</span>
+                        <span class="math-operator">=</span>
+                        <span class="math-label">Inches</span>
+                    </div>
+                </div>
+                <p>
+                    For <b>ISO/Metric</b> page sizes the calculation is a little more complex.
+
+                </p>
+                <div class="center">
+                    <div class="math-container">
+                        <span class="math-label">Points</span>
+                        <span class="math-operator">&times;</span>
+                        <div class="math-bracket-group">
+                            <span class="math-bracket-open">(</span>
+                            <div class="math-fraction">
+                                <span class="math-top">25.4</span>
+                                <span class="math-bottom">72</span>
+                            </div>
+                            <span class="math-bracket-close">)</span>
+                        </div>
+                        <span class="math-operator">=</span>
+                        <span class="math-label">mm</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+
+
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        While MathML is the standard for scientific equations, browser support for "stretchy" operators remains inconsistent. For critical documentation where layout parity is required, we recommend using the CSS
+                        Flexbox method provided in our templates to ensure brackets and fractions remain perfectly aligned across all platforms.
+                    </div>
+                </div>
+                <p>
+                    In all likelihood, if you are looking to set up a custom page size then you are going to want to convert from mm to points. To do so, for both metric and imperial page sizes is is simply ac case of flipping the calculation.
+                </p>
+
+                <h5>US / Imperial:</h5>
+                <div class="center">
+                    <div class="math-container">
+                        <span class="math-label">Inches</span>
+                        <span class="math-operator">&times;</span>
+                        <span class="math-label">72</span>
+                        <span class="math-operator">=</span>
+                        <span class="math-label">Points</span>
+                    </div>
+                </div>
+
+                <h5>ISO / Metric:</h5>
+                <div class="center">
+                    <div class="math-container">
+                        <span class="math-label">mm</span>
+                        <span class="math-operator">&times;</span>
+                        <div class="math-bracket-group">
+                            <span class="math-bracket-open">(</span>
+                            <div class="math-fraction">
+                                <span class="math-top">72</span>
+                                <span class="math-bottom">25.4</span>
+                            </div>
+                            <span class="math-bracket-close">)</span>
+                        </div>
+                        <span class="math-operator">=</span>
+                        <span class="math-label">Points</span>
+                    </div>
+                </div>
+
+                <h5>Example Walkthrough:</h5>
+                <p>
+                    If you require a custom layout of <b>178mm x 223mm</b>, you must first find the nearest
+                    <b>whole-point</b> equivalent to ensure zero-drift rendering:
+                </p>
+                <ul class="box" style="background: none;">
+                    <li><b>Width:</b> 178mm &times; (72 / 25.4) &approx; 504.56pt &rarr; <b>Round to 505pt</b></li>
+                    <li><b>Height:</b> 223mm &times; (72 / 25.4) &approx; 632.12pt &rarr; <b>Round to 632pt</b></li>
+                </ul>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        By anchoring your dimensions to an integer point value, you ensure that your internal 12pt/18pt typographic grid remains perfectly aligned with the physical edge of the page, eliminating cumulative rounding errors across
+                        multi-page documents.
+                    </div>
+                </div>
+                <p>
+                    To ensure 100% parity between your CSS and the hardware, you must "snap" your height calculation to a whole pixel value before assigning it to your page container.
+                </p>
+                <p>
+                    Finally, convert these <b>integer points</b> back into the high-precision millimetre
+                    values required for your CSS <code>:root</code> variables:
+                </p>
+
+
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <ul class="box" style="background: none;">
+                    <li><b>Width:</b> (505 &times; 25.4) &divide; 72 = 178.1528</li>
+                    <li><b>Height:</b>(632 * 25.4) / 72 = 222.9556</li>
+                </ul>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>:root {
+--page-width: 178.1528;
+--page-height: 222.9556;
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Example: Stabilized custom page size.</div>
+
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        Always round your calculated Point values to the nearest whole integer before converting back to millimetres for your CSS variables.
+                    </div>
+                </div>
+
+                <h4 id="synctypras">6.1.1.2 Typography/Raster Synchronising (Optional reading)</h4>
+                <p>
+                    While anchoring your layout to Integer Points (pt) ensures typographic consistency and prevents "baseline creep," a secondary calculation is required to satisfy the browser’s internal rendering engine (Webkit/Blink/etc.).
+                </p>
+                <p>
+                    Browsers do not "paint" in millimetres or points; they paint in Physical Pixels (px). At the standard web resolution of 96 DPI, one pixel is exactly 0.75pt. If your calculated page height results in a fractional pixel (e.g.,
+                    1190.55pt), the rendering engine will often truncate or "floor" this value to the nearest whole pixel to fit the physical display or print buffer.
+                </p>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        If your CSS content height is even 0.001pt taller than the browser's "floored" pixel container, the engine will trigger an Overflow. This is the primary cause of "Ghost Pages"—that dreaded blank page at the end of a document.
+                    </div>
+                </div>
+
+                <div class="center">
+                    <div class="math-container">
+                        <span class="math-label">mm</span>
+                        <span class="math-operator">&times;</span>
+                        <div class="math-bracket-group">
+                            <span class="math-bracket-open">(</span>
+                            <div class="math-fraction">
+                                <span class="math-top">96</span>
+                                <span class="math-bottom">25.4</span>
+                            </div>
+                            <span class="math-bracket-close">)</span>
+                        </div>
+                        <span class="math-operator">&rarr;</span>
+                        <span class="math-label">Floor(px) &times; 0.75 = Webkit Height (pt)</span>
+                    </div>
+                </div>
+                <p>
+                    By using this formula, you are essentially pre-calculating the browser's "Hard Ceiling."
+                </p>
+                <p>
+                    In our templates, this is handled automatically via CSS Variables in the :root block. By rounding down to the nearest pixel, we guarantee that the content area is always exactly equal to, or infinitesimally smaller than, the
+                    physical paper—resulting in zero-drift , zero-overflow rendering at any size.
+                </p>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <ul class="box" style="margin-top: 0;">
+                    <li><b>Typographic Logic</b> - Manages the internal "Baselines" so text doesn't drift.</li>
+                    <li><b>Raster Logic</b> - Manages the external "Cage" so the container doesn't burst.</li>
+                </ul>
+                <div class="code-caption">Typographic Logic</div>
+                <p>
+                    In our templates, this is handled automatically via CSS Variables in the :root block. By rounding down to the nearest pixel, we guarantee that the content area is always exactly
+                </p>
+                <ul class="box">
+                    <li>--height-pure-px: calc(var(--page-height) * 96 / 25.4);</li>
+                    <li>--height-floored-px: round(down, var(--height-pure-px), 1);</li>
+                    <li>--webkit-height-val: calc(var(--height-floored-px) * 0.75);</li>
+                </ul>
+                <div class="code-caption">These values are constants and shouldn't be adjusted</div>
+                <h4 id="elemcalc">6.1.1.3 Element calculations</h4>
+                <p>
+                    While the Raster Logic manages the outer page internal container calculations ensure that every line of text sits perfectly on a predictable physical pixel.
+                </p>
+                <p>
+                    Standard CSS line-heights (like 1.5 or 1.4) often result in fractional pixels (e.g., 16.8px) which may cause unexpected display anomalies.  The same applies to font sizes eg. 16pt.
+                </p>
+                <p>
+                    To achieve zero-drift all objects need to be declared in whole pixel values that are reconcilable with the point unit scale.
+                </p>
+                <h5>The Synchronisation Formula:</h5>
+                <ul class="box">
+                    <li><b>Calculate Raw Pixels</b> - Convert the pt value back into pixels.</li>
+                    <li><b>Snap to Pixel</b> - Floor the result to the nearest whole integer</li>
+                    <li><b>Convert to Points</b> - Convert back to points</li>
+                </ul>
+<!-- <p>
+Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
+<p> -->
+
+<div class="note-box">
+    <span class="note-icon">ℹ</span>
+    <div>
+        <strong>Note:</strong>
+Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
+        <div class="center" style="margin-top: 0;">
+            <div class="math-container" style="margin-top: 0;">
+                <span class="math-label">pt</span>
+                <span class="math-operator">&equals;</span>
+                <span class="math-label">( &lfloor;pt &divide; 0.75&rfloor; )</span>
+    <span class="math-operator">&times;</span>
+    <span class="math-label">0.75</span>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h3 id="usingpgtemplates">6.1.2 Using the page templates</h3>
+                <p>
+                    Each default template has a margin that is visible to the compositor while they are designing the manual in order to assist with visualisation of the page and to assist in hightlighting overflow.
+                </p>
+                <div>
+                    <img src="a6lanscapetemplate.png" alt="A6 Landscape Template Image">
+                </div>
+                <div class="code-caption">A blank A6 page with margins outlined.</div>
+                <h2 id="jsutility">6.2 JavaScript helper utility</h2>
+                <p>
+                    As alluded to several times throughout this manual wk2gtk-html2pdf includes a helper utility to aid with design. It is located in the same folder as the CSS templates and can be used to identify problems before trying to generate
+                    a PDF.
+                </p>
+                <p>
+                    There are actually 2 versions of the linter that can be used depending on what you are doing and how mission critical your output is.
+                </p>
+                <p>
+                    The simple linter will detect most errors that will result in larger rendering errors while the pedantic linter will detect all currently known issues that may prevent the proper redndering of large documents.
+                </p>
+                <p>
+                    We would always recommend using the pedantic linter however it can be overkill if you are making a simple form where you are happy to leave a small buffer at the bottom of the page and don't care about the pdf engine rendering the
+                    document exactly as it appears on the screen.
+                </p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+
+
+                <p>
+                    To use the utility you need to declare it:
+                </p>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;script src=""/usr/share/wk2gtkpdf/overflow-monitor.js"&gt;&lt;script&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Basic linter declaration</div>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;script src=""/usr/share/wk2gtkpdf/overflow-monitor-pedantic.js"&gt;&lt;script&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Pedantic linter declaration</div>
+
+
+                <p>
+                    Once declared, when you open the page in a browser it will automatically monitor changes and notify as and when it detects issues.
+                </p>
+                <h3 id=jshelperreq>6.2.1 Monitored Issues</h3>
+                <p>
+                    Depending on which version of the linter you choose determines which issues are monitored. The basic linter monitors issues that are certain to cause rendering problems while the the pedantic linter monitors issues that may cause
+                    issues.
+                </p>
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        The font checker can only determine if a font is available at design time, it cannot determine whether it is available system wide or whether it is available on a remote server.
+                    </div>
+                </div>
+                <table class=fixed>
+                    <col width="120pt">
+                    <col width="100pt">
+                    <col width="100pt">
+                    <col width="179pt">
+
+                    <tr>
+                        <th>Issue</th>
+                        <th>Basic</th>
+                        <th>Pedantic</th>
+                        <th>Issue</th>
+                    </tr>
+                    <tr>
+                        <td class="field">Overflow</td>
+                        <td class=" field check-cell"></td>
+                        <td class=" field check-cell"></td>
+                        <td class="field">Elements exceeding the physical page or grid boundaries.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">Missing Fonts</td>
+                        <td class=" field check-cell"></td>
+                        <td class=" field check-cell"></td>
+                        <td class="field">Verification of font availability at design time.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">px Declarations</td>
+                        <td class=" field"></td>
+                        <td class=" field check-cell"></td>
+                        <td class="field">Check for pixel measurement declarations.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">em Declarations</td>
+                        <td class=" field"></td>
+                        <td class=" field check-cell"></td>
+                        <td class="field">Check for relative declarations.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">Dirty precision</td>
+                        <td class=" field"></td>
+                        <td class=" field check-cell"></td>
+                        <td class="field">Check for sub-pixel rounding errors.</td>
+                    </tr>
+                </table>
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        Browsers will likely restrict access to resources that the pedantic linter needs to check your fonts. At the time of writing this seems to be limited to Linux.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+
+
+
+
+                <h5>Blink Engines</h5>
+                <p>
+                    For Chrome based engines on linux try the following from the command line (replace <b>chromium</b> with whatever flavour of blink engine you wish to use eg. <b>brave</b>):
+                </p>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code></pre>
+                    </div>
+                </div>
+
+                <ul class="box">
+                    <li><b>Microsoft Windows</b> - Edge and Chrome on Windows just worked with no special flags or anything. If security is tightened or your configuration is different to our test suite (which is a very basic Windows 11 virtual
+                        machine running blink engine 146) then you may have to pass the command line arguments required for Linux versions, but for now at least it works out of the box.</li>
+                    <li><b>Mac OS</b> - Our testing on Mac has been extremely limited as we have only tested on very old hardware. On our hardware Safari (WebKit) and Brave (blink 146) and FireFox (Gecko) Just worked, but the Safari version is quite
+                        old.</li>
+                </ul>
+
+
+                <h5>Gecko Engines</h5>
+                <p>
+                    We have only tested firefox and in tests all seemed to work out of the box on every operating sytsem but Linux where we had to go into <b>about:config</b> and change <b>security.fileuri.strict_origin_policy</b> to false.
+                </p>
+                <h5>WebKit Engines</h5>
+                <p>
+                    Despite sharing our WebKitGTK core, Epiphany’s security model is too rigid for local font auditing. Unlike Chromium or Firefox, it lacks the necessary flags to bypass the restrictions required by the linter.
+                </p>
+                <h3 id="jshelperfonts">6.2.2 Font Management</h3>
+                <p>
+                    To ensure your typography renders exactly as intended, please observe the following requirements:
+                </p>
+                <ol class="box">
+                    <li><b>System-Wide Installation:</b> Fonts must be installed in the system font directory (e.g., <i>/usr/share/fonts</i> on Linux). The rendering library cannot "see" fonts stored only in local user directories
+                        or temporary session folders.</li>
+                    <li><b>Web Fonts (WOFF/WOFF2):</b> Modern web font formats are supported, provided they are hosted in a location accessible to the rendering engine at the time of PDF generation.</li>
+                    <!-- <li class="box"><b>Remote Rendering:</b> If generating documents on a remote server or CI/CD pipeline, that environment <b>must</b> have identical copies of your specific fonts installed to prevent silent font substitution.</li> -->
+                </ol>
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        You should always declare a default global font in your CSS to prevent the browser and the rendering engine from arbitrarily picking one.
+                    </div>
+                </div>
+                <p>
+                    If you are generating a PDF on a different machine than the one you are developing on then you must ensure that the relevant fonts are also installed on the generator machine.
+                <p>
+
+                <p>
+                    If anything, including text, is overflowing the available space the margin will turn red and the notification window will warn of a problem.
+                </p>
+                <p>
+                    When there is a problem with overflow all the margins will turn red however the margins where overflow is present will have a thicker border.
+                </p>
+                <div>
+                    <img class="fullwidth" src="overflow.png" alt="Overflow Indicator Image">
+                </div>
+                <div class="code-caption">Notification when the content goes outside of the page margin</div>
+
+                <h4 id="fontofres">6.2.2.1 How to Resolve Overflows</h4>
+                <p>
+                    If you see the red notification shown above, your content has exceeded the calculated <b>subpage</b> height. To fix this, you should:
+                </p>
+
+
+            </div>
+        </div>
+
+
+
+        <div class="page">
+            <div class="subpage">
+                <ol class="box">
+                    <li>Reduce the amount of text or the size of your images on the affected page.</li>
+                    <li>Adjust your <b>line-height</b> or <b>font-size</b> in your CSS.</li>
+                    <li>Check for ghost white space or padding at the bottom of your elements.</li>
+                </ol>
+                <p>
+                    In addition to the detection of overflow it should also be capable of detecting missing fonts. This is to be considered advisory and if there are rendering issues the first thing that should be checked is the system wide
+                    availability of fonts.
+                </p>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        While font detection is highly effective, the technical nature of font substitution means it should be considered advisory rather than an absolute guarantee. If your PDF layout shifts unexpectedly, always verify the
+                        system-wide availability of your fonts first.
+                    </div>
+                </div>
+                <img class="fullwidth" src="fontmissing.png" alt="Missing Font Indicator Image">
+                <div class="code-caption">Notification when a missing font is detected</div>
+
+
+
+            </div>
+        </div>
+
+
+        <div class="page">
+            <div class="subpage">
+                <h3 id="google-fonts">6.2.3 Using Google Fonts & CDNs</h3>
+                <p>
+                    Standard web typography services like <b>Google Fonts</b> are fully supported. Since these are remote artefacts, WebKitGTK will fetch them at render-time.
+                </p>
+
+                <div class="note-box" style="margin-bottom: 0;">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        While Google Fonts work perfectly in a connected environment, we recommend downloading the <code>.ttf</code> or <code>.woff</code> files and installing them <b>system-wide</b> if you need to generate PDFs in an
+                        offline or firewalled environment (such as a secure server or CI/CD pipeline).
+                    </div>
+                </div>
+
+                <h1 id="hints" style="margin-top: 15.75pt">7. Hints and Tips</h1>
+
+                <h2 id="page-numbering">7.1 Page Numbering</h2>
+
+                <p>
+                    While you will note that the pages in this manual are numbered you will also note that they are not referenced and merely exist to give the reader a sense of familiarity; While you are welcome to use page numbers if you so wish,
+                    we strongly recommend using Section Numbers (e.g., See Section 6.2) only in your index instead.
+                </p>
+                <p>
+                    Particular care should be taken when porting documents as the likelihood of page references remaining intact are low.
+                </p>
+                <p>
+                    If you do wish to use page numbers for your indexing then we advise that you develop your document in the follwing order:
+                </p>
+
+                <ol class="box">
+
+                    <li>Prepare the whole HTML document without any <b>.page</b> or <b>.subpage</b> elements</li>
+                    <li>If the index is at the front of the document then insert as many <b>.page</b> and <b>.subpage</b> elements as would be required to hold the entlre index. (skip this step if your index is at the back of the
+                        document).</li>
+                    <li>Iterate through the document inserting <b>.page</b> and <b>.subpage</b> elements and closing them off where necessary.</li>
+                    <li>Paginate the document applying an <b>id</b> to each page number</li>
+                    <li>Generate the index in the reserved space</li>
+                </ol>
+                <p>
+                    NOTE: It may be necessary to reflow the pagination if you amend the document.
+                </p>
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h3>7.1.1 Our Recommendation</h3>
+                <p>
+                    In PDF documents it is rare for the page number determined by the reader to the the same as the page number marked at the bottom of the page; this is because PDF readers start counting from the very first page (often the document
+                    cover which is not paginated).
+                </p>
+
+                <ol class="box" style="margin-top: 0;">
+                    <li><b>Maintenance Zero</b> - Section numbers are 'set and forget.' They remain accurate regardless of how the content flows across physical pages.</li>
+                    <li><b>Digital Precision</b> - Our indexing engine maps the exact XY coordinates of your anchors. Clicking "Section 6.2" in the PDF will always take the reader to the correct content, even if a layout change shifts
+                        that content
+                        from Page 10 to Page 11.</li>
+                    <li><b>The 'Reflow' Nightmare</b> - Referencing physical page numbers in your text requires manual updates every time your template or content changes. Using section-based anchors eliminates this entire category of
+                        error.</li>
+                </ol>
+                <p>
+                    In this manual, as the page numbers are merely to give the reader a sense of familiarity they are automatically inserted by utilising CSS' built in <b>counter</b> function; this is how we do it:
+                </p>
+
+                <p>To start the counter from a particualr page simply add a class of <b>.number</b> to that page
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>&lt;div class="page number"&gt;</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Commence numbering from a given page</div>
+                <p>
+                    Once you have instantiated a <b>.number</b> class the following pages will automatically be paginated; it is not necessary to add <b>.number</b> to additional pages and will in fact cause the page counter to be reset.
+                </p>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Adding the <b>.number</b> class to every page will reset the counter to 1.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+                <p>
+                    Here is the CSS for the page numbering used in this manuals
+                </p>
+
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>div.page.number {
+counter-reset: page 0;
+}
+div.page.number,
+div.page.number ~ div.page {
+    counter-increment: page;
+}
+
+div.page.number div.subpage::after,
+div.page.number ~ div.page div.subpage::after {
+    display: block;
+    content: " Page - " counter(page);
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    z-index: 999;
+    padding: 2px 8px;
+    border-right: 2px solid #23b8e7;
+    font-size: 12px;
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">An automated page counter positioned towards the bottom right of the subpage</div>
+
+
+
+                <h2 id="no-link-underline">7.2 Remove underlining on PDF</h2>
+                <p>
+                    We are all used to seeing links underlined on web pages but for some it can seem an unnecessary distraction when transcribed to a PDF. Albeit subjective (as all design is) personally I like to get rid of the underline but keep the
+                    blue colour just to hint to the user that it is clickable.
+                </p>
+                <p>
+                    To change this or any formatting specifically for pdf generation you use the <b>@media print</b> directive in your CSS.
+                </p>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>@media print {
+            a {
+                text-decoration-line: none !important;
+            }
+        }</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Remove the underline from links for PDF</div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h2 id="hide-margin">7.3 Remove the visible page margin</h2>
+                <p>
+                    By default the blue margin used to aid design will be displayed in any HTML version; You should hide it rather than remove it to properly maintain the page dimensions.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>.subpage {
+    border: solid white !important;
+}</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Hide the margin guide</div>
+                <h2 id="baslinetemplate">7.4 The Reference Baseline Template</h2>
+                <p>
+                    To accelerate development, the suite includes <code>technical-manual.css</code>. This is a carefully calculated baseline that provides the fundamental geometry for technical documentation.
+                </p>
+                <h5>Features:</h5>
+                <ul class="box">
+                    <li> <b>Low-Opinion Design</b> - The styles are intentionally generic. We provide the "Plumbing" (vertical rhythm, notification boxes, and index leaders) so you can focus on the content.</li>
+                    <li> <b>The Component Contract</b> - The code snippets provided in the next section (<span class="index-item"><a href="#ide-setup">7.5</a></span>) are mapped 1:1 to the classes defined in this baseline</li>
+                </ul>
+                <p>
+                    The template is by no means mandatory, but is the quickest way to get started or to test the suite is suited to your needs is to link to it either from our templates repository or the the default folder if you have the library
+                    installed (See: <span class="index-item"><a href="#css-stylesheets">6.1 CSS Style sheets</a></span>)
+                <p>
+
+                <h3 id="tmplateprovisions">7.4.1 Provisions</h3>
+
+                <h4 id="tmplatenotebox">7.4.1.1 Note box</h4>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        This note box layout is included in the technical-manual.css template.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h4 id="tmplateimportantbox">7.4.1.2 Important box</h4>
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        This important box is included in the technical-manual.css template.
+                    </div>
+                </div>
+                <h4 id="tmplatewarn">7.4.1.3 Warning box</h4>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        This warning box is included in the technical-manual.css template.
+                    </div>
+                </div>
+
+
+                <h4 id="templateindex">7.4.1.4 Index With Leaders</h4>
+                <ul class="index">
+                    <li class="header index-item">1. INTRODUCTION</li>
+                    <li class="index-branch">
+                        <ul class="leaders index">
+                            <li class="index-item"> <span>Introduction</span><span>1.0</span></li>
+                        </ul>
+                    </li>
+                </ul>
+
+                <h2 id="ide-setup">7.5 Development environment setup</h2>
+                <p>
+                    Depending on what we are doing we use both of these setups (sometimes even both at once), but as long as you have something to preview and something to write code on you shouldn't run into difficulties.
+                </p>
+                <h3 id="ide-pulsar">7.5.1 Pulsar-edit/VSCode</h3>
+                <p>
+                    Without doubt our favourite IDE for developing anything HTML is <b>Pulsar-edit</b>.
+                </p>
+                <p>
+                    We are reliably informed that VS Code is another solid alternative that works similarly however we haven't used it ourselves.
+                </p>
+                <p>
+                    On the following pages we have provided the snippets that we use to speed up development in both pulsar edit and VSCode.
+                </p>
+
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        While we can confirm with some degree of certainty that the pulsar-edit version works we have only conducted limited testing with VSCode.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h4 id="pulsarsnippets">7.5.1.1 Pulsar Edit Snippets</h4>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>'.text.html.basic':
+  'Page and Subpage':
+    'prefix': 'hpage'
+    'body': """
+      &lt;div class="page"&gt;
+          &lt;div class="subpage"&gt;
+              $1
+          &lt;/div&gt;
+      &lt;/div&gt;
+    """
+  'Code Box':
+    'prefix': 'hcode'
+    'body': """
+      &lt;div class="code-container"&gt;
+          &lt;div class="code-container-sub"&gt;
+              &lt;pre&gt;&lt;code&gt;$1&lt;/code&gt;&lt;/pre&gt;
+          &lt;/div&gt;
+      &lt;/div&gt;
+    """
+  'Note':
+    'prefix': 'hnote'
+    'body': """
+      &lt;div class="note-box"&gt;
+          &lt;span class="note-icon"&gt;ℹ&lt;/span&gt;
+          &lt;div&gt;
+              &lt;strong&gt;Note:&lt;/strong&gt;
+              $1
+          &lt;/div&gt;
+      &lt;/div&gt;
+    """
+  'Warning':
+    'prefix': 'hwarn'
+    'body': """
+      &lt;div class="warning-box"&gt;
+          &lt;span class="warning-icon"&gt;⚠&lt;/span&gt;
+          &lt;div&gt;
+              &lt;strong&gt;WARNING:&lt;/strong&gt;
+              $1
+          &lt;/div&gt;
+      &lt;/div&gt;
+    """</code></pre>
+                    </div>
+                </div>
+                <p>...cont'd</p>
+
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>  'Important':
+    'prefix': 'himportant'
+    'body': """
+      &lt;div class="important-box"&gt;
+          &lt;span class="important-icon"&gt;★&lt;/span&gt;
+          &lt;div&gt;
+              &lt;strong&gt;IMPORTANT:&lt;/strong&gt;
+              $1
+          &lt;/div&gt;
+      &lt;/div&gt;
+    """</code></pre>
+                    </div>
+                </div>
+                <h4 id=vscodesnippet>7.5.1.2 VSCode</h4>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>{
+    "Page and Subpage": {
+        "prefix": "hpage",
+        "body": [
+            "&lt;div class=\"page\"&gt;",
+            "    &lt;div class=\"subpage\"&gt;",
+            "        $1",
+            "    &lt;/div&gt;",
+            "&lt;/div&gt;"
+        ],
+        "description": "Insert page and subpage container"
+      },
+      "Code Box": {
+        "prefix": "hcode",
+        "body": [
+            "&lt;div class=\"code-container\"&gt;",
+            "    &lt;div class=\"code-container-sub\"&gt;",
+            "        &lt;pre&gt;&lt;code&gt;$1&lt;/code&gt;&lt;/pre&gt;",
+            "    &lt;/div&gt;",
+            "&lt;/div&gt;"
+        ]
+      },</code></pre>
+
+                        <p>...cont'd</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>     "Note": {
+        "prefix": "hnote",
+        "body": [
+            "&lt;div class=\"note-box\"&gt;",
+            "    &lt;span class=\"note-icon\"&gt;ℹ&lt;/span&gt;",
+            "    &lt;div&gt;",
+            "        &lt;strong&gt;Note:&lt;/strong&gt; $1",
+            "    &lt;/div&gt;",
+            "&lt;/div&gt;"
+        ]
+    },
+    "Warning": {
+        "prefix": "hwarn",
+        "body": [
+            "&lt;div class=\"warning-box\"&gt;",
+            "    &lt;span class=\"warning-icon\"&gt;⚠&lt;/span&gt;",
+            "    &lt;div&gt;",
+            "        &lt;strong&gt;WARNING:&lt;/strong&gt; $1",
+            "    &lt;/div&gt;",
+            "&lt;/div&gt;"
+        ]
+    },
+    "Important": {
+        "prefix": "himportant",
+        "body": [
+            "&lt;div class=\"important-box\"&gt;",
+            "    &lt;span class=\"important-icon\"&gt;★&lt;/span&gt;",
+            "    &lt;div&gt;",
+            "        &lt;strong&gt;IMPORTANT:&lt;/strong&gt; $1",
+            "    &lt;/div&gt;",
+            "&lt;/div&gt;"
+        ]
+    }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        When pasting snippets into snippets.cson (Pulsar) or html.json (VS Code), ensure the indentation is flush-left within the body strings. Any leading whitespace in the snippet source will be rendered as a physical offset.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h3 id="ide-vim">7.5.2 Vim and a browser</h3>
+                <p>
+                    If you love vim then you probably don't need us to tell you how to set up your environment but in testing we have found that previewing the output with <b>Falkon</b> browser results in the almost real time updates on save without
+                    need to manually refresh the page refresh. While probably not the world's greatest browser for daily internet use we have found it the best solution for live previewing while using your favourite text editor (be that vim, nano, or
+                    something less hardcore) to design your pages.
+                </p>
+
+                <h1 id="calibration">8. Calibration</h1>
+
+                <p>
+                    Unlike traditional "Headless" PDF generators that function as black boxes, the wkgtk-html2pdf engine includes a built-in forensic calibration suite. We do not ask you to trust our coordinate mapping; we provide the tools to verify
+                    it.
+                </p>
+                <h2 id="why-calibrate">8.1 Why Calibrate</h2>
+                <p>
+                    A PDF is a physical map. Even a 0.1pt rounding error in a CSS rendering engine can lead to Point-Creep, where content subtly shifts over a long document. By using the <code>--calibrate</code> flag, you generate a 150-page "Stress
+                    Test" that proves the engine's 1:1 parity between the virtual DOM and the physical page.
+                </p>
+
+                <h3 id="calibrate-duao-output">8.1.1 The Dual-Output Strategy</h3>
+                <p>
+                    The calibrator generates both a <b>.pdf</b> and an <b>.html</b> file from a single internal source. This creates a "Digital Reference" that allows for a three-stage validation:
+                </p>
+                <ul class="box">
+                    <li><b>Visual Parity</b> - Open the HTML in a browser and the PDF in an viewer (e.g., Okular or Acrobat). Overlay the windows. The 1mm grid lines should remain surgically aligned across the entire stack.</li>
+                    <li><b>Repeatability</b> - Compare Page 1 to Page 150. If the 260mm grid line is in the exact same position on both, you have confirmed a zero-leak vertical rhythm.</li>
+                    <li><b>Physical Truth</b> - Print a calibration page at 100% scale (No "Fit to Page"). Use a steel ruler to verify that 100mm on the paper is exactly 100mm in the real world.</li>
+
+                </ul>
+            </div>
+        </div>
+
+
+        <div class="page">
+            <div class="subpage">
+                <h3 id="calibrate-when">8.1.2 When to Calibrate</h3>
+                <p>
+                    Because the engine relies on the host system's WebKit and font libraries, we recommend a calibration pass during the following "High-Stakes" events:
+                </p>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Always re-calibrate after a system-wide update. Updates to webkit2gtk or pango can subtly alter font metrics and baseline calculations.
+                    </div>
+                </div>
+
+                <ul class="box">
+                    <li><b>Initial Deployment</b> - Establish a "Forensic Baseline" for your server environment.</li>
+                    <li><b>Browser Updates</b> - If your regular browser updates or your change your regular browser you should always calibrate it to the engine.</li>
+                    <li><b>Template Revision</b> - If you are experiencing drift or unexpected results run the calibration to verify the integrity of the engine.</li>
+                    <li><b>Audit Verification</b> - Include a datestamped Calibration Certificate (the footer of the grid) in your project's archive to prove the manual was rendered on a validated engine.</li>
+                    <li><b>Contractual Accountability</b> - If you outsource document design to third parties, the calibrator provides a "Clean Room" proof of the engine’s integrity. If a designer’s layout drifts or overflows, the 150-page
+                        calibration grid serves as forensic evidence that the fault lies in the CSS Architecture, not the Rendering Engine. It eliminates the "He said, She said" disputes by providing a mathematically perfect baseline.</li>
+                </ul>
+                <p>
+                    The Calibrator is not just a technical test; it is a Contractual Safeguard. Always run a calibration pass before signing off on externally developed templates to ensure they adhere to the physical geometry of the 'Cage' Standard.
+                </p>
+                <h2 id="calibrate-how">8.2 How to Calibrate</h2>
+                <p>
+                    To ensure the engine is performing as it should you first need to generate the test documents using the command line interface.
+                </p>
+
+                <p>
+                    wkgtk-html2pdf will generate a US ANSI A or ISO A4 standard page test document depending on the given command line argument; Both documents will have the same IEEE margins.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>wkgtk-html2pdf --calibrate US</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Example to generate a 150 page ANSI A test document</div>
+
+
+
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        To generate an ISO A4 test document use --calibrate ISO instead.
+                    </div>
+                </div>
+                <p>
+                    Upon completion 2 files will be generated; these files will be located in the folder where you ran the command and will be named <b>wkgtk-html2pdf-cal-</b> appended with a timestamp and the appropriate extension <b>.pdf</b> or
+                    <b>.html</b>
+                </p>
+                <h3 id="calibrate-creep">8.2.1 Creep Validation</h3>
+                <p>HTMM doesn't actually generate pages at all so the engine is entirely reliant on coordinates to construct a PDF from an HTML layout. If these coordinates are incorrect (even by as little as a pixel) this will result in an
+                    accumulative creep problem where whole lines will be cropped appear on the wrong page. To ensure the engine isn't causing this look at the first page and the last page of the test document and they should be identical.
+                </p>
+                <div>
+                    <img class="fullwidth" style="max-height: 3000pt;" src="creep-validataion.png" alt="Creep Validation">
+                </div>
+                <div style="margin-top: 0pt;" class="code-caption">Creep validation - All pages are identical.</div>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        For the highest degree of certainty use the IS0 version for this test as it has more lines
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="page">
+            <div class="subpage">
+                <h3 id="calibrate-browser">8.2.2 Testing Browser Calibration</h3>
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        If ever you have any appearance issues this is the place to start.
+                    </div>
+                </div>
+                <p>During development of the library, the command line interface and the templates we tested browser from <b>Falkon</b> on KDE to <b>Chrome</b> on Microsoft Windows and managed to ensure parity throughout the spectrum however we have
+                    no control over the future development of browsers and therefor highly recommend that you calibrate your browser regularly.
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        We find it easier on the eyes to use the US calbration page for this test as it has fewer rule lines.
+                    </div>
+                </div>
+                <p>
+                    To conduct the test
+                </p>
+                <ol class="box">
+                    <li><b>generate the calibration documents</b> - and open them up in a PDF reader (eg. Adobe Acrobat or Okular) and a browser of your choice.</li>
+                    <li><b>Set up the browser</b> - so you can see a single entire page on your screen (A border-less browser is best for this).</li>
+                    <li><b>Align the PDF</b> - Set your PDF viewer to scale to width and with a full page viewable drag the sides to scale the page until the upper and lower green margins in the PDF align with the upper and lower blue margins of the
+                        page in the browser.</li>
+                    <li><b>Check</b> - the lines in between; If they line up then the browser and the PDF engine are calibrated and therefore provided you follow the guidance set out in this document your documentation will align also.</li>
+                </ol>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Tip:</strong>
+                        During testing we discovered that the least forgiving browser was <b>Falkon</b>. This meant that if we made a mistake with our page design or our style sheets it stood out. For the purposes of development we don't consider
+                        this a flaw, but an asset and therefore we recommend <b>Falkon</b> if you have the opportunity to use it; although any browser will work, some are more forgiving. At the time of testing Falkon still used an older version of
+                        Blink so we expect by the next release that there will be some parity with more recent versions of Chrome and that will likely lead to the loss of the advantage.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <div>
+                    <img class="fullwidth" style="max-height: 3000pt;" src="BrowserCalibration.png" alt="Creep Validation">
+                </div>
+                <div style="margin-top: 0pt;" class="code-caption">Testing browser calibration.</div>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Tip:</strong>
+                        Setting the PDF scaling to 88.4% while leaving the browser on 100% should give you a pretty good match on most systems.
+                    </div>
+                </div>
+                <h3 id="calibrate-printer">8.2.3 Printer Calibration</h3>
+                <p>
+                    Testing printer calibration is simply a matter of printing a page out and measuring it. The margins for both US and ISO page sizes have been explicitly set to:
+
+                <ul class="box">
+                    <li><b>Top/bottom margins</b> - 15.8mm</li>
+                    <li><b>Left/Right margins</b> - 16.9mm</li>
+                </ul>
+
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Switch off Page Scaliing/Scale to fit before testing.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    Most printers have a tolerance level set by the manufacturers, please be aware that the best that can be expected is within that tolerance.
+                </p>
+                <h2 id="qualcon">8.3 Quality Control</h2>
+                <p>
+                    A document should only be considered "Surgical Grade" when it passes every stage of this forensic audit. Before releasing a manual to a client or archiving a mission-critical report we recommend verify the following:
+                </p>
+                <h3 id="structinteg">8.3.1 Structural Integrity</h3>
+
+                <ul class="box">
+                    <li><b>[ ] The "No-Red" Rule</b> - The Design Auditor shows zero red borders. Any overflow has been resolved by adjusting content or adding a new .page.</li>
+                    <li><b>[ ] The "No-Purple" Rule</b> - All px units have been purged from the CSS. Every vertical measurement is defined in Points (pt) or Millimetres (mm).</li>
+                    <li><b>[ ] No missing fonts</b> - Not only must fonts be verified at design time, they must also be installed system wide on the machine producing the PDF.</li>
+                </ul>
+
+                <h3 id="enginteg">8.3.2 Engine Integrity</h3>
+
+                <ul class="box">
+                    <li><b>[ ] Browser Test Pass</b> - Browser calibration has been tested.</li>
+                    <li><b>[ ] Drift Test Pass</b> - No drift can be detected on the test PDF document between the first and the last page.</li>
+                </ul>
+
+                <h3 id="indinteg">8.3.3 Index Integrity</h3>
+                <ul class="box">
+                    <li><b>[ ] Target Verification</b> - Each bookmark in the PDF takes you to the correct destination.</li>
+                    <li><b>[ ] Nesting</b> - Each link is nested within the correct parent.</li>
+                    <li><b>[ ] All Links Present</b> - Every expected link is contained within the bookmark bar</li>
+                    <li><b>[ ] No Extra Links</b> - There are no extra links within the bookmark bar.</li>
+                    <li><b>[ ] Content page has been set</b> - Clicking <b>Contents</b> takes you to the index.</li>
+
+
+                </ul>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+                <h1 id="capi">9. C++ API</h1>
+                <p>
+                    The wkgtk-html2pdf library provides a professional-grade C++ interface designed for high-performance document automation. Starting with Version 1.0.0, the API utilizes the Pimpl (Pointer to Implementation) idiom, ensuring a
+                    stable
+                    Application Binary Interface (ABI). This allows the internal rendering engine to be updated without requiring the host application to be recompiled.
+                </p>
+                <h2 id="api-concepts">9.1 Key Concepts</h2>
+                <p>
+                    The wkgtk-html2pdf C++ API is designed for professional document automation where long-term binary compatibility is a requirement. To achieve this, the library adheres to two core principles:
+                </p>
+                <h3 id="api-wall">9.1.1 The Binary Wall (Pimpl)</h3>
+                <p>
+                    Every public-facing class such as PDFprinter and html_tree utilises the Pointer to Implementation (Pimpl) idiom. The header files contain no private members from third-party libraries (WebKit, PoDoFo, or GLib).
+                <ul>
+                    <li>
+                        <b>Benefit:</b> You can upgrade the underlying rendering engine by simply replacing the shared object (.so) file. Your host application does not require recompilation
+                    </li>
+                </ul>
+
+                <h3 id="api-thread-safety">9.1.2 Thread Safety &amp; Initialization</h3>
+                <p>
+                    For non-GTK host applications, the rendering engine utilizes a <strong>Thread-Safe Singleton</strong> pattern to manage the underlying GTK environment.
+                </p>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>icGTK::init();</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Initializing the Global GTK Context.</div>
+
+                <p>
+                    This method must be invoked before any PDF generation calls are executed. It initializes the heavy WebKit infrastructure within a <strong>dedicated worker thread</strong>, isolating the GTK initialisation from your application's
+                    main execution loop. As a "Set-and-Forget" object, it provides no public getters or state manipulators; its sole purpose is to maintain the lifecycle of the rendering thread.
+                </p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Do not invoke <b>icGTK::init()</b> from within an existing GTK-based process. Initializing a second global context is redundant and will lead to an immediate application crash.
+
+                    </div>
+                </div>
+
+                <h2 id="api-htmldom">9.2 The html_tree Class (DOM Construction)</h2>
+                <p>
+                    The html_tree class allows for programmatic construction of well-formed HTML without manual string concatenation.
+                    cpp
+                </p>
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>#include &lt;wk2gtkpdf&#x2F;ichtmltopdf++.h&gt;
+
+// 1. Create the Root
+phtml::html_tree dom("html");
+
+// 2. Nest Elements
+phtml::html_tree *body = dom.new_node("body");
+phtml::html_tree *h1   = body->new_node("h1");
+
+// 3. Set Content (ABI-safe strings)
+h1->set_node_content("Professional PDF Report");
+
+// 4. Extract HTML string
+phtml::process_nodes(&dom);
+const char *html = dom.get_html();
+
+// 5. Cleanup
+phtml::PDF_FreeHTML(html);</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Minimal example using built in DOM constructor.</div>
+                <h2 id="api-rendering">9.3 The PDFprinter Class (Rendering)</h2>
+                <p>
+                    The PDFprinter class manages the conversion of HTML strings into PDF documents or raw binary data.
+                </p>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>#include &lt;wk2gtkpdf&#x2F;ichtmltopdf++.h&gt;
+
+// Initialize the Global GTK Loop (Call once)
+icGTK::init();
+
+phtml::PDFprinter pdf;
+
+// Set input HTML and Output filename
+pdf.set_param(html, "report.pdf");
+
+// Set Layout parameters
+pdf.layout("A4", "portrait");
+
+// Execute Rendering
+pdf.make_pdf();
+</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Generating a PDF.</div>
+
+                <h2 id="api-blobs">9.4 Working with BLOBs</h2>
+                <p>
+                    For advanced workflows (e.g., post-processing with ImageMagick), the library can return the PDF as a raw memory buffer.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>pdf.set_param(html); // No filename provided = BLOB mode
+     pdf.make_pdf();
+
+     // Retrieve Binary Data
+     phtml::PDF_Blob binDat = pdf.get_blob();
+
+     // ... process binDat.data (size: binDat.size) ...
+
+     // Explicitly free the library-allocated memory
+     phtml::PDF_FreeBlob(binDat);</code></pre>
+                    </div>
+                </div>
+
+                <h2 id="api-variadic-helpers">9.5 Variadic Helpers</h2>
+                <p>
+                    To facilitate dynamic content generation, the API includes printf-style helpers that handle internal buffering automatically.
+                </p>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>new_node_f(const char *format, ...)
+set_node_content_f(const char *format, ...)</code></pre>
+                    </div>
+                </div>
+                <h2 id="api-indexing">9.6 Indexing Configuration</h2>
+                <p>
+                    The wkgtk-html2pdf engine provides three distinct modes for generating PDF sidebar bookmarks (the document outline). This is controlled via the phtml::index_mode enumeration.
+                </p>
+                <h3 id="api-index-mode">9.6.1 The index_mode Enum</h3>
+                <p>
+                    When calling the rendering methods, you must pass one of the following flags:
+                </p>
+                <table class=fixed>
+                    <col width="225pt">
+                    <tr>
+                        <th>Constant</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr>
+                        <td class="field">index_mode::OFF</td>
+                        <td class="field">Default. No sidebar bookmarks are generated.</td>
+                    </tr>
+                    <tr>
+                        <td class="field">iindex_mode::CLASSIC</td>
+                        <td class="field">Scrapes all &lt;a&gt; tags with internal # anchors.<span class="index-item"><a href=#anchor-classic>See 4.1 Classic mode</a></span></td>
+                    </tr>
+                    <tr>
+                        <td class="field">index_mode::ENHANCED</td>
+                        <td class="field">Only indexes elements explicitly marked with the index-item class. <span class="index-item"><a href=#anchor-enhanced>See 4.2 Enhanced mode</a></span></td>
+                    </tr>
+                </table>
+
+                <h3 id="api-implementation">9.6.2 API Implementation</h3>
+                <p>
+                    To enable indexing within your C++ application, pass the mode as the third argument to the parameter setup function.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>#include &lt;wk2gtkpdf&#x2F;ichtmltopdf++.h&gt;
+
+// 1. Initialise the printer
+phtml::PDFprinter pdf("file:///path/to/resources/");
+
+// 2. Set parameters with Indexing Mode
+// Signature: set_param_from_file(const char* infile, const char* outfile, index_mode mode)
+phtml::index_mode myMode = phtml::index_mode::ENHANCED;
+
+pdf.set_param_from_file("input.html", "output.pdf", myMode);
+
+// 3. Configure layout and render
+pdf.layout("A4", "portrait");
+pdf.make_pdf(); </code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h3 id="api-strategic-index">9.6.3 Strategic Usage</h3>
+                <ul class="box">
+                    <li> <b>Off</b> - For documents that do not have .page and .subpage classes the only option is to leave indexing off.
+                    </li>
+                    <li> <b>Classic Mode</b> - Best for legacy HTML documents where headers are already wrapped in standard anchors. It requires zero modification to the HTML but can result in a "noisy" sidebar if the document contains many
+                        cross-references.
+                    </li>
+                    <li><b>Enhanced Mode</b>- The professional choice for complex manuals. By requiring the.index-item class, it allows the developer to precisely curate the navigation tree and, as noted in <span class="index-item"><a
+                                href="#enhanced-v-classic">Section4.3.2</a></span>, expands the clickable
+                        hit-box to the entire container for better UX in PDF viewers.
+                    </li>
+                </ul>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        Setting indexing to enhanced mode without using the bundled templates and declaring <b>.page</b> and <b>.subpage</b> &lt;div&gt; containers will cause undefined behaviour.
+                    </div>
+                </div>
+
+                <h2 id="gtk-dev">9.7 GTK Development</h2>
+                <p>
+                    Because a single Linux process cannot safely load both libgtk-3 and libgtk-4 simultaneously, wkgtk-html2pdf is distributed in two distinct builds. Selecting the correct version depends entirely on your application's environment.
+                </p>
+
+                <h3 id="gtkheadlessdev">9.7.1 Headless applications</h3>
+                <p>
+                    The library supports both GTK3 (WebKit 4.1) and GTK4 (WebKit 6.0) targets. Thanks to our Pimpl-shielded architecture, the headers and public API symbols remain identical across both versions.
+                    To switch your build target, simply update your pkg-config flags:
+                </p>
+                <ul class="box">
+                    <li><b>For GTK3</b> - pkg-config --libs wk2gtkpdf-4</li>
+                    <li><b>For GTK4</b> - pkg-config --libs wk2gtkpdf-6</li>
+                </ul>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h3 id="gtkappdev">9.7.2 GTK Applications</h3>
+                <p>
+                    Attempting to link a GTK3-based host application against the GTK4 version of the library (or vice-versa) will result in an immediate Segmentation Fault or a Critical Gdk-Error at startup. This is not a limitation of the library,
+                    but a fundamental restriction of
+                </p>
+                <p>
+                    the GTK display backend, which cannot coexist with multiple global versions in a single process space.
+                </p>
+                <p>
+                    Ensure that your build target matches your host environment as described in <span classs="index-item"><a href="#gtkheadlessdev">Section 9.7.1</a></span>.
+                </p>
+                <h3 id="headlessdaemon">9.7.3 Headless Daemons</h3>
+                <p>As WebKitGTK requires a valid display surface to initialize the rendering pipeline, libwk2gtkpdf is bundled with a dedicated background service. This service manages a virtual framebuffer (Xvfb), providing a "Ghost Display"
+                    when no physical hardware is available.
+                </p>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        During development, we attempted to generate PDFs using the Weston (Wayland) compositor as a headless alternative to Xvfb. However, while Weston is suitable for general rendering, it did not support stable PDF generation
+                        at the time of publication. We will continue to monitor Wayland’s headless maturity; until then, Xvfb remains the mandatory standard for server-side production.
+                    </div>
+                </div>
+                <p>
+                    For high-availability services (such as automated statement delivery), the engine must be decoupled from the main application thread. This ensures that the "heavy lifting" of WebKit rendering does not block your application’s
+                    supervisory logic or network listeners.
+                </p>
+                <p>
+                    The recommended lifecycle for a long-running service involves initializing the global singleton in your main() entry point and delegating the document production to a dedicated worker thread.
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>int main(int argc, char** argv) {
+// 1. Initialize the Global GTK Context (Once per lifetime)
+icGTK::init();
+// 2. Spawn the Industrial Delivery Thread
+std::thread t1(& {run_statement_delivery_service();});
+t1.join();
+return 0;
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
+                <p>
+                    This pattern has been forensically verified for stability. During a 20-day "Longevity Audit" of the Inplicare Automated Account Statement service, this exact implementation demonstrated:
+                </p>
+                <ul class="box">
+                    <li><b>Zero-Leak Throughput</b> - Continuous generation of PDF statements without cumulative memory growth.</li>
+                    <li><b>Internal Library Compatibility</b> - The make_pdf() call remained stable even when nested three levels deep within external shared libraries (.so).</li>
+                    <li><b>Thread Safety</b> - No collisions between the WebKit rendering thread and the host application's timeout management logic. </li>
+                </ul>
+
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        The icGTK::init() call is a Global Anchor. Once set in main(), any thread within the same process space can safely trigger a PDF render, provided the host is built against the correct GTK target (See <span
+                            classs="index-item"><a href="#gtkheadlessdev"><b>Section 9.7.1</b></a></span>)
+                    </div>
+                </div>
+
+                <h4 id="servicedev">9.7.3.1 Service development</h4>
+                <p>
+                    The most critical failure point for a headless service is the termination of the Xvfb display server. Because WebKitGTK maintains a persistent connection to the display surface, the loss of Xvfb will cause an immediate,
+                    unrecoverable crash of your host application.
+                </p>
+                <p>
+                    libwk2gtkpdf communicates directly with the systemd-logind and D-Bus bus. If the mandatory xvfb.service is inactive, the engine will:
+                </p>
+                <ul class="box">
+                    <li><b>Probe</b> - Check the ActiveState of the virtual framebuffer via org.freedesktop.systemd1.</li>
+                    <li><b>Resuscitate</b> - Issue a StartUnit command directly to the Systemd Manager if the display is missing.</li>
+                    <li><b>Wait</b> - Synchronize the rendering thread until the virtual display surface is confirmed "active".</li>
+                </ul>
+
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        There is no need to add xvfb.service to your daemon's configuration; Your daemon starts, initialises libwk2gtkpdf, libwk2gtkpdf then starts xfvb if it isn't already running.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>[Unit]
+Description=Foo Daemon
+# Ensure the network is up so we can fetch assets or talk to APIs
+After=network-online.target
+Wants=network-online.target
+
+# Prevent the service from infinite-looping if it fails
+StartLimitIntervalSec=60s
+StartLimitBurst=5
+
+[Service]
+# self-healing policy
+Restart=on-failure
+RestartSec=5s
+
+# The user/group should have write access to your logs and temp folders
+User=bar
+Group=bar
+
+Type=simple
+ExecStart=/usr/bin/your-daemon-name --verbose --config /etc/foo/config.json
+
+# Clean shutdown handling
+KillMode=process
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+# This ensures the daemon starts automatically at boot
+WantedBy=multi-user.target
+</code></pre>
+                    </div>
+                </div>
+                <div class="code-caption">Example service file.</div>
+
+                <p>
+                    To prevent the engine from waiting for desktop-only services, init() explicitly neuters the following background portals:
+                </p>
+                <ul class="box">
+                    <li><b>Portal Deactivation</b> - GTK_USE_PORTAL=0 ensures the engine doesn't try to use Flatpak-style "Save As" dialogues.</li>
+                    <li><b>Bridge Suppression</b> - NO_AT_BRIDGE=1 prevents the engine from looking for Accessibility tools that aren't present in headless mode.</li>
+                    <li><b>VFS Lock</b> - GIO_USE_VFS=local forces WebKit to use the local filesystem, bypassing network-mount delays.</li>
+                </ul>
+
+            </div>
+        </div>
+
+        <script src="/usr/share/wk2gtkpdf/overflow-monitor-pedantic.js">
+        </script>
+    </body>
+
+</html>

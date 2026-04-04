@@ -183,70 +183,73 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    --default-font-size: 12;\n",
         "    --default-line-height: 1.5;\n",
         "    --default-font-family: \"Liberation Sans\", sans-serif;\n",
-        "    /* --- DO NOT CHANGE THESE VALUES --- */\n",
-        /* --- PREVENT WEBKIT INTERNAL ROUNDING --- */
-        /* 2. Calculate Pure Height in Pixels (96 DPI) */
+
+        "    /* --- INTERNAL CALCULATIONS (explicit) --- */\n",
         "    --height-pure-px: calc(var(--page-height) * 96 / 25.4);\n",
-        /* 3. The Webkit Floor: Snap down to the nearest physical pixel */
         "    --height-floored-px: round(down, var(--height-pure-px), 1);\n",
-        /* 4. Convert back to Points and apply the 1pt 'Safety Shave' */
-        "    --webkit-height-val: calc(var(--height-floored-px) * 0.75);\n",
+        "    --webkit-height-val: calc(var(--height-floored-px) * 0.75pt);\n",
+
+        "    --margin-v-pure-px: calc(var(--page-margin-v) * 96 / 25.4);\n",
+        "    --margin-v-floored: calc(round(down, var(--margin-v-pure-px), 1) * 0.75pt);\n",
+
+        "    --lh-pure-px: calc(var(--default-font-size) * var(--default-line-height) * 96 / 72);\n",
+        "    --lh-floored-px: round(down, var(--lh-pure-px), 1);\n",
+        "    --real-line-height: calc(var(--lh-floored-px) * 0.75pt);\n",
         "}\n\n",
+
         "* {\n",
         "    box-sizing: border-box;\n",
         "    margin: 0; padding: 0;\n",
-        "    line-height: calc((var(--default-line-height) * var(--default-font-size)) * 1pt);\n",
+        "    line-height: var(--real-line-height);\n",
         "    font-family: var(--default-font-family);\n",
         "    font-size: calc(var(--default-font-size) * 1pt);\n",
         "}\n\n",
+
         "@page {\n",
         "    size: calc(var(--page-width) * 1mm) calc(var(--page-height) * 1mm);\n",
         "    margin: 0;\n",
         "}\n\n",
+
         "html, body {\n",
         "    width: calc(var(--page-width) * 1mm);\n",
         "    margin: 0; padding: 0;\n",
         "    background-color: transparent !important;\n",
-        "    font-family: \"Liberation Sans\", sans-serif;\n",
         "}\n\n",
+
         ".page {\n",
         "    width: calc(var(--page-width) * 1mm);\n",
-        /* The Safety Shave (0.1mm) prevents ghosting */
-        "    height: calc(var(--webkit-height-val) * 1pt);\n",
+        "    height: var(--webkit-height-val);\n",
         "    background-color: white !important;\n",
         "    display: grid;\n",
-        /* The Grid Cage: [Margin] [Content] [Margin] */
         "    grid-template-columns: calc(var(--page-margin-h) * 1mm) 1fr calc(var(--page-margin-h) * 1mm);\n",
-        "    grid-template-rows: calc(var(--page-margin-v) * 1mm) 1fr calc(var(--page-margin-v) * 1mm);\n",
+        "    grid-template-rows: var(--margin-v-floored) 1fr var(--margin-v-floored);\n",
         "    break-after: page;\n",
         "    position: relative;\n",
         "    overflow: hidden;\n",
         "    border-radius: 0;\n",
         "    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);\n",
         "}\n\n",
+
         ".subpage {\n",
-        /* Bolt to Row 2, Column 2 */
         "    grid-area: 2 / 2 / 3 / 3;\n",
         "    display: flex;\n",
         "    flex-direction: column;\n",
         "    position: relative;\n",
         "    overflow: hidden;\n",
-        /* Helper border for design phase */
         "    outline: 1pt solid blue;\n",
         "}\n\n",
+
         "@media print {\n",
         "    .page { border: none; box-shadow: none; }\n",
         "    .subpage { outline: none; }\n",
         "}\n"
-        /* clang-format -on */
-        );
+        /* clang-format on */
+    );
 
-    std::string filename = name + "-" + orientation + ".css";
+    std::string   filename = name + "-" + orientation + ".css";
     std::ofstream file(filename);
     if (file) {
         file << css;
         file.close();
     }
 }
-
-

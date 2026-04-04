@@ -20,9 +20,9 @@ int main(int argc, char *argv[]) {
     html_tree dom("html");
 
     html_tree *head = dom.new_node("head");
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
+    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A0-portrait.css\"");
     head->new_node("style")->set_node_content(
-        "/* The Grid: 1px red line every 10mm */ "
+        /* The Grid: 1pt red line every 10mm */
         ".grid-line { "
         "    position: absolute; "
         "    left: 0; "
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
         // "   overflow: visible; /* Let the text show, but the box is 'nothing' */ "
         // "} "
 
-        "/* The Page Marker: A blue 2px line exactly at Top 0 */ "
+        /* The Page Marker: A blue 2pt line exactly at Top 0 */
         ".top-marker { "
         "    position: absolute; "
         "    top: 0; "
@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
 
     html_tree *body = dom.new_node("body");
 
-    for (int p = 0; p != 2000; ++p) {
+    for (int p = 0; p != 200; ++p) {
         html_tree *page = body->new_node("div class=\"page\"")->new_node("div class=\"subpage\"");
         page->new_node("div class=\"top-marker\"");
-        for (int i = 0; i != 28; ++i) {
+        for (int i = 0; i != 116; ++i) {
             page->new_node_f("div class=\"grid-line\" style=\"top: %.2fpt\"", (i + 1) * 28.25)->set_node_content_f("%dmm", (i + 1) * 10);
         }
         page->new_node("div class=\"page-number\"")->set_node_content_f("page %d", p + 1);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     process_nodes(&dom);
 
     const char   *html = dom.get_html();
-    std::ofstream file(std::filesystem::current_path().string() + "/A2-2000-measure_test.html");
+    std::ofstream file(std::filesystem::current_path().string() + "/A0P-measure_test.html");
     if (file) {
         file << html;
         file.close();
@@ -141,9 +141,9 @@ int main(int argc, char *argv[]) {
     PDFprinter  pdf(baseURI.c_str());
     pdf.set_param(
         html,
-        (std::filesystem::current_path().string() + "/A4-2000-measure_test.pdf").c_str()
+        (std::filesystem::current_path().string() + "/A0P-measure_test.pdf").c_str()
     );
-    pdf.layout("A4", "portrait");
+    pdf.layout("A0", "portrait");
 
     pdf.make_pdf();
 

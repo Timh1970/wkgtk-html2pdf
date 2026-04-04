@@ -1,0 +1,368 @@
+/******************************************************************************/
+/*                                                                            */
+/* TECHNICAL DOCUMENTATION BASELINE (DPI-LOCKED)                              */
+/* ---------------------------------------------                              */
+/* Single column easy to read linear ISO A4 technical manual style sheet      */
+/*                                                                            */
+/* HTML to PDF style sheet requiremements:                                    */
+/*                                                                            */
+/* - All declared values are in points (pt); other units are forbidden.       */
+/*                                                                            */
+/* - All pt values must return a whole number when divided  by .75            */
+/*                                                                            */
+/*     Shorthand for pt * (96 / 72)                                           */
+/*                                                                            */
+/******************************************************************************/
+:root {
+    /* Typographic Scale */
+    /* Prevents "doubling" in dense technical text */
+    /* Semantic Colors (High Contrast for PDF/A) */
+    --color-text: #1a1a1a;
+    --color-heading: #000000;
+    --color-accent: #0056b3;
+    /* IEEE-style blue */
+    --color-border: #dddddd;
+    --font-weight: 400;
+    --font-mono: "Liberation Mono", monospace;
+    --font-sans: "Liberation Sans", sans-serif;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* BASIC CONTAINERS                                                           */
+/*                                                                            */
+/******************************************************************************/
+* {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    font-family: var(--font-sans);
+    line-height: 16.5pt;
+    font-size: 12pt; 
+}
+
+body {
+    font-weight: 400;
+    color: var(--color-text);
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+    color: var(--color-heading);
+    font-weight: 700;
+    margin-bottom: 9pt;
+}
+
+h1 {
+    font-size: 24pt;
+    border-bottom: 0.75pt solid var(--color-border);
+    padding-bottom: 5.25pt;
+    line-height: 30pt;
+}
+
+h2 {
+    font-size: 18pt;
+    margin-top: 18pt;
+    line-height: 22.5pt;
+}
+
+h3 {
+    font-size: 13.5pt;
+    margin-top: 18pt;
+    color: var(--color-accent);
+    line-height: 18pt;
+}
+
+h4 {
+    font-size: 12pt;
+    margin-top: 18pt;
+    text-transform: uppercase;
+    letter-spacing: 0.75pt;
+}
+
+p {
+    margin-bottom: 12pt;
+    text-align: left;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* CODE AND TECHNICAL BLOCKS                                                  */
+/*                                                                            */
+/******************************************************************************/
+code, pre {
+    --font-size: 9.75;
+    --line-height: 1.5;
+    /* Line height calculator - DO NOT ALTER */
+    --lh-pure-px: calc(var(--font-size) * var(--line-height) * 96 / 72);
+    --lh-floored-px: round(down, var(--lh-pure-px), 1);
+    --lh-pt: calc(var(--lh-floored-px) * 0.75);
+    font-family: var(--font-mono);
+    font-size: calc(var(--font-size) * 1pt) !important;
+    line-height: calc(var(--lh-pt) * 1pt) !important;
+    /* Mono usually looks larger than Sans, so we step down */
+    background-color: #f5f5f5;
+}
+
+pre {
+    padding: 9.75pt;
+    border: 0.75pt solid var(--color-border);
+    border-radius: 2.25pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 9.75pt 0;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* PAGE INDEX                                                                 */
+/*                                                                            */
+/******************************************************************************/
+ul.index {
+    background: inherit;
+    padding: inherit;
+    list-style-type: none;
+}
+
+ol>li.header {
+    --font-size: 30;
+    --line-height: 1.2;
+    /* Line height calculator - DO NOT ALTER */
+    --lh-pure-px: calc(var(--font-size) * var(--line-height) * 96 / 72);
+    --lh-floored-px: round(down, var(--lh-pure-px), 1);
+    --lh-pt: calc(var(--lh-floored-px) * 0.75);
+    line-height: calc(var(--lh-pt) * 1pt);
+    font-size: calc(var(--font-size) * 1pt);
+    margin: 0;
+    padding-left: 6pt;
+    margin-left: 16pt;
+    margin-top: 9pt;
+}
+
+li.index-item a {
+    line-height: 18pt
+    font-size: 12pt
+}
+
+li.index-item {
+    margin-top: 3.75pt
+}
+
+ul.leaders li:not(.index-branch):before {
+    float: left;
+    width: 0;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    letter-spacing: 2.25pt;
+    content: "................................................................";
+}
+
+/* Indent each index level */
+ul.index.leaders {
+    margin-left: 15pt;
+    padding: 0;
+    overflow-x: hidden;
+    list-style: none;
+}
+
+ul.index.leaders>li {
+    margin-left: 20.25pt;
+}
+
+/* ol>li {
+    margin: 0;
+    padding-top: 4.5000pt
+} */
+ol.index {
+    background: none;
+}
+
+ul.leaders span:first-child {
+    padding-right: 12pt;
+    background: white
+}
+
+ul.leaders span+span {
+    float: right;
+    padding-left: 12pt;
+    background: white
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* AUTOMATIC PAGE NUMBERING                                                   */
+/*                                                                            */
+/******************************************************************************/
+div.page.number {
+    counter-reset: page 0;
+}
+
+/* Increment and Show for the .number page AND every page AFTER it */
+div.page.number,
+div.page.number~div.page {
+    counter-increment: page;
+}
+
+div.page.number div.subpage::after,
+div.page.number~div.page div.subpage::after {
+    display: block;
+    content: " Page - " counter(page);
+    position: absolute;
+    bottom: 0pt;
+    right: 0pt;
+    z-index: 999;
+    padding: 2.25pt 6pt;
+    border-right: 1.5pt solid #23b8e7;
+    font-size: 9pt;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* WARNING BOX                                                                */
+/*                                                                            */
+/******************************************************************************/
+.warning {
+    padding: 6pt 0 6pt 0;
+}
+
+.warning-box {
+    background-color: #fff9db;
+    /* Soft yellow */
+    width: auto;
+    border-left: 3.75pt solid #fcc419;
+    /* Bold yellow stripe */
+    margin: 15pt 0;
+    padding-left: 6pt;
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #856404;
+    font-size: 10.5pt;
+    padding-top: 8.25pt;
+    padding-bottom: 8.25pt;
+    padding-right: 12pt;
+}
+
+.warning-box strong {
+    margin-right: 4.5pt;
+    /* This creates the "breathing room" after the word WARNING: */
+    flex-shrink: 0;
+    /* Prevents the label from squishing on narrow pages */
+}
+
+.warning-icon {
+    font-size: 24pt;
+    margin-right: 11.25pt;
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* NOTE BOX                                                                   */
+/*                                                                            */
+/******************************************************************************/
+.note-box {
+    background-color: #e7f5ff;
+    /* Soft blue */
+    width: auto;
+    border-left: 3.75pt solid #339af0;
+    /* Bold blue stripe */
+    margin: 15pt 0;
+    padding: 7.5pt 11.25pt;
+    /* Added vertical padding for better text flow */
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #1864ab;
+    /* Darker blue for text contrast */
+    font-size: 10.5pt;
+    line-height: 1.4;
+}
+
+.note-icon {
+    font-size: 24pt;
+    margin-right: 11.25pt;
+    /* Optional: use a Unicode Info symbol like 'ℹ' or an icon font */
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* IMPORTANT BOX                                                              */
+/*                                                                            */
+/******************************************************************************/
+.important-box {
+    background-color: #f8f0fc;
+    /* Very soft violet */
+    width: auto;
+    border-left: 3.75pt solid #ae3ec9;
+    /* Bold violet stripe */
+    margin: 15pt 0;
+    padding: 8.25pt 11.25pt;
+    display: flex;
+    align-items: center;
+    border-radius: 3pt;
+    color: #4b0082;
+    /* Deep Indigo for text contrast */
+    font-size: 10.5pt;
+    line-height: 1.4;
+}
+
+.important-box strong {
+    margin-right: 4.5pt;
+    flex-shrink: 0;
+}
+
+.important-icon {
+    font-size: 24pt;
+    line-height: 0;
+    margin-right: 11.25pt;
+}
+
+/* Remove Underline for print */
+@media print {
+    a {
+        /* color: black !important; */
+        text-decoration-line: none !important;
+    }
+}
+
+/******************************************************************************/
+/*                                                                            */
+/* DEBUG GRID                                                                 */
+/* ----------                                                                 */
+/* If a page is not rendering correctly or its contents are jumping it is     */
+/* almost certainly becasue of an irreconcileable value.                      */
+/*                                                                            */
+/* Ading this class to the a .subpage element will help to visualise or       */
+/* manually check suspected issues.                                           */
+/*                                                                            */
+/******************************************************************************/
+.debug-grid {
+    position: relative;
+}
+
+.debug-grid::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 9999;
+    /* Create the horizontal lines */
+    background-image:
+        linear-gradient(#D8D8D8 0.75pt, transparent 0.75pt),
+        linear-gradient(#E8E8E8 0.75pt, transparent 0.75pt);
+    /*
+       The first size is your full --baseline (e.g. 18pt).
+       The second size is the half-step (e.g. 9pt).
+    */
+    background-size: 100% var(--real-line-height), 100% calc(var(--real-line-height) / 2);
+    background-position: 0 -0.75pt;
+    /* Align precisely with the top border */
+}
+
+/* Highlight the containers to see if they are 'snapping' */
+.debug-grid * {
+    outline: 1px dotted rgba(0, 249, 0, 0.6);
+}

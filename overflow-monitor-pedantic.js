@@ -19,7 +19,7 @@ sheet.replaceSync(`
         background: #ae3ec9;
         color: white;
         font-size: 7pt;
-        padding: 1pt 3pt;
+        padding: 0.75pt 3pt;
         z-index: 10001;
         pointer-events: none;
     }
@@ -241,8 +241,8 @@ const checkDesignIssues = async (element) => {
         issues.push('OVERFLOW');
         //element.style.border = "3pt solid red";
         element.style.outline = "8pt solid red";
-           element.style.outlineOffset = "1pt"; // Pulls it inside so it doesn't bleed off-page
-       }
+        element.style.outlineOffset = "0.75pt"; // Pulls it inside so it doesn't bleed off-page
+    }
 
     return issues;
 };
@@ -293,6 +293,15 @@ const observer = new ResizeObserver(async (entries) => {
                     return;
                 }
 
+                const status = checkStylesheetAccess(sheet);
+                const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
+
+                if (!status.accessible) {
+                    allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
+                    console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
+                    return; // Skip this sheet
+                }
+
                 try {
                     Array.from(sheet.cssRules).forEach(rule => {
                         const text = rule.cssText.toLowerCase();
@@ -313,11 +322,14 @@ const observer = new ResizeObserver(async (entries) => {
                                 dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
                             }
                         }
-                        if (/:\s*\d+\.(?!(0|25|5|75)0*\s*pt)\d+pt/.test(text)) {
-                            const ignore = ['design-helper', '.page', '.subpage'];
-                            if (!ignore.some(term => rule.selectorText?.includes(term))) {
-                                dodgySelectors.push(`DIRTY_PRECISION: ${rule.selectorText}`);
-                            }
+                        const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
+                        if (ptMatches) {
+                            ptMatches.forEach(match => {
+                                const val = match.replace(/:\s*|pt/g, '');
+                                if (isDirtyPT(val)) {
+                                    dodgySelectors.push(`DIRTY_PRECISION (${val}pt): ${rule.selectorText}`);
+                                }
+                            });
                         }
 
                     });
@@ -325,6 +337,7 @@ const observer = new ResizeObserver(async (entries) => {
             });
             return [...new Set(dodgySelectors)];
         };
+
 
         const scanForInlineLiarUnits = () => {
             const inlineDodgy = [];
@@ -357,13 +370,20 @@ const observer = new ResizeObserver(async (entries) => {
 
                     el.classList.add('design-helper-inline-liar');
                 }
-                if (/:\s*\d+\.(?!(0|25|5|75)0*\s*pt)\d+pt/.test(styleAttr)) {
-                    const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
-                    inlineDodgy.push(`DIRTY_PRECISION: ${identifier}`);
 
+                if (!allIssues.has('OVERFLOW')) {
 
-                    el.setAttribute('data-label', 'DIRTY_PRECISION');
-                    el.classList.add('design-helper-inline-liar');
+                    const ptMatches = styleAttr.match(/(\d*\.?\d+)pt/g);
+                    if (ptMatches) {
+                        ptMatches.forEach(match => {
+                            const val = match.replace('pt', '');
+                            if (isDirtyPT(val)) {
+                                inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline`);
+                                el.setAttribute('data-label', `DIRTY_PRECISION: ${val}pt`);
+                                el.classList.add('design-helper-inline-liar');
+                            }
+                        });
+                    }
                 }
 
             });
@@ -383,6 +403,48 @@ const observer = new ResizeObserver(async (entries) => {
     });
 });
 
+const isDirtyPT = (value) => {
+    const num = parseFloat(value);
+    if (isNaN(num)) return false;
+    // The "Stone" Test: (Value / 0.75) must be an Integer
+    return !Number.isInteger(Math.round((num / 0.75) * 1000) / 1000);
+};
+
+const checkStylesheetAccess = (sheet) => {
+    try {
+        // Attempting to read 'cssRules' is the definitive test.
+        // Browsers like Blink will throw a DOMException (SecurityError)
+        // if the file origin is considered "opaque" (like local files).
+        const rules = sheet.cssRules || sheet.rules;
+
+        if (rules === null) {
+            return {
+                accessible: false,
+                reason: "BROWSER_RESTRICTED (null rules)"
+            };
+        }
+
+        return {
+            accessible: true,
+            reason: null
+        };
+    } catch (e) {
+        // Handle common security/access errors
+        if (e.name === 'SecurityError' || e.code === 18) {
+            return {
+                accessible: false,
+                reason: "CORS_OR_FILE_PROTOCOL_BLOCK"
+            };
+        }
+        return {
+            accessible: false,
+            reason: "UNAVAILABLE (" + e.message + ")"
+        };
+    }
+};
+
+
+
 const createDesignStatusPanel = () => {
     const panel = document.createElement('div');
     panel.id = 'design-status-panel';
@@ -392,11 +454,11 @@ const createDesignStatusPanel = () => {
     bottom: 7.5pt;
     right: 7.5pt;
     background: #f0f0f0;
-    border: 1pt solid #ccc;
+    border: 0.75pt solid #ccc;
     padding: 7.5pt;
-    border-radius: 2.5pt;
+    border-radius: 2.25pt;
     font-family: monospace;
-    font-size: 10pt;
+    font-size: 9.75pt;
     max-width: 225pt;
     max-height: 150pt;
     overflow-y: auto;
@@ -411,22 +473,47 @@ const updateStatusPanel = (allIssues) => {
     let panel = document.getElementById('design-status-panel');
     if (!panel) panel = createDesignStatusPanel();
 
-    if (allIssues.length === 0) {
+    // Convert Set to Array once for the UI logic
+    const issuesArray = Array.from(allIssues);
+
+    if (issuesArray.length === 0) {
         panel.style.display = 'none';
         return;
     }
 
     panel.style.display = 'block';
-    panel.style.borderColor = allIssues.some(i => i.includes('OVERFLOW')) ? 'red' : 'brown';
-    panel.innerHTML = `
-    <strong style="color: #333;">Design Issues:</strong><br>
-    ${allIssues.map(issue => `<div style="color: ${issue.includes('OVERFLOW') ? 'red' : 'brown'};">• ${issue}</div>`).join('')}
-  `;
 
+    // 1. Determine the "Master" color for borders
+    let masterColor = 'brown';
+    if (issuesArray.some(i => i.includes('OVERFLOW'))) {
+        masterColor = 'red';
+    } else if (issuesArray.some(i => i.includes('READ_ERROR'))) {
+        masterColor = '#007bff'; // Blue for restricted access
+    }
+
+    panel.style.borderColor = masterColor;
+
+    // 2. Generate the list with specific colors per issue type
+    panel.innerHTML = `
+        <strong style="color: #333;">Design Status Audit:</strong><br>
+        ${issuesArray.map(issue => {
+            let color = 'brown';
+            if (issue.includes('OVERFLOW')) color = 'red';
+            if (issue.includes('READ_ERROR')) color = '#007bff';
+
+            return `<div style="color: ${color};">• ${issue}</div>`;
+        }).join('')}
+    `;
+
+    // 3. Sync the subpage outlines to the master state
     document.querySelectorAll('.subpage').forEach((subpage) => {
-        subpage.style.borderColor = allIssues.some(i => i.includes('OVERFLOW')) ? 'red' : 'brown';
+        subpage.style.outlineColor = masterColor;
     });
 
+    // 4. Show alert
+    if (issuesArray.some(i => i.includes('READ_ERROR'))) {
+        showPrecisionAlert();
+    }
 };
 
 async function isFontRendered(fontName) {
@@ -455,3 +542,45 @@ function pixelsEqual(a, b) {
         if (a[i] !== b[i]) return false;
     return true;
 }
+
+// ALERT USER IF BROWSER CANNOT READ FILE
+const showPrecisionAlert = () => {
+    // 1. Check if the user has already seen/dismissed this today
+    if (sessionStorage.getItem('pedantic-linter-silenced')) return;
+
+    const alertBox = document.createElement('div');
+    alertBox.id = 'pedantic-alert-modal';
+
+    alertBox.style = `
+        position: fixed; top: 10.5pt; left: 50%; transform: translateX(-50%);
+        width: 380.25pt; background: #fff; border: 2.25pt solid #007bff;
+        padding: 18pt; z-index: 99999; box-shadow: 0 7.5pt 30pt rgba(0,0,0,0.4);
+        font-family: var(--default-font-family); color: #333;
+    `;
+
+    alertBox.innerHTML = `
+        <h3 style="color: #007bff; margin-top: 0; line-height: 18pt;">⚠️ Precision Audit Locked</h3>
+        <p style="font-size: 10.5pt; line-height: 15.75pt;">
+            Blink-based browsers (Chrome/Edge) prevent the <b>Pedantic Linter</b> from auditing local CSS files.
+        </p>
+        <ul style="font-size: 9.75pt; line-height: 15pt; margin: 15pt 0;">
+            <li>Try an alternative browser eg. <b>Mozilla Firefox</b> if using Microsoft Windows. Or; </li>
+            <li>Launch Chrome with <code>--allow-file-access-from-files</code>. Or;</li>
+            <li>Host your files on a Web Server. Or;</li>
+            <li>Switch to <b>overflow-monitor.js</b> for basic checks only.</li>
+        </ul>
+        <div style="margin-top: 18pt; display: flex; gap: 9pt;">
+            <button id="dismiss-linter-alert" style="padding: 6pt 12pt; cursor: pointer;">Acknowledge</button>
+            <button id="silence-linter-alert" style="padding: 6pt 12pt; background: #eee; border: 0.75pt solid #ccc; cursor: pointer;">Don't show again this session</button>
+        </div>
+    `;
+
+    document.body.appendChild(alertBox);
+
+    // Event Listeners
+    document.getElementById('dismiss-linter-alert').onclick = () => alertBox.remove();
+    document.getElementById('silence-linter-alert').onclick = () => {
+        sessionStorage.setItem('pedantic-linter-silenced', 'true');
+        alertBox.remove();
+    };
+};

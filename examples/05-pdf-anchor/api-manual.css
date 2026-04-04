@@ -1,0 +1,186 @@
+.page {
+    background: white;
+}
+
+hr.frontpage {
+    border: none;
+    height: 7.5pt;
+    /* Set the hr color */
+    color: #333;
+    /* old IE */
+    background-color: #333;
+    /* Modern Browsers */
+}
+
+ol.box {
+    list-style-position: outside !important;
+    padding-left: 30pt;
+    padding-right: 15pt;
+}
+
+ul.box,
+ol.box {
+    font-family: "Liberation Sans";
+    font-size: 10.5pt;
+    background: pink;
+    border-radius: 12pt;
+    margin-top: 10.5pt;
+    margin-bottom: 15.75pt;
+}
+
+ul.box>li {
+    list-style-type: none;
+    padding: 3pt 15pt 3pt 15pt;
+}
+
+ol.box>li {
+    padding: 3pt 0;
+}
+
+ol.box li:first-child,
+ul.box li:first-child {
+    padding-top: 9.75pt;
+}
+
+ol.box li:last-child,
+ul.box li:last-child {
+    padding-bottom: 9.75pt;
+}
+
+th {
+    height: 18.75pt;
+    text-align: left;
+    font-size: 12pt;
+    letter-spacing: 0.75pt;
+    font-style: normal;
+    font-family: "helvetica";
+    color: white;
+    font-weight: bold;
+    padding-left: 12pt;
+    border: solid #002E4D 0.75pt;
+    background-color: #002E4D;
+}
+
+td.field {
+    height: 24.75pt;
+    font-size: 12pt;
+    font-style: normal;
+    font-weight: normal;
+    font-family: "Times New Roman";
+    padding-left: 12pt;
+    padding-right: 12pt;
+    text-align: left;
+    border: solid darkgrey 0.7500pt;
+    padding-top: 1.5pt;
+    padding-bottom: 1.5pt;
+}
+
+table.fixed {
+    table-layout: fixed;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table.fixed td {
+    overflow: auto;
+}
+
+.check-cell::before {
+    content: "\2714";
+    font-family: Arial, sans-serif;
+    font-size: 9.75pt;
+    line-height: 12pt;
+    font-weight: 700;
+    color: var(--color-accent);
+    display: block;
+    text-align: center;
+}
+
+img {
+    display: flex;
+    margin: auto;
+}
+
+img.fullwidth {
+    display: flex;
+    margin: auto;
+    width: 100%;
+    object-fit: contain;
+    padding: 7.5pt;
+}
+
+svg {
+    display: flex;
+    margin: auto;
+    object-fit: contain;
+    padding: 7.5pt;
+}
+
+.code-caption {
+    display: block;
+    width: 100%;
+    margin-bottom: 18pt;
+    margin-top: -9.75pt;
+    text-align: center;
+    font-size: 9pt;
+    letter-spacing: 0.75pt;
+}
+
+div.center {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
+
+.math-container {
+    display: inline-flex;
+    align-items: center;
+    font-family: serif;
+    font-style: italic;
+    font-size: 14.25pt;
+    margin: 15pt 0;
+    color: #333;
+}
+
+.math-operator, .math-label {
+    margin: 0 8.25pt;
+    font-style: normal;
+}
+
+.math-label {
+    font-weight: bold;
+}
+
+.math-bracket-group {
+    display: inline-flex;
+    align-items: stretch;
+}
+
+.math-bracket-open, .math-bracket-close {
+    font-style: normal;
+    font-size: 36pt;
+    line-height: 0.7;
+    display: flex;
+    align-items: center;
+}
+
+.math-fraction {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 5pt;
+}
+
+.math-top {
+    border-bottom: 0.75pt solid #333;
+    width: 100%;
+    text-align: center;
+    padding-bottom: 2.25pt;
+}
+
+.math-bottom {
+    width: 100%;
+    text-align: center;
+    padding-top: 2.25pt;
+}
