@@ -1,13 +1,24 @@
+wkgtk-html2pdf (1.0.12-1) unstable; urgency=medium
+
+  * Automated release: Version 1.0.12
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sat, 04 Apr 2026 13:28:10 +0100
+
 wkgtk-html2pdf (1.0.11-1) unstable; urgency=medium
 
-  * Automated release: Version 1.0.11
+  * Initial release. (Closes: #1132338)
+  * Built with WebKitGTK and PoDoFo for high-fidelity PDF generation.
+  * Integrated layout verification and headless D-Bus support.
+  * Fixes overflow monitor and page templates.
+  * HTML of suite manual (generated with suite) added to examples.
 
  -- James Hothersall <james@wkgtk-html2pdf.com>  Sat, 04 Apr 2026 13:00:13 +0100
 
 wkgtk-html2pdf (1.0.10-1) unstable; urgency=medium
 
-  * Automated release: Version 1.0.10
-  * Resolve final packaging issues (probelm with watch file and VCS Field)
+  * Initial release. (Closes: #1132338)
+  * Built with WebKitGTK and PoDoFo for high-fidelity PDF generation.
+  * Integrated layout verification and headless D-Bus support.
 
  -- James Hothersall <james@wkgtk-html2pdf.com>  Mon, 30 Mar 2026 16:18:58 +0100
 

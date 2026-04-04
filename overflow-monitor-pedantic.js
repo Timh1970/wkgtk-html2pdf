@@ -561,11 +561,11 @@ const showPrecisionAlert = () => {
     alertBox.innerHTML = `
         <h3 style="color: #007bff; margin-top: 0; line-height: 18pt;">⚠️ Precision Audit Locked</h3>
         <p style="font-size: 10.5pt; line-height: 15.75pt;">
-            Blink-based browsers (Chrome/Edge) prevent the <b>Pedantic Linter</b> from auditing local CSS files.
+            Your browser has prevented the <b>Pedantic Linter</b> from auditing some CSS files.
         </p>
         <ul style="font-size: 9.75pt; line-height: 15pt; margin: 15pt 0;">
-            <li>Try an alternative browser eg. <b>Mozilla Firefox</b> if using Microsoft Windows. Or; </li>
-            <li>Launch Chrome with <code>--allow-file-access-from-files</code>. Or;</li>
+            <li>Try an alternative browser. Or; </li>
+            <li>Apply the appropriate flags or setting. Or;</li>
             <li>Host your files on a Web Server. Or;</li>
             <li>Switch to <b>overflow-monitor.js</b> for basic checks only.</li>
         </ul>
