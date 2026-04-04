@@ -1,5 +1,7 @@
 version=4
-opts=filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/wkgtk-html2pdf-$1.tar.gz/ \
-  https://github.com/Timh1970/wkgtk-html2pdf/tags \
-  (?:.*?/)?archive/refs/tags/v?(\d\S+)\.tar\.gz
-
+opts="searchmode=plain, \
+      downloadurlmangle=s/.*\"//, \
+      filenamemangle=s/.*\/wkgtk-html2pdf_(\d\S+)\.orig\.tar\.gz/wkgtk-html2pdf-$1.tar.gz/, \
+      pgpsigurlmangle=s/$/\.asc/" \
+  https://api.github.com/repos/Timh1970/wkgtk-html2pdf/releases \
+  browser_download_url":"(?:[^"]+/download/v?(?:[\d.]+)/wkgtk-html2pdf_([\d.]+)\.orig\.tar\.gz)

@@ -1,6 +1,15 @@
+wkgtk-html2pdf (1.0.13-1) unstable; urgency=medium
+
+  * Automated release: Version 1.0.13
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Sat, 04 Apr 2026 14:43:36 +0100
+
 wkgtk-html2pdf (1.0.12-1) unstable; urgency=medium
 
-  * Automated release: Version 1.0.12
+  * Initial release. (Closes: #1132338)
+  * Built with WebKitGTK and PoDoFo for high-fidelity PDF generation.
+  * Integrated layout verification and headless D-Bus support.
+  * Changed overflow monitor fail notification text
 
  -- James Hothersall <james@wkgtk-html2pdf.com>  Sat, 04 Apr 2026 13:28:10 +0100
 
