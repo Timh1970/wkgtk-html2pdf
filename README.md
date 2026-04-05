@@ -11,7 +11,10 @@ A lightweight C++ library for generating PDFs from HTML using WebKit2GTK.
 - **Automated Tag Closing**: Generate HTML directly from the API with self-closing elements
 - **Easy Variable Data**: Integrate C++ data seamlessly into HTML
 - **Modern Rendering Engine**: Uses WebKit2GTK for consistent, up-to-date rendering
+- **Calibration Testing**:  Built in test generator to ensure the appearance in the browswer and the resultant PDF match.
 
+
+![Testing calibration](web2pdf-calibration-acrobat.png)
 ## Why Use This?
 
 Most HTML-to-PDF tools struggle with:
@@ -28,7 +31,7 @@ Our solution fixes these by:
 
 ### Recommended: Pre-built Packages
 
-We provide pre-built packages for Arch Linux and Debian. These include all necessary configuration files, templates, and system setup.
+We provide pre-built packages for Arch Linux.
 
 #### Arch Linux (AUR)
 ```bash
@@ -44,38 +47,12 @@ Install example:
 sudo pacman -U wkgtk-html2pdf-0.0.10-0-x86_64.pkg.tar.zst
 ```
 
-#### Debian/Ubuntu (Direct Download)
-
-Binaries are here https://git.inplico.uk/releases/wkgtk-html2pdf/Deb/
-
-Install example:
-
-```bash
-sudo dpkg -i wkgtk-html2pdf_1.0.0_amd64.deb
-```
-
-> **Note**: Debian Trixie includes version 1.0.0; earlier versions may require the manual package installation above.
 
 ### Not Recommended: Building from Source
 
-Building from source requires manual configuration of:
-- CSS templates in `/usr/share/html2pdf`
-- systemd `.service` file for Xvfb control
-- polkit rules for passwordless service control on headless systems
-- pkg-config (`.pc`) file for library discovery
-- xvfb user and group creation
-- User group membership setup
+A simple make; make install will build library and the binary and install the templates, but you will have to manage the xvfb service and group manually if you are installing on a headless system (xvfb is not necessary for systems with a desktop environment however installing without the xvfb service is untested).
 
-**We strongly recommend using the pre-built packages instead.** If you need to build from source for an unsupported platform, please open an issue on GitHub.
 
-## Compatibility
-
-| Distribution | Version | Status |
-|--------------|---------|--------|
-| Arch Linux | 0.0.10+ | ✓ Fully supported (AUR + direct download) |
-| Debian Trixie | 0.0.9+ | ✓ Fully supported (direct download) |
-| Debian Bookworm | 0.0.9+ | ✓ Supported (direct download) |
-| Ubuntu 22.04+ | 0.0.9+ | ✓ Supported (direct download) |
 
 ## Quick Start
 
@@ -89,7 +66,7 @@ html2pdf -i infile.html -o outfile.pdf -O portrait -s A4
 For best results link to the appropriate page template; Place your content inside a **page** and **subpage** element and do not overflow the margins (See [Guided Templates](#Guided-Templates)).
 
 ### Further documentation
-Currently a work in progress, our PDF manual developed entirely with the tools that make up this project is available here https://git.inplico.uk/releases/wkgtk-html2pdf/manual.pdf.  Please note however that our Debian release is behind the Arch release due to having to backport the PoDoFo 0.10 code to work with PoDoFo 0.9.
+A full manual is provided at https://wkgtk-html2pdf.com
 
 ### C++ API
 
