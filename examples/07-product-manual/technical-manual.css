@@ -37,7 +37,7 @@
     -webkit-print-color-adjust: exact;
     font-family: var(--font-sans);
     line-height: 16.5pt;
-    font-size: 12pt; 
+    font-size: 12pt;
 }
 
 body {
@@ -209,11 +209,21 @@ div.page.number~div.page div.subpage::after {
     content: " Page - " counter(page);
     position: absolute;
     bottom: 0pt;
-    right: 0pt;
     z-index: 999;
     padding: 2.25pt 6pt;
-    border-right: 1.5pt solid #23b8e7;
     font-size: 9pt;
+}
+
+/* Odd pages (Right side) */
+div.page:nth-of-type(odd) div.subpage::after {
+    right: 0pt;
+    border-right: 1.5pt solid #23b8e7;
+}
+
+/* Even pages (Left side) */
+div.page:nth-of-type(even) div.subpage::after {
+    left: 0pt;
+    border-left: 1.5pt solid #23b8e7;
 }
 
 /******************************************************************************/

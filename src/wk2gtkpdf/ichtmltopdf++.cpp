@@ -740,6 +740,12 @@ namespace phtml {
         g_signal_handlers_disconnect_by_data(impl->m_print_operation, impl);
         g_signal_handlers_disconnect_by_data(impl->m_web_view, impl);
         // --- THE MAGIC CLEANUP BLOCK ---
+        if (impl->m_web_view) {
+            webkit_web_view_terminate_web_process(impl->m_web_view); // Optional: force kill sub-procs
+            g_object_run_dispose(G_OBJECT(impl->m_web_view));        // Properly dispose
+            g_object_unref(impl->m_web_view);                        // Release memory
+            impl->m_web_view = nullptr;
+        }
 
         // 1. Kill the loop first so nothing else can trigger
         if (impl->m_innerLoop) {
