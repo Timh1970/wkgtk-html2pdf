@@ -1,3 +1,9 @@
+wkgtk-html2pdf (1.0.15-1) unstable; urgency=medium
+
+  * Automated release: Version 1.0.15
+
+ -- James Hothersall <james@wkgtk-html2pdf.com>  Tue, 07 Apr 2026 11:22:47 +0100
+
 wkgtk-html2pdf (1.0.14-1) unstable; urgency=medium
 
   * Automated release: Version 1.0.14

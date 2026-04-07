@@ -800,6 +800,13 @@
                 <p>
                     If you are viewing the HTML version of this manual, the randomised image following demonstrates a live remote fetch that will be locked into the PDF upon generation.
                 </p>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        Remote image is just a a static in example for packaging compliance.
+                    </div>
+                </div>
 
 
 
@@ -809,7 +816,7 @@
         <div class="page">
             <div class="subpage">
                 <div>
-                    <img class="fullwidth" style="max-height: 150pt;" src="https://picsum.photos/200/300" alt="Randomised Generic Image">
+                    <img class="fullwidth" style="max-height: 150pt;" src="images/alt-test-img.jpg" alt="Randomised Generic Image">
                     <div class="code-caption">Example: A remote asset embedded at runtime.</div>
                 </div>
 
@@ -1189,7 +1196,7 @@
                     While the Raster Logic manages the outer page internal container calculations ensure that every line of text sits perfectly on a predictable physical pixel.
                 </p>
                 <p>
-                    Standard CSS line-heights (like 1.5 or 1.4) often result in fractional pixels (e.g., 16.8px) which may cause unexpected display anomalies.  The same applies to font sizes eg. 16pt.
+                    Standard CSS line-heights (like 1.5 or 1.4) often result in fractional pixels (e.g., 16.8px) which may cause unexpected display anomalies. The same applies to font sizes eg. 16pt.
                 </p>
                 <p>
                     To achieve zero-drift all objects need to be declared in whole pixel values that are reconcilable with the point unit scale.
@@ -1200,27 +1207,27 @@
                     <li><b>Snap to Pixel</b> - Floor the result to the nearest whole integer</li>
                     <li><b>Convert to Points</b> - Convert back to points</li>
                 </ul>
-<!-- <p>
+                <!-- <p>
 Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
 <p> -->
 
-<div class="note-box">
-    <span class="note-icon">ℹ</span>
-    <div>
-        <strong>Note:</strong>
-Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
-        <div class="center" style="margin-top: 0;">
-            <div class="math-container" style="margin-top: 0;">
-                <span class="math-label">pt</span>
-                <span class="math-operator">&equals;</span>
-                <span class="math-label">( &lfloor;pt &divide; 0.75&rfloor; )</span>
-    <span class="math-operator">&times;</span>
-    <span class="math-label">0.75</span>
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
+                        <div class="center" style="margin-top: 0;">
+                            <div class="math-container" style="margin-top: 0;">
+                                <span class="math-label">pt</span>
+                                <span class="math-operator">&equals;</span>
+                                <span class="math-label">( &lfloor;pt &divide; 0.75&rfloor; )</span>
+                                <span class="math-operator">&times;</span>
+                                <span class="math-label">0.75</span>
 
-            </div>
-        </div>
-    </div>
-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
 
             </div>
@@ -1246,13 +1253,13 @@ Whether it is line height, font size, margins, padding, or any other measurement
                 <p>
                     The basic linter will detect errors that will result in significant drift while the pedantic linter aims to detect most known issues.
                 </p>
-<div class="warning-box">
-    <span class="warning-icon">&#9888;</span>
-        <div>
-        <strong>WARNING:</strong>
-        At the current stage of development and for the foreseeable future the linters should be considered experimental.
-    </div>
-</div>
+                <div class="warning-box">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        At the current stage of development and for the foreseeable future the linters should be considered experimental.
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -1362,9 +1369,9 @@ Whether it is line height, font size, margins, padding, or any other measurement
                         <pre><code>chromium  --allow-file-access-from-files </code></pre>
                     </div>
                 </div>
-<p>
-In one test we had to use <code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code>
-</p>
+                <p>
+                    In one test we had to use <code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code>
+                </p>
 
                 <ul class="box">
                     <li><b>Microsoft Windows</b> - Edge and Chrome on Windows just worked with no special flags or anything. If security is tightened or your configuration is different to our test suite (which is a very basic Windows 11 virtual
@@ -2060,13 +2067,13 @@ div.page.number ~ div.page div.subpage::after {
                     <li><b>[ ] Line height</b> - should be explicitly set in <b>pt</b> values rather than implicit multipliers </li></li>
                     <li><b>[ ] No missing fonts</b> - Not only must fonts be verified at design time, they must also be installed system wide on the machine producing the PDF.</li>
                 </ul>
-<div class="important-box">
-    <span class="important-icon">★</span>
-    <div>
-        <strong>IMPORTANT:</strong>
-        line-height &approx; &lfloor;((multiplier &times; font-size) &divide; 0.75)&rfloor; &times; 0.75
-    </div>
-</div>
+                <div class="important-box">
+                    <span class="important-icon">★</span>
+                    <div>
+                        <strong>IMPORTANT:</strong>
+                        line-height &approx; &lfloor;((multiplier &times; font-size) &divide; 0.75)&rfloor; &times; 0.75
+                    </div>
+                </div>
 
                 <h3 id="enginteg">8.3.2 Engine Integrity</h3>
 
