@@ -141,9 +141,12 @@ git tag -a "$tag" -m "Release $tag"
 DEB_NAME="wkgtk-html2pdf"
 DEB_ARCHIVE_NAME="${DEB_NAME}_${version}.orig.tar.gz"
 
+DEB_ARCHIVE_NAME_LITE="${DEB_NAME}_lite-${version}.orig.tar.gz"
+
+
 # Create the archive (with hyphen in prefix, underscore in filename)
 git archive --format=tar.gz --prefix="${DEB_NAME}-${version}/" -o "../$DEB_ARCHIVE_NAME" "$tag"
-tar cvf archive.tar --transform "s,^,${DEB_NAME}-${version}/," src
+tar cvf ../$DEB_ARCHIVE_NAME_LITE --transform "s,^,${DEB_NAME}-lite-${version}/," src templates/A4-portrait-lite.css overflow-monitor.js wkgtk-html2pdf.1 50-wk2gtkpdf.rules wk2gtkpdf.pc.in xvfb.service LICENSE examples
 
 echo "---------------------------------------------------"
 echo "Version: $version"
