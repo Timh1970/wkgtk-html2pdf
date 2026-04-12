@@ -99,15 +99,30 @@ if [ -f "debian/changelog" ]; then
   mv debian/changelog.new debian/changelog
 fi
 
-cp debian/changelog ../wkgtk-html2pdf-lite/debian/
+# LITE VERSION
+if [ -f "../wkgtk-html2pdf-lite/debian/changelog" ]; then
+  echo "${CHANGELOG_HEADER}-lite" > ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "  * Automated release: Version ${version}" >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "$CHANGELOG_FOOTER" >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  cat ../wkgtk-html2pdf-lite/debian/changelog >> debian/changelog.new
+  mv ../wkgtk-html2pdf-lite/debian/changelog.new debian/changelog
+fi
+
 
 # For the GTK3 / WK4 version
 SHLIBS_FILE4="debian/libwk2gtkpdf-4-${major}.shlibs"
 echo "libwk2gtkpdf-4 ${major} libwk2gtkpdf-4-${major} (>= ${version})" > "$SHLIBS_FILE4"
+echo "libwk2gtkpdf-4 ${major} libwk2gtkpdf-4-${major} (>= ${version})" > "../wkgtk-html2pdf-lite/$SHLIBS_FILE4"
+
 
 # For the GTK4 / WK6 version
 SHLIBS_FILE6="debian/libwk2gtkpdf-6-${major}.shlibs"
 echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "$SHLIBS_FILE6"
+echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "../wkgtk-html2pdf-lite/$SHLIBS_FILE4"
+
 
 
 
