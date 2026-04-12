@@ -141,7 +141,7 @@ git tag -a "$tag" -m "Release $tag"
 DEB_NAME="wkgtk-html2pdf"
 DEB_ARCHIVE_NAME="${DEB_NAME}_${version}.orig.tar.gz"
 
-DEB_ARCHIVE_NAME_LITE="${DEB_NAME}_lite-${version}.orig.tar.gz"
+DEB_ARCHIVE_NAME_LITE="${DEB_NAME}-lite_${version}.orig.tar.gz"
 
 
 # Create the archive (with hyphen in prefix, underscore in filename)

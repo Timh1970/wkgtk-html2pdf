@@ -10,7 +10,7 @@ std::string generate_demo_html() {
     phtml::html_tree  dom("html");
     phtml::html_tree *head = dom.new_node("head");
     // Link to the system-installed CSS templates
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
+    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait-lite.css\"");
 
     phtml::html_tree *body = dom.new_node("body");
     phtml::html_tree *page = body->new_node("div class=\"page\"");

@@ -40,7 +40,7 @@ const char *page() {
             "}\n"
         );
 
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait.css\"");
+    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait-lite.css\"");
 
     html_tree *body = dom.new_node("body");
     html_tree *page = body->new_node("div class=\"page\"");

@@ -183,7 +183,7 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "* Use of this source code is governed by a commercial license.\n",
         "* Any unauthorized copying, distribution, or use is strictly prohibited.\n",
         "*\n",
-        "* For licensing inquiries, please contact: [sales@inplico.uk/httpd]\n",
+        "* For licensing inquiries, please contact: [sales@inplico.uk/http://inplico.uk]\n",
         "* SPDX-License-Identifier: LicenseRef-Proprietary\n",
         "*/\n\n",
 

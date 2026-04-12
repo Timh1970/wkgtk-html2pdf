@@ -64,6 +64,7 @@ SOURCES += \
         examples/02-gtk3-integration/test_gtk3.cpp \
         examples/03-gtk4-integration/test_gtk4.cpp \
         examples/04-business-form/demo_jobsheet.cpp \
+        examples/05-pdf-anchor/indextest.cpp \
         examples/05-pdf-bookmark/indextest.cpp \
         examples/demo-form/demo_jobsheet.cpp \
         extra-examples/greyscale/greyscale.cpp \
