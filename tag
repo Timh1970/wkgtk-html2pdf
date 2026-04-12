@@ -84,6 +84,8 @@ DEB_DATE=$(date -R)
 # 2. Build the new Header and Footer
 # Note: 'unstable' or 'trixie' is the target distribution
 CHANGELOG_HEADER="wkgtk-html2pdf (${version}-1) unstable; urgency=medium"
+CHANGELOG_HEADER_LITE="wkgtk-html2pdf-lite (${version}-1) unstable; urgency=medium"
+
 CHANGELOG_FOOTER=" -- James Hothersall <james@wkgtk-html2pdf.com>  $DEB_DATE"
 
 # 3. Prepend to the existing changelog
@@ -101,7 +103,7 @@ fi
 
 # LITE VERSION
 if [ -f "../wkgtk-html2pdf-lite/debian/changelog" ]; then
-  echo "${CHANGELOG_HEADER}-lite" > ../wkgtk-html2pdf-lite/debian/changelog.new
+  echo "$CHANGELOG_HEADER_LITE" > ../wkgtk-html2pdf-lite/debian/changelog.new
   echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
   echo "  * Automated release: Version ${version}" >> ../wkgtk-html2pdf-lite/debian/changelog.new
   echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
@@ -162,7 +164,7 @@ DEB_ARCHIVE_NAME_LITE="${DEB_NAME}-lite_${version}.orig.tar.gz"
 
 # Create the archive (with hyphen in prefix, underscore in filename)
 git archive --format=tar.gz --prefix="${DEB_NAME}-${version}/" -o "../$DEB_ARCHIVE_NAME" "$tag"
-tar cvf ../$DEB_ARCHIVE_NAME_LITE --transform "s,^,${DEB_NAME}-lite-${version}/," src templates/A4-portrait-lite.css overflow-monitor.js wkgtk-html2pdf.1 50-wk2gtkpdf.rules wk2gtkpdf.pc.in xvfb.service LICENSE examples version.conf
+tar cvf ../wkgtk-html2pdf-lite/$DEB_ARCHIVE_NAME_LITE --transform "s,^,${DEB_NAME}-lite-${version}/," src templates/A4-portrait-lite.css overflow-monitor.js wkgtk-html2pdf.1 50-wk2gtkpdf.rules wk2gtkpdf.pc.in xvfb.service LICENSE examples version.conf
 
 echo "---------------------------------------------------"
 echo "Version: $version"
