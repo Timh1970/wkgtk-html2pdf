@@ -175,6 +175,18 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
 
     std::string css = build_string(
         /* clang-format off */
+        "/**\n",
+        "* @license\n",
+        "* (c) 2026 Inplico. All Rights Reserved.\n",
+        "*\n",
+        "* PROPRIETARY AND CONFIDENTIAL.\n",
+        "* Use of this source code is governed by a commercial license.\n",
+        "* Any unauthorized copying, distribution, or use is strictly prohibited.\n",
+        "*\n",
+        "* For licensing inquiries, please contact: [sales@inplico.uk/httpd]\n",
+        "* SPDX-License-Identifier: LicenseRef-Proprietary\n",
+        "*/\n\n",
+
         ":root {\n",
         "    --page-width: ", w, ";\n",
         "    --page-height: ", h, ";\n",

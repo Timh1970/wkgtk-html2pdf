@@ -84,7 +84,7 @@ async function applyTextShave() {
 
 
 async function initDesignHelper() {
-    console.log("🛠️ Starting Design Helper...");
+    console.log("🛠 Starting Design Helper...");
     await document.fonts.ready;
     await applyTextShave();
     await new Promise(resolve => requestAnimationFrame(resolve));
@@ -186,7 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     await logAllFonts();
 
-    // auditUnits();
 });
 
 const allFonts = new Set();
@@ -249,6 +248,7 @@ const checkDesignIssues = async (element) => {
 
 const observer = new ResizeObserver(async (entries) => {
 
+
     var i = allIssues.length;
     while (i--) {
         if (allIssues[i].indexOf('BROWSER:') < 0) {
@@ -256,7 +256,6 @@ const observer = new ResizeObserver(async (entries) => {
             allIssues.splice(i, 1);
         }
     }
-
 
     requestAnimationFrame(async () => {
         // Wait for all font checks to complete
@@ -279,116 +278,13 @@ const observer = new ResizeObserver(async (entries) => {
             }
         }
 
-
         for (const item of realFonts) {
             console.log(item);
         }
 
-        const scanForLiarUnits = () => {
-            const dodgySelectors = [];
-            Array.from(document.styleSheets).forEach(sheet => {
-                // 1. SKIP GHOSTS: Only check sheets that are local/inline or part of your templates
-                // Browser internal sheets usually have a null or "chrome://" href
-                if (sheet.href && !sheet.href.includes(window.location.hostname) && !sheet.href.startsWith('file:')) {
-                    return;
-                }
-
-                const status = checkStylesheetAccess(sheet);
-                const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
-
-                if (!status.accessible) {
-                    allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
-                    console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
-                    return; // Skip this sheet
-                }
-
-                try {
-                    Array.from(sheet.cssRules).forEach(rule => {
-                        const text = rule.cssText.toLowerCase();
-
-                        // 2. TARGETED REGEX: Only flag if 'px' is actually used in the value
-                        // This prevents flagging a selector name that happens to contain 'px'
-                        if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\px/.test(text)) {
-                            // 3. IGNORE LIST: Skip the helper and the page/subpage setup
-                            const ignore = ['design-helper', '.page', '.subpage'];
-                            if (!ignore.some(term => rule.selectorText?.includes(term))) {
-                                dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
-                            }
-                        }
-                        if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]\em/.test(text)) {
-                            // 3. IGNORE LIST: Skip the helper and the page/subpage setup
-                            const ignore = ['design-helper', '.page', '.subpage'];
-                            if (!ignore.some(term => rule.selectorText?.includes(term))) {
-                                dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
-                            }
-                        }
-                        const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
-                        if (ptMatches) {
-                            ptMatches.forEach(match => {
-                                const val = match.replace(/:\s*|pt/g, '');
-                                if (isDirtyPT(val)) {
-                                    dodgySelectors.push(`DIRTY_PRECISION (${val}pt): ${rule.selectorText}`);
-                                }
-                            });
-                        }
-
-                    });
-                } catch (e) {}
-            });
-            return [...new Set(dodgySelectors)];
-        };
-
-
-        const scanForInlineLiarUnits = () => {
-            const inlineDodgy = [];
-
-            // First, clear any old snitch classes so we start fresh
-            document.querySelectorAll('.design-helper-inline-liar')
-                .forEach(el => el.classList.remove('design-helper-inline-liar'));
-
-            const elementsWithStyle = document.querySelectorAll('[style]');
-
-            elementsWithStyle.forEach(el => {
-                const styleAttr = el.getAttribute('style').toLowerCase();
-
-                // Use your "Non-Zero" regex
-                if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]px/.test(styleAttr)) {
-                    const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
-                    inlineDodgy.push(`INLINE_PX: ${identifier}`);
-
-                    // SNITCH: Apply the visual highlight
-                    el.setAttribute('data-label', 'INLINE_PX');
-                    el.classList.add('design-helper-inline-liar');
-                }
-
-                if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
-                    const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
-                    inlineDodgy.push(`INLINE_EM: ${identifier}`);
-
-                    // SNITCH: Apply the visual highlight
-                    el.setAttribute('data-label', 'INLINE_EM');
-
-                    el.classList.add('design-helper-inline-liar');
-                }
-
-                if (!allIssues.has('OVERFLOW')) {
-
-                    const ptMatches = styleAttr.match(/(\d*\.?\d+)pt/g);
-                    if (ptMatches) {
-                        ptMatches.forEach(match => {
-                            const val = match.replace('pt', '');
-                            if (isDirtyPT(val)) {
-                                inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline`);
-                                el.setAttribute('data-label', `DIRTY_PRECISION: ${val}pt`);
-                                el.classList.add('design-helper-inline-liar');
-                            }
-                        });
-                    }
-                }
-
-            });
-            return [...new Set(inlineDodgy)];
-        };
+        // 3. Audit Tables
+        const tableIssues = scanTables();
+        tableIssues.forEach(issue => allIssues.add(issue));
 
         // Then inside the observer's requestAnimationFrame:
         const pxIssues = scanForLiarUnits();
@@ -402,6 +298,142 @@ const observer = new ResizeObserver(async (entries) => {
         updateStatusPanel(Array.from(allIssues));
     });
 });
+
+const scanForLiarUnits = () => {
+    const dodgySelectors = [];
+    Array.from(document.styleSheets).forEach(sheet => {
+        // 1. SKIP GHOSTS: Only check sheets that are local/inline or part of your templates
+        // Browser internal sheets usually have a null or "chrome://" href
+        if (sheet.href && !sheet.href.includes(window.location.hostname) && !sheet.href.startsWith('file:')) {
+            return;
+        }
+
+        const status = checkStylesheetAccess(sheet);
+        const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
+
+        if (!status.accessible) {
+            allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
+            console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
+            return; // Skip this sheet
+        }
+
+        try {
+            Array.from(sheet.cssRules).forEach(rule => {
+                const text = rule.cssText.toLowerCase();
+
+                // 2. TARGETED REGEX: Only flag if 'px' is actually used in the value
+                // This prevents flagging a selector name that happens to contain 'px'
+                if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\px/.test(text)) {
+                    // 3. IGNORE LIST: Skip the helper and the page/subpage setup
+                    const ignore = ['design-helper', '.page', '.subpage'];
+                    if (!ignore.some(term => rule.selectorText?.includes(term))) {
+                        dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
+                    }
+                }
+                if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]\em/.test(text)) {
+                    // 3. IGNORE LIST: Skip the helper and the page/subpage setup
+                    const ignore = ['design-helper', '.page', '.subpage'];
+                    if (!ignore.some(term => rule.selectorText?.includes(term))) {
+                        dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
+                    }
+                }
+                const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
+                if (ptMatches) {
+                    ptMatches.forEach(match => {
+                        const val = match.replace(/:\s*|pt/g, '');
+                        if (isDirtyPT(val)) {
+                            dodgySelectors.push(`DIRTY_PRECISION (${val}pt): ${rule.selectorText}`);
+                        }
+                    });
+                }
+
+            });
+        } catch (e) {}
+    });
+    return [...new Set(dodgySelectors)];
+};
+
+const scanForInlineLiarUnits = () => {
+    const inlineDodgy = [];
+
+    // First, clear any old snitch classes so we start fresh
+    document.querySelectorAll('.design-helper-inline-liar')
+        .forEach(el => el.classList.remove('design-helper-inline-liar'));
+
+    const elementsWithStyle = document.querySelectorAll('[style]');
+
+    elementsWithStyle.forEach(el => {
+        const styleAttr = el.getAttribute('style').toLowerCase();
+
+        // Use your "Non-Zero" regex
+        if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]px/.test(styleAttr)) {
+            const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
+            inlineDodgy.push(`INLINE_PX: ${identifier}`);
+
+            // SNITCH: Apply the visual highlight
+            el.setAttribute('data-label', 'INLINE_PX');
+            el.classList.add('design-helper-inline-liar');
+        }
+
+        if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
+            const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
+            inlineDodgy.push(`INLINE_EM: ${identifier}`);
+
+            // SNITCH: Apply the visual highlight
+            el.setAttribute('data-label', 'INLINE_EM');
+
+            el.classList.add('design-helper-inline-liar');
+        }
+
+        if (!allIssues.has('OVERFLOW')) {
+
+            const ptMatches = styleAttr.match(/(\d*\.?\d+)pt/g);
+            if (ptMatches) {
+                ptMatches.forEach(match => {
+                    const val = match.replace('pt', '');
+                    if (isDirtyPT(val)) {
+                        inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline`);
+                        el.setAttribute('data-label', `DIRTY_PRECISION: ${val}pt`);
+                        el.classList.add('design-helper-inline-liar');
+                    }
+                });
+            }
+        }
+
+    });
+
+    return [...new Set(inlineDodgy)];
+};
+
+
+const scanTables = () => {
+    const inlineDodgy = [];
+    if (!allIssues.has('OVERFLOW')) {
+        // Select all potential layout elements regardless of current attributes
+        const elements = document.querySelectorAll('table, td, th, col, div');
+
+        elements.forEach(el => {
+            // Manually check for both 'width' and 'height'
+            const attrs = el.attributes;
+            for (let i = 0; i < attrs.length; i++) {
+                const attrName = attrs[i].name.toLowerCase();
+                if (attrName === 'width' || attrName === 'height') {
+                    const val = attrs[i].value; // Don't lowerCase yet, we need the original unit
+
+                    // If it's on a server, we MUST see 'pt'
+                    if (!val.toLowerCase().endsWith('pt')) {
+                        inlineDodgy.push(`ATTR: <${el.tagName}> ${attrName}="${val}" is not PT`);
+                        el.classList.add('design-helper-inline-liar');
+                    } else if (isDirtyPT(val.replace(/pt/i, ''))) {
+                        inlineDodgy.push(`DIRTY_PT_ATTR: <${el.tagName}> ${val}`);
+                        el.classList.add('design-helper-inline-liar');
+                    }
+                }
+            }
+        });
+    }
+    return [...new Set(inlineDodgy)];
+};
 
 const isDirtyPT = (value) => {
     const num = parseFloat(value);
@@ -559,7 +591,7 @@ const showPrecisionAlert = () => {
     `;
 
     alertBox.innerHTML = `
-        <h3 style="color: #007bff; margin-top: 0; line-height: 18pt;">⚠️ Precision Audit Locked</h3>
+        <h3 style="color: #007bff; margin-top: 0; line-height: 18pt;">⚠ Precision Audit Locked</h3>
         <p style="font-size: 10.5pt; line-height: 15.75pt;">
             Your browser has prevented the <b>Pedantic Linter</b> from auditing some CSS files.
         </p>

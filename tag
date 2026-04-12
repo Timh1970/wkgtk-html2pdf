@@ -143,6 +143,7 @@ DEB_ARCHIVE_NAME="${DEB_NAME}_${version}.orig.tar.gz"
 
 # Create the archive (with hyphen in prefix, underscore in filename)
 git archive --format=tar.gz --prefix="${DEB_NAME}-${version}/" -o "../$DEB_ARCHIVE_NAME" "$tag"
+tar cvf archive.tar --transform "s,^,${DEB_NAME}-${version}/," src
 
 echo "---------------------------------------------------"
 echo "Version: $version"
