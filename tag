@@ -107,8 +107,8 @@ if [ -f "../wkgtk-html2pdf-lite/debian/changelog" ]; then
   echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
   echo "$CHANGELOG_FOOTER" >> ../wkgtk-html2pdf-lite/debian/changelog.new
   echo "" >> ../wkgtk-html2pdf-lite/debian/changelog.new
-  cat ../wkgtk-html2pdf-lite/debian/changelog >> debian/changelog.new
-  mv ../wkgtk-html2pdf-lite/debian/changelog.new debian/changelog
+  cat ../wkgtk-html2pdf-lite/debian/changelog >> ../wkgtk-html2pdf-lite/debian/changelog.new
+  mv ../wkgtk-html2pdf-lite/debian/changelog.new ../wkgtk-html2pdf-lite/debian/changelog
 fi
 
 
