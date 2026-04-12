@@ -99,6 +99,7 @@ if [ -f "debian/changelog" ]; then
   mv debian/changelog.new debian/changelog
 fi
 
+cp debian/changelog ../wkgtk-html2pdf-lite/debian/
 
 # For the GTK3 / WK4 version
 SHLIBS_FILE4="debian/libwk2gtkpdf-4-${major}.shlibs"
