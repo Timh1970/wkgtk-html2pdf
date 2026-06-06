@@ -1,5 +1,7 @@
 ## Template Makker
 
+### NOTE: This is now considered a legacy tool and will be removed in future versions.  The recommended way to get a template now is to generate it using the utility on inplico.uk site.
+
 This is a utility app to generate the stylesheets for each suported page size.  it can be compiled with a simple
 
 ```
