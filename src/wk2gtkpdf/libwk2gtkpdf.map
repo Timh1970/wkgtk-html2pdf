@@ -7,6 +7,12 @@ LIBWK2GTKPDF_1.0 {
         LOG_IGNORE;
         wkJlog;
 
+        # New Python-friendly C Bridge entry points:
+        wk2gtk_printer_create;
+        wk2gtk_printer_set_param;
+        wk2gtk_printer_make_pdf;
+        wk2gtk_printer_destroy;
+
         # --- C++ Mangled Prefixes ---
         # Note: K for const (obviously!)
         # The Printer & Tree classes
