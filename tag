@@ -123,7 +123,7 @@ echo "libwk2gtkpdf-4 ${major} libwk2gtkpdf-4-${major} (>= ${version})" > "../wkg
 # For the GTK4 / WK6 version
 SHLIBS_FILE6="debian/libwk2gtkpdf-6-${major}.shlibs"
 echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "$SHLIBS_FILE6"
-echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "../wkgtk-html2pdf-lite/$SHLIBS_FILE4"
+echo "libwk2gtkpdf-6 ${major} libwk2gtkpdf-6-${major} (>= ${version})" > "../wkgtk-html2pdf-lite/$SHLIBS_FILE6"
 
 
 

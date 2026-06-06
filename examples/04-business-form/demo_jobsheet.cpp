@@ -12,9 +12,9 @@ using namespace phtml;
 void contact_table(html_tree *formArea) {
 
     html_tree *table = formArea->new_node("table class=\"fixed\"");
-    table->new_node("col width=\"80pt\"");
-    table->new_node("col width=\"209.5pt\"");
-    table->new_node("col width=\"209.5pt\"");
+    table->new_node("col width=\"80.25pt\"");
+    table->new_node("col width=\"209.25pt\"");
+    table->new_node("col width=\"209.25pt\"");
 
     // TABLE HEADING
     html_tree *row = table->new_node("tr");
@@ -57,14 +57,14 @@ void contact_table(html_tree *formArea) {
      * In production you would probably want to set an explicit style or do it with a CSS variable and
      * a multiplier to keep the field a static height but relative to any changed.
      */
-    html_tree *cAddress = row->new_node("td class=\"field\" style=\"height: 68pt; vertical-align: top;\"");
+    html_tree *cAddress = row->new_node("td class=\"field\" style=\"height: 68.25pt; vertical-align: top;\"");
     cAddress->set_node_content("31 Spooner Street");
     cAddress->new_node("br")->set_node_content("Quahog");
     cAddress->new_node("br")->set_node_content("Cranston");
     cAddress->new_node("br")->set_node_content("Rhode Island");
 
     // SITE ADDRESS
-    html_tree *sAddress = row->new_node("td class=\"field\" style=\"height: 68pt; vertical-align: top;\"");
+    html_tree *sAddress = row->new_node("td class=\"field\" style=\"height: 68.25pt; vertical-align: top;\"");
     sAddress->set_node_content("1407 Greymalkin Lane");
     sAddress->new_node("br")->set_node_content("Salem Center");
     sAddress->new_node("br")->set_node_content("New York");
@@ -85,10 +85,10 @@ void contact_table(html_tree *formArea) {
 void build_call_table(html_tree *formArea) {
 
     html_tree *table = formArea->new_node("table class=\"fixed\"");
-    table->new_node("col width=\"80pt\"");
-    table->new_node("col width=\"100pt\"");
-    table->new_node("col width=\"80pt\"");
-    table->new_node("col width=\"239pt\"");
+    table->new_node("col width=\"80.25pt\"");
+    table->new_node("col width=\"99.75pt\"");
+    table->new_node("col width=\"80.25pt\"");
+    table->new_node("col width=\"239.25pt\"");
 
     html_tree *row = table->new_node("tr");
 
@@ -121,9 +121,9 @@ void build_call_table(html_tree *formArea) {
 void build_faults_table(html_tree *formArea) {
     // FAULT TABLE HEADERS
     html_tree *table = formArea->new_node("table class=\"fixed\"");
-    table->new_node("col width=\"80pt\"");
+    table->new_node("col width=\"80.25pt\"");
     table->new_node("col width=\"339pt\"");
-    table->new_node("col width=\"80pt\"");
+    table->new_node("col width=\"80.25pt\"");
     table->new_node("tr")
         ->new_node("th colspan=\"3\"")
         ->set_node_content("Faults");
@@ -158,7 +158,7 @@ void build_faults_table(html_tree *formArea) {
 
 void build_parts_table(html_tree *formArea) {
     html_tree *table = formArea->new_node("table class=\"fixed\"");
-    table->new_node("col width=\"40pt\"");
+    table->new_node("col width=\"39.75pt\"");
     table->new_node("col width=\"120pt\"");
     table->new_node("col width=\"339pt\"");
     // PARTS TABLE HEADER
@@ -195,7 +195,7 @@ void build_parts_table(html_tree *formArea) {
 void build_labour_table(html_tree *formArea) {
 
     html_tree *table = formArea->new_node("table class=\"fixed\"");
-    table->new_node("col width=\"100pt\"");
+    table->new_node("col width=\"99.75pt\"");
     table->new_node("col width=\"162pt\"");
     table->new_node("col width=\"162pt\"");
     table->new_node("col width=\"75pt\"");
@@ -238,8 +238,8 @@ void build_travel_table(html_tree *formArea) {
     html_tree *table = formArea->new_node("table class=\"fixed\"");
     table->new_node("col width=\"199.5pt\"");
     table->new_node("col width=\"199.5pt\"");
-    table->new_node("col width=\"50pt\"");
-    table->new_node("col width=\"50pt\"");
+    table->new_node("col width=\"50.25pt\"");
+    table->new_node("col width=\"50.25pt\"");
 
     // PARTS TABLE HEADER
     table->new_node("tr")
@@ -363,11 +363,11 @@ const char *webpage() {
     head->new_node("meta charset=\"UTF-8\"");
     head->new_node("meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"");
 
-    // STYLE
+    // STYLE [DEPRICATED]
     /**
      * Built in style for an ISO A4 page (see templates folder)
      * */
-    head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait-lite.css\"");
+    // head->new_node("link rel=\"stylesheet\" href=\"/usr/share/wk2gtkpdf/A4-portrait-lite.css\"");
 
     /**
      * @brief f

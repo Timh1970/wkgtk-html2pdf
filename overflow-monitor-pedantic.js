@@ -28,61 +28,6 @@ sheet.replaceSync(`
 document.adoptedStyleSheets = [sheet];
 
 
-async function applyTextShave() {
-    const ua = navigator.userAgent;
-    let browserTest = coefficient();
-
-
-    if (browserTest.coef === 1.0) {
-        if (browserTest.msg != null) {
-            allIssues.add(browserTest.msg);
-        }
-        return
-    }
-
-    const walker = document.createTreeWalker(
-        document.body,
-        NodeFilter.SHOW_TEXT,
-        null,
-        false
-    );
-    const textElements = new Set();
-    while (walker.nextNode()) {
-        const parent = walker.currentNode.parentElement;
-        if (walker.currentNode.textContent.trim().length > 0) {
-            textElements.add(parent);
-        }
-    }
-
-    textElements.forEach(el => {
-        const style = window.getComputedStyle(el);
-        const currentFS = parseFloat(style.fontSize);
-        el.style.fontSize = `${(currentFS * browserTest.fsCoef).toFixed(4)}pt`;
-
-        const currentLS = (style.letterSpacing === 'normal') ? 0 : parseFloat(style.letterSpacing);
-        el.style.letterSpacing = `${(currentLS + browserTest.lsNudge).toPrecision(6)}pt`;
-        // 3. Line height
-        const lh = style.lineHeight;
-
-        let numericLH;
-        if (lh === 'normal') {
-            numericLH = parseFloat(style.fontSize) * 1.2;
-        } else {
-            numericLH = parseFloat(lh);
-        }
-        const adjustedLH = (numericLH * browserTest.coef).toPrecision(5);
-        el.style.lineHeight = `${adjustedLH}pt`;
-    });
-
-    if (browserTest.msg != null) {
-        allIssues.add(browserTest.msg);
-    }
-
-    console.log(`📏 Shaved ${textElements.size} text elements by ${browserTest.coef}`);
-};
-
-
-
 async function initDesignHelper() {
     console.log("🛠 Starting Design Helper...");
     await document.fonts.ready;
@@ -96,82 +41,6 @@ async function initDesignHelper() {
 };
 
 
-function coefficient() {
-    // NOTE: THIS WAS USED FOR TESTING AND POTENTIAL CORRECTIONS PRIOR TO FULLY ALIGNING
-    // THE TEMPLATES; IT IS NO LONGER NEEDED AS ALL BROWSERS ARE CURRENTLY COMPATIBLE,
-    // BUT HAS BEEN LEFT IN SHOULD ANY FUTURE ISSUES DEVELOP.
-    //
-    // TO DISPLAY A MESSAGE ABOUT A SPECIFIC BROWSER SIMPLY TYPE THE word
-    //
-    // BROWSER:
-    //
-    // FOLLOWED BY YOUR MESSAGE IN THE RESPECTIVE STRUCT UNDER msg:
-    //
-    // eg.
-    //
-    // msg: "BROWSER: foo causes bar."
-    //
-    // CURRENTLY ALL MESSGES ARE SET TO null
-    const ua = navigator.userAgent;
-    console.log(`User Agent is ${ua}`);
-    // 1. WebKit/WebKitGTK - THE BASELINE
-    // If it's WebKit but NOT Chrome/OPR, it's our "Gold Standard"
-    if (/AppleWebKit/.test(ua) && !/Chrome/.test(ua) && !/OPR/.test(ua)) {
-        console.log("WebKit Browser detected");
-        return {
-            lsNudge: 0,
-            fsCoef: 1.0,
-            coef: 1.0,
-            msg: null
-        };
-    }
-    // 2. Opera - The Chromium Pioneer
-    if (/OPR/.test(ua) || /Opera/.test(ua)) {
-        return {
-            lsNudge: 0,
-            fsCoef: 1.0,
-            coef: 1.0,
-            msg: null
-        };
-    }
-    // 3. Falkon / QtWebEngine
-    if (/QtWebEngine/.test(ua) || /Falkon/.test(ua)) {
-        return {
-            lsNudge: 0,
-            fsCoef: 1.0,
-            coef: 1,
-            msg: null
-        };
-    }
-    // 4. Firefox (Gecko)
-    if (/Firefox/.test(ua)) {
-        return {
-            lsNudge: 0,
-            fsCoef: 1.0,
-            coef: 1.0,
-            msg: null
-        };
-    }
-    // 5. Generic Chromium (Chrome, Edge, Brave)
-    if (/Chrome/.test(ua)) {
-        console.log("Chrome detected")
-        const version = parseInt(ua.match(/Chrome\/(\d+)/)?.[1] || 0);
-        let res = (version >= 140 ? 0.972 : 0.988);
-        return {
-            lsNudge: 0,
-            fsCoef: 1.0,
-            coef: 1.0,
-            msg: null
-        };
-    }
-    return {
-        lsNudge: 0,
-        fsCoef: 1.0,
-        coef: 1.0,
-        msg: null
-    };
-
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
 
@@ -616,3 +485,137 @@ const showPrecisionAlert = () => {
         alertBox.remove();
     };
 };
+
+
+// --- REDUNDANT FOR NOW --- //
+
+async function applyTextShave() {
+    const ua = navigator.userAgent;
+    let browserTest = coefficient();
+
+
+    if (browserTest.coef === 1.0) {
+        if (browserTest.msg != null) {
+            allIssues.add(browserTest.msg);
+        }
+        return
+    }
+
+    const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    const textElements = new Set();
+    while (walker.nextNode()) {
+        const parent = walker.currentNode.parentElement;
+        if (walker.currentNode.textContent.trim().length > 0) {
+            textElements.add(parent);
+        }
+    }
+
+    textElements.forEach(el => {
+        const style = window.getComputedStyle(el);
+        const currentFS = parseFloat(style.fontSize);
+        el.style.fontSize = `${(currentFS * browserTest.fsCoef).toFixed(4)}pt`;
+
+        const currentLS = (style.letterSpacing === 'normal') ? 0 : parseFloat(style.letterSpacing);
+        el.style.letterSpacing = `${(currentLS + browserTest.lsNudge).toPrecision(6)}pt`;
+        // 3. Line height
+        const lh = style.lineHeight;
+
+        let numericLH;
+        if (lh === 'normal') {
+            numericLH = parseFloat(style.fontSize) * 1.2;
+        } else {
+            numericLH = parseFloat(lh);
+        }
+        const adjustedLH = (numericLH * browserTest.coef).toPrecision(5);
+        el.style.lineHeight = `${adjustedLH}pt`;
+    });
+
+    if (browserTest.msg != null) {
+        allIssues.add(browserTest.msg);
+    }
+
+    console.log(`📏 Shaved ${textElements.size} text elements by ${browserTest.coef}`);
+};
+
+
+function coefficient() {
+    // NOTE: THIS WAS USED FOR TESTING AND POTENTIAL CORRECTIONS PRIOR TO FULLY ALIGNING
+    // THE TEMPLATES; IT IS NO LONGER NEEDED AS ALL BROWSERS ARE CURRENTLY COMPATIBLE,
+    // BUT HAS BEEN LEFT IN SHOULD ANY FUTURE ISSUES DEVELOP.
+    //
+    // TO DISPLAY A MESSAGE ABOUT A SPECIFIC BROWSER SIMPLY TYPE THE word
+    //
+    // BROWSER:
+    //
+    // FOLLOWED BY YOUR MESSAGE IN THE RESPECTIVE STRUCT UNDER msg:
+    //
+    // eg.
+    //
+    // msg: "BROWSER: foo causes bar."
+    //
+    // CURRENTLY ALL MESSGES ARE SET TO null
+    const ua = navigator.userAgent;
+    console.log(`User Agent is ${ua}`);
+    // 1. WebKit/WebKitGTK - THE BASELINE
+    // If it's WebKit but NOT Chrome/OPR, it's our "Gold Standard"
+    if (/AppleWebKit/.test(ua) && !/Chrome/.test(ua) && !/OPR/.test(ua)) {
+        console.log("WebKit Browser detected");
+        return {
+            lsNudge: 0,
+            fsCoef: 1.0,
+            coef: 1.0,
+            msg: null
+        };
+    }
+    // 2. Opera - The Chromium Pioneer
+    if (/OPR/.test(ua) || /Opera/.test(ua)) {
+        return {
+            lsNudge: 0,
+            fsCoef: 1.0,
+            coef: 1.0,
+            msg: null
+        };
+    }
+    // 3. Falkon / QtWebEngine
+    if (/QtWebEngine/.test(ua) || /Falkon/.test(ua)) {
+        return {
+            lsNudge: 0,
+            fsCoef: 1.0,
+            coef: 1,
+            msg: null
+        };
+    }
+    // 4. Firefox (Gecko)
+    if (/Firefox/.test(ua)) {
+        return {
+            lsNudge: 0,
+            fsCoef: 1.0,
+            coef: 1.0,
+            msg: null
+        };
+    }
+    // 5. Generic Chromium (Chrome, Edge, Brave)
+    if (/Chrome/.test(ua)) {
+        console.log("Chrome detected")
+        const version = parseInt(ua.match(/Chrome\/(\d+)/)?.[1] || 0);
+        let res = (version >= 140 ? 0.972 : 0.988);
+        return {
+            lsNudge: 0,
+            fsCoef: 1.0,
+            coef: 1.0,
+            msg: null
+        };
+    }
+    return {
+        lsNudge: 0,
+        fsCoef: 1.0,
+        coef: 1.0,
+        msg: null
+    };
+
+}

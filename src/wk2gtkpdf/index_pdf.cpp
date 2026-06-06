@@ -511,6 +511,9 @@ void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
                 m_outlineData.push_back(od);
         }
     }
+    // Tell the PDF viewer to open with the Outlines (Bookmarks) visible
+    // ePdfPageMode_UseOutlines is the standard enum in 0.9.x
+    pdfDoc.SetPageMode(ePdfPageModeUseBookmarks);
 
     buildNestedOutlines(pOutlines, m_outlineData, pTocDest);
 

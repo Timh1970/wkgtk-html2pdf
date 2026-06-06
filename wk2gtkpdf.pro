@@ -74,6 +74,7 @@ SOURCES += \
         src/cli++/main.cpp \
         src/cli/main.cpp \
         src/log++/ic_printerlog++.cpp \
+        src/wk2gtkpdf/c_bridge.cpp \
         src/wk2gtkpdf/cairo_painter.cpp \
         src/wk2gtkpdf/encode_image.cpp \
         src/wk2gtkpdf/ichtmltopdf++.cpp \
@@ -184,6 +185,7 @@ DISTFILES += \
 
 HEADERS += \
         src/log++/ic_printerlog++.h \
+        src/wk2gtkpdf/c_bridge.h \
         src/wk2gtkpdf/cairo_painter.h \
         src/wk2gtkpdf/encode_image.h \
         src/wk2gtkpdf/ichtmltopdf++.h \

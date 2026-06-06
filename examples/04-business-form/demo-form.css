@@ -1,40 +1,113 @@
-* {
+  /*
+  * Precision Layout Engine by Inplico (v1.0)
+  * -----------------------------------------------------------------------
+  * This CSS is mathematically quantized for 0-drift PDF generation.
+  * Generated on: 2026-05-15 | License: Standard Attribution
+  *
+  * NOTICE: This header must remain intact for free commercial use.
+  * To obtain a Private Label license (white-label / header removal),
+  * please visit: https://inplico.uk
+  *
+  * Unauthorized removal of this notice is a breach of license.
+  *
+  * Technical Support: support@inplico.uk
+  * -----------------------------------------------------------------------
+  */
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    line-height: 18.0000pt;
+    font-family: 'Liberation Sans', sans-serif;
+    font-size: 12.0000pt;
+  }
+
+  @page {
+    size: 209.9028mm 296.6861mm;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 209.9028mm;
+    margin: 0;
+    padding: 0;
+    background-color: transparent !important;
+  }
+
+  .page {
+    width: 209.9028mm;
+    height: 840.7500pt;
+    background-color: white !important;
+    display: grid;
+    grid-template-columns: 8.0000mm 1fr 8.0000mm;
+    grid-template-rows: 22.5000pt 1fr 22.5000pt;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0;
+    box-shadow: 0 0 3.75pt rgba(0, 0, 0, 0.1);
+  }
+
+  .subpage {
+    grid-area: 2 / 2 / 3 / 3;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    outline: .75pt solid blue;
+  }
+
+  @media print {
+    .page {
+      border: none;
+      box-shadow: none;
+    }
+
+    .subpage {
+      outline: none;
+    }
+  }
+
+
+  * {
     box-sizing: border-box;
     margin: 0pt;
     font-size: 10.5pt;
-    line-height: 13pt;
-}
+    line-height: 13.5pt;
+  }
 
-br {
+  br {
     display: block;
     /* Forces it to behave as a layout break, not a character */
     content: "";
     /* Ensures no "invisible" glyph is rendered */
     margin: 0;
     padding: 0;
-}
+  }
 
-div.container {
+  div.container {
     display: grid;
-    grid-template-rows: 50pt 1fr;
-}
+    grid-template-rows: 50.25pt 1fr;
+  }
 
-div.heading {
+  div.heading {
     grid-area: 1 / 1 / 1 / 1;
-}
+  }
 
-div.form {
+  div.form {
     grid-area: 2 / 1 / 2 / 1;
-}
+  }
 
-table {
+  table {
     table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
-}
+  }
 
-th {
-    height: 16pt;
+  th {
+    height: 15.75pt;
     text-align: left;
     font-size: 12pt;
     font-style: normal;
@@ -42,79 +115,79 @@ th {
     font-weight: bold;
     font-family: "Liberation Sans";
     background-color: purple;
-    border: 1pt solid purple;
+    border: .75pt solid purple;
     padding-left: 6pt;
     overflow: hidden;
-}
+  }
 
-td {
+  td {
     box-sizing: border-box;
-    height: 17pt;
-    padding-left: 8pt;
+    height: 17.25pt;
+    padding-left: 8.25pt;
     overflow: hidden;
-}
+  }
 
-td.label {
+  td.label {
     background-color: #F5F5F5;
-    border: 1pt solid #F5F5F5;
-}
+    border: .75pt solid #F5F5F5;
+  }
 
-td.field,
-td.faultfield {
-    border: 1pt solid #E0E0E0;
-}
+  td.field,
+  td.faultfield {
+    border: .75pt solid #E0E0E0;
+  }
 
-body {
+  body {
     font-family: "Liberation Sans";
     font-size: 10.5pt;
-    line-height: 14pt
-}
+    line-height: 14.25pt
+  }
 
-h1.doctitle {
+  h1.doctitle {
     vertical-align: middle;
     padding-left: 18pt;
     display: inline;
-}
+  }
 
-img.logo {
+  img.logo {
     vertical-align: middle;
     width: auto;
     height: auto;
-    max-width: 320pt;
-    max-height: 50pt;
-}
+    max-width: 320.25pt;
+    max-height: 50.25pt;
+  }
 
-h2 {
+  h2 {
     margin: 18pt 0 10.5pt 0;
     font-size: 18pt;
     line-height: 12pt;
-}
+  }
 
-h4.ref {
+  h4.ref {
     display: inline;
     vertical-align: top;
     position: absolute;
     right: 0;
     font-size: 7.5pt;
     padding: 15pt;
-}
+  }
 
-.code {
+  .code {
     font-family: "Liberation Mono";
     padding-left: 30pt;
     color: green;
-}
+  }
 
-.inline-code,
-inline-code {
+  .inline-code,
+  inline-code {
     font-family: "Liberation Mono";
     color: green;
-}
+  }
 
-.nested-code,
-nested-code {
+  .nested-code,
+  nested-code {
     display: block;
     padding-left: 30pt;
     font-family: "Liberation Mono";
     color: green;
-}
+  }

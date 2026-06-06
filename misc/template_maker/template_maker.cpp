@@ -1,3 +1,5 @@
+#include <chrono>
+#include <cmath>
 #include <fstream>
 #include <getopt.h>
 #include <iomanip>
@@ -5,6 +7,8 @@
 #include <string>
 
 void create_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV);
+
+void create_static_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV);
 
 /**
  * @brief main
@@ -116,8 +120,11 @@ int main(int argc, char *argv[]) {
             break;
         // Portrait
         create_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait", marginH, marginV);
+        create_static_stylesheet(size.sizeName, size.shortMM, size.longMM, "portrait", marginH, marginV);
+
         // Landscape (Swap the Point-aligned dimensions)
         create_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape", marginH, marginV);
+        create_static_stylesheet(size.sizeName, size.longMM, size.shortMM, "landscape", marginH, marginV);
     }
 
     return (0);
@@ -175,17 +182,18 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
 
     std::string css = build_string(
         /* clang-format off */
-        "/**\n",
-        "* @license\n",
-        "* (c) 2026 Inplico. All Rights Reserved.\n",
-        "*\n",
-        "* PROPRIETARY AND CONFIDENTIAL.\n",
-        "* Use of this source code is governed by a commercial license.\n",
-        "* Any unauthorized copying, distribution, or use is strictly prohibited.\n",
-        "*\n",
-        "* For licensing inquiries, please contact: [sales@inplico.uk/http://inplico.uk]\n",
-        "* SPDX-License-Identifier: LicenseRef-Proprietary\n",
-        "*/\n\n",
+
+        // "/**\n",
+        // "* @license\n",
+        // "* (c) 2026 Inplico. All Rights Reserved.\n",
+        // "*\n",
+        // "* PROPRIETARY AND CONFIDENTIAL.\n",
+        // "* Use of this source code is governed by a commercial license.\n",
+        // "* Any unauthorized copying, distribution, or use is strictly prohibited.\n",
+        // "*\n",
+        // "* For licensing inquiries, please contact: [sales@inplico.uk/http://inplico.uk]\n",
+        // "* SPDX-License-Identifier: LicenseRef-Proprietary\n",
+        // "*/\n\n",
 
         ":root {\n",
         "    --page-width: ", w, ";\n",
@@ -239,7 +247,7 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    position: relative;\n",
         "    overflow: hidden;\n",
         "    border-radius: 0;\n",
-        "    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);\n",
+        "    box-shadow: 0 0 3.75pt rgba(0, 0, 0, 0.1);\n",
         "}\n\n",
 
         ".subpage {\n",
@@ -248,7 +256,7 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
         "    flex-direction: column;\n",
         "    position: relative;\n",
         "    overflow: hidden;\n",
-        "    outline: 1pt solid blue;\n",
+        "    outline: .75pt solid blue;\n",
         "}\n\n",
 
         "@media print {\n",
@@ -259,6 +267,124 @@ void create_stylesheet(std::string name, double w, double h, std::string orienta
     );
 
     std::string   filename = name + "-" + orientation + ".css";
+    std::ofstream file(filename);
+    if (file) {
+        file << css;
+        file.close();
+    }
+}
+
+std::string get_datestamp() {
+
+    std::chrono::system_clock::time_point now       = std::chrono::system_clock::now();
+    std::time_t                           in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm                               bt{};
+    localtime_r(&in_time_t, &bt);
+    std::ostringstream oss;
+    oss << std::put_time(&bt, "%Y-%m-%d");
+    return oss.str();
+}
+
+void create_static_stylesheet(std::string name, double w, double h, std::string orientation, double marginH, double marginV) {
+
+    // Page Size
+    const double pt_per_mm          = 72 / 25.4;
+    const double page_width         = w * pt_per_mm;
+    const double page_width_floored = std::floor(page_width);
+    const double actual_width       = (page_width_floored * 25.4) / 72;
+
+    const double page_height         = w * pt_per_mm;
+    const double page_height_floored = std::floor(page_height);
+    const double actual_height       = (page_height_floored * 25.4) / 72;
+
+    // 1. Physical constants
+    const double px_per_mm = 96.0 / 25.4;
+    const double pt_per_px = 0.75;
+
+    // 2. Pre-calculate the "Hard Ceiling" (The Webkit/Blink logic)
+    // Floor the pixel value to ensure the browser never sees a sub-pixel overflow
+    double height_pure_px    = h * px_per_mm;
+    double height_floored_px = std::floor(height_pure_px);
+    double webkit_height_pt  = height_floored_px * pt_per_px;
+
+    // 3. Pre-calculate Margins
+    double margin_v_pure_px    = marginV * px_per_mm;
+    double margin_v_floored_pt = std::floor(margin_v_pure_px) * pt_per_px;
+
+    // 4. Pre-calculate Typography
+    double font_size_pt     = 12.0;
+    double line_height_mult = 1.5;
+    double lh_pure_px       = font_size_pt * line_height_mult * (96.0 / 72.0);
+    double lh_floored_pt    = std::floor(lh_pure_px) * pt_per_px;
+
+    std::string css = build_string(
+        /* clang-format off */
+        "/*\n",
+        " * Precision Layout Engine by Inplico (v1.0)\n",
+        " * -----------------------------------------------------------------------\n",
+        " * This CSS is mathematically quantized for 0-drift PDF generation.\n",
+        " * Generated on: ", get_datestamp(), " | License: Standard Attribution\n",
+        " *\n",
+        " * NOTICE: This header must remain intact for free commercial use.\n",
+        " * To obtain a Private Label license (white-label / header removal),\n",
+        " * please visit: https://inplico.uk\n",
+        "/*\n",
+        " * Unauthorized removal of this notice is a breach of license.\n",
+        "/*\n",
+        " * Technical Support: support@inplico.uk\n",
+        " * -----------------------------------------------------------------------\n",
+        " */\n\n",
+
+        "* {\n",
+        "    box-sizing: border-box;\n",
+        "    margin: 0; padding: 0;\n",
+        "    line-height: ", lh_floored_pt, "pt;\n",
+        "    font-family: 'Liberation Sans', sans-serif;\n",
+        "    font-size: ", font_size_pt, "pt;\n",
+        "}\n\n",
+
+        "@page {\n",
+        "    size: ", w, "mm ", h, "mm;\n",
+        "    margin: 0;\n",
+        "}\n\n",
+
+        "html, body {\n",
+        "    width: ", w, "mm;\n",
+        "    margin: 0; padding: 0;\n",
+        "    background-color: transparent !important;\n",
+        "}\n\n",
+
+        ".page {\n",
+        "    width: ", w, "mm;\n",
+        "    height: ", webkit_height_pt, "pt;\n",
+        "    background-color: white !important;\n",
+        "    display: grid;\n",
+        "    grid-template-columns: ", marginH, "mm 1fr ", marginH, "mm;\n",
+        "    grid-template-rows: ", margin_v_floored_pt, "pt 1fr ", margin_v_floored_pt, "pt;\n",
+        "    break-after: page;\n",
+        "    position: relative;\n",
+        "    overflow: hidden;\n",
+        "    border-radius: 0;\n",
+        "    box-shadow: 0 0 3.75pt rgba(0, 0, 0, 0.1);\n",
+        "}\n\n",
+
+        ".subpage {\n",
+        "    grid-area: 2 / 2 / 3 / 3;\n",
+        "    display: flex;\n",
+        "    flex-direction: column;\n",
+        "    position: relative;\n",
+        "    overflow: hidden;\n",
+        "    outline: .75pt solid blue;\n",
+        "}\n\n",
+
+        "@media print {\n",
+        "    .page { border: none; box-shadow: none; }\n",
+        "    .subpage { outline: none; }\n",
+        "}\n"
+        /* clang-format on */
+    );
+
+    std::string   filename = name + "-" + orientation + "-static.css";
     std::ofstream file(filename);
     if (file) {
         file << css;
