@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         willReadFrequently: true
     });
     await logAllFonts();
+    initViewportPersistence();
 
 });
 
@@ -168,59 +169,226 @@ const observer = new ResizeObserver(async (entries) => {
     });
 });
 
+const initViewportPersistence = () => {
+    // 1. Restore exact scroll position on layout load
+    const savedScrollTop = localStorage.getItem('precision_layout_scroll_pos');
+    if (savedScrollTop) {
+        window.scrollTo(0, parseFloat(savedScrollTop));
+    }
+
+    // 2. Track scroll changes and save them instantly
+    window.addEventListener('scroll', () => {
+        localStorage.setItem('precision_layout_scroll_pos', window.scrollY);
+    });
+};
+
+
 const scanForLiarUnits = () => {
     const dodgySelectors = [];
-    Array.from(document.styleSheets).forEach(sheet => {
-        // 1. SKIP GHOSTS: Only check sheets that are local/inline or part of your templates
-        // Browser internal sheets usually have a null or "chrome://" href
-        if (sheet.href && !sheet.href.includes(window.location.hostname) && !sheet.href.startsWith('file:')) {
-            return;
-        }
 
-        const status = checkStylesheetAccess(sheet);
-        const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
-
-        if (!status.accessible) {
-            allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
-            console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
-            return; // Skip this sheet
-        }
-
+    // Helper function to process rules recursively
+    const processRule = (rule) => {
         try {
-            Array.from(sheet.cssRules).forEach(rule => {
-                const text = rule.cssText.toLowerCase();
-
-                // 2. TARGETED REGEX: Only flag if 'px' is actually used in the value
-                // This prevents flagging a selector name that happens to contain 'px'
-                if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\px/.test(text)) {
-                    // 3. IGNORE LIST: Skip the helper and the page/subpage setup
-                    const ignore = ['design-helper', '.page', '.subpage'];
-                    if (!ignore.some(term => rule.selectorText?.includes(term))) {
-                        dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
-                    }
-                }
-                if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]\em/.test(text)) {
-                    // 3. IGNORE LIST: Skip the helper and the page/subpage setup
-                    const ignore = ['design-helper', '.page', '.subpage'];
-                    if (!ignore.some(term => rule.selectorText?.includes(term))) {
-                        dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
-                    }
-                }
-                const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
-                if (ptMatches) {
-                    ptMatches.forEach(match => {
-                        const val = match.replace(/:\s*|pt/g, '');
-                        if (isDirtyPT(val)) {
-                            dodgySelectors.push(`DIRTY_PRECISION (${val}pt): ${rule.selectorText}`);
-                        }
-                    });
+            // 1. DANGEROUS MEDIA QUERY TRAP & RECURSION BRANCH
+            if (rule.media) {
+                const mediaType = rule.media.mediaText.toLowerCase();
+                if (mediaType.includes('screen') && !mediaType.includes('print') && !mediaType.includes('all')) {
+                    dodgySelectors.push(`SCREEN_ONLY_MEDIA_QUERY: @media ${rule.media.mediaText}`);
                 }
 
+                // Unpack and process the rules nested inside the media block safely
+                if (rule.cssRules) {
+                    Array.from(rule.cssRules).forEach(nestedRule => processRule(nestedRule));
+                }
+                return;
+            }
+
+            // Standard validation guard for styling rules
+            // Wrapped carefully inside the try block to avoid strict type crashes
+            if (!rule.style || !rule.selectorText) return;
+
+            // 2. IGNORE SYSTEM UI: Keep the linter panel from reporting its own styling
+            if (rule.selectorText.includes('design-helper')) {
+                return;
+            }
+
+            const text = rule.cssText ? rule.cssText.toLowerCase() : '';
+            if (!text) return;
+
+            // 3. BAN PX UNITS
+            if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\s*px/.test(text)) {
+                dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
+            }
+
+            // 4. BAN EM & REM UNITS
+            if (/\b\d*\.?\d+rem\b/.test(text)) {
+                dodgySelectors.push(`REM_UNIT: ${rule.selectorText}`);
+            } else if (/\b\d*\.?\d+em\b/.test(text)) {
+                dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
+            }
+
+            // 5. POINT PRECISION CHECK
+            const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
+            if (ptMatches) {
+                ptMatches.forEach(match => {
+                    const val = parseFloat(match.replace(/:\s*|pt/g, ''));
+                    const convertedPx = val * (4 / 3);
+                    const roundedPx = Number(convertedPx.toFixed(4));
+
+                    if (!Number.isInteger(roundedPx)) {
+                        dodgySelectors.push(`DIRTY_PRECISION (${val}pt results in subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`);
+                    }
+                });
+            }
+
+            // 6. NATIVE STYLE AUDIT (line-height, etc.)
+            const targetedProps = ['lineHeight'];
+
+            targetedProps.forEach(prop => {
+                const rawValue = rule.style[prop];
+                if (rawValue && rawValue !== '') {
+                    const trimmedValue = rawValue.trim();
+
+                    if (trimmedValue.includes('%')) {
+                        dodgySelectors.push(`PERCENTAGE_UNIT (${prop}: ${trimmedValue}): ${rule.selectorText}`);
+                    } else if (!isNaN(trimmedValue) && parseFloat(trimmedValue) !== 0) {
+                        dodgySelectors.push(`UNITLESS_VALUE (${prop}: ${trimmedValue}): ${rule.selectorText}`);
+                    }
+                }
             });
-        } catch (e) {}
+        } catch (ruleException) {
+            // Catches strict-mode properties anomalies from specific rule types
+            // and lets the loop smoothly continue auditing everything else
+            console.debug("Skipped non-standard style rule token alignment check:", ruleException);
+        }
+    };
+
+
+    // Main stylesheet iterator loop
+    Array.from(document.styleSheets).forEach(sheet => {
+        try {
+            // 1. RESOLVE SECURE HREF PASS
+            // If running remotely on a local file, sheet.href might be null,
+            // but the sheet is still our local template stylesheet.
+            if (sheet.href) {
+                const hrefLower = sheet.href.toLowerCase();
+
+                // Absolute skip for browser internals or external non-app metrics
+                if (hrefLower.startsWith('chrome') || hrefLower.startsWith('resource')) {
+                    return;
+                }
+
+                // If we are developing locally, allow any local stylesheets to pass
+                const isLocalDev = window.location.protocol === 'file:';
+                const isSameDomain = window.location.hostname && hrefLower.includes(window.location.hostname.toLowerCase());
+
+                if (!isLocalDev && !isSameDomain) {
+                    return; // Skip genuine third-party external CDNs in production
+                }
+            }
+
+            // 2. SAFETY GAUNTLET PASS
+            const status = checkStylesheetAccess(sheet);
+            const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
+
+            if (!status.accessible) {
+                            allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
+                            console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
+                            return; // Skip this sheet                return;
+            }
+
+            // 3. EXECUTE DEEP SCAN
+            if (sheet.cssRules) {
+                Array.from(sheet.cssRules).forEach(rule => processRule(rule));
+            }
+        } catch (stylesheetException) {
+            // Catches strict cross-origin security context blocks silently
+            console.debug("Linter styleSheet context evaluation skipped:", stylesheetException);
+        }
     });
     return [...new Set(dodgySelectors)];
 };
+
+
+
+// const scanForLiarUnits = () => {
+//     const dodgySelectors = [];
+//     Array.from(document.styleSheets).forEach(sheet => {
+//         // 1. SKIP GHOSTS: Only check sheets that are local/inline or part of your templates
+//         // Browser internal sheets usually have a null or "chrome://" href
+//         if (sheet.href && !sheet.href.includes(window.location.hostname) && !sheet.href.startsWith('file:')) {
+//             return;
+//         }
+//
+//         const status = checkStylesheetAccess(sheet);
+//         const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
+//
+//         if (!status.accessible) {
+//             allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
+//             console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
+//             return; // Skip this sheet
+//         }
+//
+//         try {
+//             Array.from(sheet.cssRules).forEach(rule => {
+//                 const text = rule.cssText.toLowerCase();
+//
+//                 // 2. TARGETED REGEX: Only flag if 'px' is actually used in the value
+//                 // This prevents flagging a selector name that happens to contain 'px'
+//                 if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\px/.test(text)) {
+//                     // 3. IGNORE LIST: Skip the helper and the page/subpage setup
+//                     const ignore = ['design-helper', '.page', '.subpage'];
+//                     if (!ignore.some(term => rule.selectorText?.includes(term))) {
+//                         dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
+//                     }
+//                 }
+//                 if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]\em/.test(text)) {
+//                     // 3. IGNORE LIST: Skip the helper and the page/subpage setup
+//                     const ignore = ['design-helper', '.page', '.subpage'];
+//                     if (!ignore.some(term => rule.selectorText?.includes(term))) {
+//                         dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
+//                     }
+//                 }
+//                 if (/:\s*[1-9]\d*\.?\d*rem|:\s*0\.\d*[1-9]\rem/.test(text)) {
+//                     // 3. IGNORE LIST: Skip the helper and the page/subpage setup
+//                     const ignore = ['design-helper', '.page', '.subpage'];
+//                     if (!ignore.some(term => rule.selectorText?.includes(term))) {
+//                         dodgySelectors.push(`REM_UNIT: ${rule.selectorText}`);
+//                     }
+//                 }
+//                 const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
+//                 if (ptMatches) {
+//                     ptMatches.forEach(match => {
+//                         const val = match.replace(/:\s*|pt/g, '');
+//                         if (isDirtyPT(val)) {
+//                             dodgySelectors.push(`DIRTY_PRECISION (${val}pt): ${rule.selectorText}`);
+//                         }
+//                     });
+//                 }
+//
+//                // BAN UNITLESS VALUES & PERCENTAGES FOR LAYOUT TRANSFORMS
+//                const targetedProps = ['lineHeight', 'zoom', 'opacity', 'columns', 'flexGrow', 'flexShrink', 'fontSizeAdjust'];
+//
+//                 targetedProps.forEach(prop => {
+//                     const rawValue = rule.style[prop];
+//                     if (rawValue && rawValue !== '') {
+//                         const trimmedValue = rawValue.trim();
+//
+//                         // Flag if it contains a percentage symbol
+//                         if (trimmedValue.includes('%')) {
+//                             dodgySelectors.push(`PERCENTAGE_UNIT (${prop}: ${trimmedValue}): ${rule.selectorText}`);
+//                         }
+//                         // Flag if it is a pure number (unitless) and not exactly zero
+//                         else if (!isNaN(trimmedValue) && parseFloat(trimmedValue) !== 0) {
+//                             dodgySelectors.push(`UNITLESS_VALUE (${prop}: ${trimmedValue}): ${rule.selectorText}`);
+//                         }
+//                     }
+//                 });
+//             });
+//         } catch (e) {}
+//     });
+//     return [...new Set(dodgySelectors)];
+// };
 
 const scanForInlineLiarUnits = () => {
     const inlineDodgy = [];

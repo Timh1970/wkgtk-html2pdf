@@ -91,15 +91,9 @@ p {
 /*                                                                            */
 /******************************************************************************/
 code, pre {
-    --font-size: 9.75;
-    --line-height: 1.5;
-    /* Line height calculator - DO NOT ALTER */
-    --lh-pure-px: calc(var(--font-size) * var(--line-height) * 96 / 72);
-    --lh-floored-px: round(down, var(--lh-pure-px), 1);
-    --lh-pt: calc(var(--lh-floored-px) * 0.75);
     font-family: var(--font-mono);
-    font-size: calc(var(--font-size) * 1pt) !important;
-    line-height: calc(var(--lh-pt) * 1pt) !important;
+    font-size: 9.75pt !important;
+    line-height: 15pt !important;
     /* Mono usually looks larger than Sans, so we step down */
     background-color: #f5f5f5;
 }
@@ -285,7 +279,7 @@ div.page:nth-of-type(even) div.subpage::after {
     color: #1864ab;
     /* Darker blue for text contrast */
     font-size: 10.5pt;
-    line-height: 1.4;
+    line-height: 15pt;
 }
 
 .note-icon {
@@ -313,7 +307,7 @@ div.page:nth-of-type(even) div.subpage::after {
     color: #4b0082;
     /* Deep Indigo for text contrast */
     font-size: 10.5pt;
-    line-height: 1.4;
+    line-height: 15pt;
 }
 
 .important-box strong {

@@ -132,7 +132,9 @@
                                     <li class="index-item"> <a href="#jshelperfonts"> <span>Font Management</span> <span>6.2.2</span></a> </li>
                                     <li class="index-branch">
                                         <ul class="leaders index">
-                                            <li class="index-item"> <a href="#fontofres"> <span>How to Resolve Overflows</span> <span>6.2.2.1</span></a> </li>
+
+                                            <li class="index-item"> <a href="#font-checklist"> <span>Strategic Checklist for Template Designers</span> <span>6.2.2.1</span></a> </li>
+                                            <li class="index-item"> <a href="#fontofres"> <span>How to Resolve Overflows</span> <span>6.2.2.2</span></a> </li>
 
                                         </ul>
                                     </li>
@@ -184,6 +186,9 @@
         <div class="page">
             <div class="subpage">
                 <ul class="index">
+
+
+
                     <li class="header index-item"><a href="#calibration">8. CALIBRATION:</a></li>
                     <li class="index-branch">
                         <ul class="leaders index">
@@ -454,7 +459,7 @@
                     on how well your content is designed.
                 </p>
                 <h2 id="key-principles">3.1 Key Principles</h2>
-                <h3 id="stylesheet-use">3.1.1 Use the correct stylesheet</h3>
+                <h3 id="stylesheet-use" style="margin-top: 0;">3.1.1 Use the correct stylesheet</h3>
                 <ol class="box">
                     <li>Each stylesheet is named according to the page size and orientation it supports (e.g. A4-portrait.css, ANSIA-landscape.css).</li>
                     <li>Link to the appropriate stylesheet in your HTML:</li>
@@ -466,7 +471,13 @@
                     </div>
                 </div>
                 <div class="code-caption">Applying the Style Sheet for A4 portrait.</div>
-
+                <div class="note-box">
+                    <span class="note-icon">ℹ</span>
+                    <div>
+                        <strong>Note:</strong>
+                        Bundled templates are legacy. For current, customizable templates, use the automated tool at <b>inplico.uk</b> (free with attribute)
+                    </div>
+                </div>
                 <h3 id="class-use">3.1.2 Use the correct classes</h3>
                 <ol class="box">
                     <li>Use the <b>.page</b> class to define the overall page</li>
@@ -777,7 +788,7 @@
                 <div class="note-box">
                     <span class="note-icon">ℹ</span>
                     <div>
-                        <strong>Note:</strong> If it is declared more than once the the first declaration that wkgtk-html2pdf finds will be used and the rest will be ignored.
+                        <strong>Note:</strong> If it is declared more than once the first declaration that wkgtk-html2pdf finds will be used and the rest will be ignored.
                     </div>
                 </div>
 
@@ -938,8 +949,8 @@
                     you are developing. This will include a margin outlined in blue.
                 </p>
                 <p>
-                    When wkgtk-html2pdf is installed locally copies of all of the style sheets are located in <i>/usr/share/wk2gtkpdf/</i> and can be linked thus:
-
+                    When wkgtk-html2pdf is installed locally copies of some basic style sheets are located in <i>/usr/share/wk2gtkpdf/</i> and can be linked thus:
+                </p>
                 <div class="code-container">
                     <div class="code-container-sub">
                         <pre><code>/usr/share/wk2gtkpdf/templates</code></pre>
@@ -951,10 +962,12 @@
                     <span class="note-icon">ℹ</span>
                     <div>
                         <strong>Note:</strong>
-                        If you are a designer with no access to the the application you can link to or use the templates hosted on our servers instead.
+                        If you are a designer with no access to the application you can link to or use the templates hosted on our servers instead.
                     </div>
                 </div>
-
+                <p>
+                    For a more flexible approach you can use the free template maker on our commercial site <a href="https://inplico.uk">inplico.uk</a> where you can create dynamic templates with custom page sizes and margins.
+                </p>
 
 
 
@@ -964,39 +977,14 @@
         <div class="page">
             <div class="subpage">
 
+                <h3 id="customtemplates" style="margin-top: 0;">6.1.1 Customising Templates</h3>
+                <h4>Advanced topic (optional)</h4>
                 <p>
-                    For a full list of themplates see <a href="https://wkgtk-html2pdf.com/templates/">https://wkgtk-html2pdf/templates</a>
+                    In most cases, if you generate your templates using our free commercial tools then you should not need to manually customise them.
                 </p>
-                <div class="code-container">
-                    <div class="code-container-sub">
-                        <pre><code>&lt;link="stylesheet" href="https://wkgtk-html2pdf/templates/A4-portrait.css&gt;"</code></pre>
-                    </div>
-                </div>
-                <div class="code-caption">Page template link example.</div>
-
-                <h3 id="customtemplates">6.1.1 Customising Templates</h3>
-                <p>
-                    By default the template margins are set to the IEEE standard for technical documenatation (Horizontal: 16.9mm; Vertical: 15.8mm) however this can easily be modified in the page template stylesheet to whatever best suits your
-                    requirements.
-                </p>
-
-                <p>
-                    To change the margins modify the values assigned to the following variables in the appropriate template:
-                </p>
-                <ul class="box">
-                    <li><b>--page-margin-h</b> - changes the left and right margins.</li>
-                    <li><b>--page-margin-v</b> - changes the upper and lower margins.</li>
-                </ul>
-                <div class="note-box">
-                    <span class="note-icon">ℹ</span>
-                    <div>
-                        <strong>Note:</strong>
-                        The margin is measured in millimetres(mm).
-                    </div>
-                </div>
                 <h4 id="custompgsz">6.1.1.1 Customising the page size </h4>
                 <p>
-                    Careful consideration is required when defining custom page sizes; your dimensions must result in a whole number of points to prevent the rendering engine from drifting. The high-precision millimetre values used in our templates
+                    Careful consideration is required when manually defining custom page sizes; your dimensions must result in a whole number of points to prevent the rendering engine from drifting. The high-precision millimetre values used in our templates
                     are calculated specifically to achieve a perfect, integer Point (pt) value based on the 72 DPI (Points Per Inch) standard.
                 </p>
                 <p>
@@ -1031,13 +1019,6 @@
                         <span class="math-label">mm</span>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="page">
-            <div class="subpage">
-
-
-
                 <div class="warning-box">
                     <span class="warning-icon">&#9888;</span>
                     <div>
@@ -1046,10 +1027,10 @@
                         Flexbox method provided in our templates to ensure brackets and fractions remain perfectly aligned across all platforms.
                     </div>
                 </div>
+
                 <p>
                     In all likelihood, if you are looking to set up a custom page size then you are going to want to convert from mm to points. To do so, for both metric and imperial page sizes is is simply ac case of flipping the calculation.
                 </p>
-
                 <h5>US / Imperial:</h5>
                 <div class="center">
                     <div class="math-container">
@@ -1060,7 +1041,6 @@
                         <span class="math-label">Points</span>
                     </div>
                 </div>
-
                 <h5>ISO / Metric:</h5>
                 <div class="center">
                     <div class="math-container">
@@ -1078,6 +1058,18 @@
                         <span class="math-label">Points</span>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+
+
+
+
+
+
+
+
 
                 <h5>Example Walkthrough:</h5>
                 <p>
@@ -1101,15 +1093,9 @@
                 </p>
                 <p>
                     Finally, convert these <b>integer points</b> back into the high-precision millimetre
-                    values required for your CSS <code>:root</code> variables:
+                    values:
                 </p>
 
-
-            </div>
-        </div>
-
-        <div class="page">
-            <div class="subpage">
                 <ul class="box" style="background: none;">
                     <li><b>Width:</b> (505 &times; 25.4) &divide; 72 = 178.1528</li>
                     <li><b>Height:</b>(632 * 25.4) / 72 = 222.9556</li>
@@ -1117,13 +1103,12 @@
                 <div class="code-container">
                     <div class="code-container-sub">
                         <pre><code>:root {
---page-width: 178.1528;
---page-height: 222.9556;
-}</code></pre>
+                --page-width: 178.1528;
+                --page-height: 222.9556;
+                }</code></pre>
                     </div>
                 </div>
                 <div class="code-caption">Example: Stabilized custom page size.</div>
-
                 <div class="important-box">
                     <span class="important-icon">★</span>
                     <div>
@@ -1131,13 +1116,17 @@
                         Always round your calculated Point values to the nearest whole integer before converting back to millimetres for your CSS variables.
                     </div>
                 </div>
-
-                <h4 id="synctypras">6.1.1.2 Typography/Raster Synchronising (Optional reading)</h4>
+                <h4 id="synctypras">6.1.1.2 Typography/Raster Synchronising</h4>
                 <p>
                     While anchoring your layout to Integer Points (pt) ensures typographic consistency and prevents "baseline creep," a secondary calculation is required to satisfy the browser’s internal rendering engine (Webkit/Blink/etc.).
                 </p>
+            </div>
+        </div>
+
+        <div class="page">
+            <div class="subpage">
                 <p>
-                    Browsers do not "paint" in millimetres or points; they paint in Physical Pixels (px). At the standard web resolution of 96 DPI, one pixel is exactly 0.75pt. If your calculated page height results in a fractional pixel (e.g.,
+                    Browsers do not paint in millimetres or points; they paint in Physical Pixels (px). At the standard web resolution of 96 DPI, one pixel is exactly 0.75pt. If your calculated page height results in a fractional pixel (e.g.,
                     1190.55pt), the rendering engine will often truncate or "floor" this value to the nearest whole pixel to fit the physical display or print buffer.
                 </p>
 
@@ -1168,45 +1157,43 @@
                 <p>
                     By using this formula, you are essentially pre-calculating the browser's "Hard Ceiling."
                 </p>
+
+                <ul class="box" style="margin-top: 0;">
+                    <li><b>Typographic Logic</b> - Manages the internal baselines so text doesn't drift.</li>
+                    <li><b>Raster Logic</b> - Manages the external cage so the container doesn't burst.</li>
+                </ul>
                 <p>
-                    In our templates, this is handled automatically via CSS Variables in the :root block. By rounding down to the nearest pixel, we guarantee that the content area is always exactly equal to, or infinitesimally smaller than, the
-                    physical paper—resulting in zero-drift , zero-overflow rendering at any size.
+                    In our templates this is handled automatically. By rounding down to the nearest pixel, we guarantee that the content area is always exactly equal to, or infinitesimally smaller than, the
+                    physical paper, resulting in zero-drift and zero-overflow rendering at any size.
+                </p>
+                <ul class="box">
+                    <li><b>height pure px</b>: (page height * 96 / 25.4);</li>
+                    <li><b>height floored px:</b> &lfloor; height-pure-px &rfloor;</li>
+                    <li><b>actual height val:</b> height floored px * 0.75</li>
+                </ul>
+                <h4 id="elemcalc">6.1.1.3 Element calculations</h4>
+                <p>
+                    While the Raster Logic manages the outer page constraints, our element-level calculations ensure that every single line of text sits perfectly on a predictable physical pixel grid.
+                </p>
+                <p>
+Standard, fluid CSS line-height values (such as 1.4 or 1.5) frequently generate fractional pixel totals (e.g., 16.8px). This forces rendering engines to make subpixel approximations, resulting in unexpected layout anomalies, text clipping, or baseline shifts. The exact same vulnerability applies to point-based font sizes (e.g., 16pt).                </p>
+                <p>
+                    To achieve absolute zero-drift rendering, all text containers, font metrics, line boxes, and item margins must be declared in whole pixel values that are mathematically reconcilable with the point unit scale.
                 </p>
 
             </div>
         </div>
         <div class="page">
             <div class="subpage">
-                <ul class="box" style="margin-top: 0;">
-                    <li><b>Typographic Logic</b> - Manages the internal "Baselines" so text doesn't drift.</li>
-                    <li><b>Raster Logic</b> - Manages the external "Cage" so the container doesn't burst.</li>
-                </ul>
-                <div class="code-caption">Typographic Logic</div>
-                <p>
-                    In our templates, this is handled automatically via CSS Variables in the :root block. By rounding down to the nearest pixel, we guarantee that the content area is always exactly
-                </p>
-                <ul class="box">
-                    <li>--height-pure-px: calc(var(--page-height) * 96 / 25.4);</li>
-                    <li>--height-floored-px: round(down, var(--height-pure-px), 1);</li>
-                    <li>--webkit-height-val: calc(var(--height-floored-px) * 0.75);</li>
-                </ul>
-                <div class="code-caption">These values are constants and shouldn't be adjusted</div>
-                <h4 id="elemcalc">6.1.1.3 Element calculations</h4>
-                <p>
-                    While the Raster Logic manages the outer page internal container calculations ensure that every line of text sits perfectly on a predictable physical pixel.
-                </p>
-                <p>
-                    Standard CSS line-heights (like 1.5 or 1.4) often result in fractional pixels (e.g., 16.8px) which may cause unexpected display anomalies. The same applies to font sizes eg. 16pt.
-                </p>
-                <p>
-                    To achieve zero-drift all objects need to be declared in whole pixel values that are reconcilable with the point unit scale.
-                </p>
+
                 <h5>The Synchronisation Formula:</h5>
                 <ul class="box">
                     <li><b>Calculate Raw Pixels</b> - Convert the pt value back into pixels.</li>
                     <li><b>Snap to Pixel</b> - Floor the result to the nearest whole integer</li>
                     <li><b>Convert to Points</b> - Convert back to points</li>
                 </ul>
+
+
                 <!-- <p>
 Whether it is line height, font size, margins, padding, or any other measurement the formula is the same: Convert it to whole pixels, round it off and convert it back again.
 <p> -->
@@ -1228,12 +1215,6 @@ Whether it is line height, font size, margins, padding, or any other measurement
                         </div>
                     </div>
                 </div>
-
-
-            </div>
-        </div>
-        <div class="page">
-            <div class="subpage">
                 <h3 id="usingpgtemplates">6.1.2 Using the page templates</h3>
                 <p>
                     Each default template has a margin that is visible to the compositor while they are designing the manual in order to assist with visualisation of the page and to assist in hightlighting overflow.
@@ -1242,7 +1223,14 @@ Whether it is line height, font size, margins, padding, or any other measurement
                     <img src="images/a6lanscapetemplate.png" alt="A6 Landscape Template Image">
                 </div>
                 <div class="code-caption">A blank A6 page with margins outlined.</div>
-                <h2 id="jsutility">6.2 JavaScript helper utility</h2>
+
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <h2 id="jsutility" style="margin-top:0;">6.2 JavaScript helper utility</h2>
                 <p>
                     wk2gtk-html2pdf includes a helper utility to aid with design. It is located in the same folder as the CSS templates and can be used to identify problems before trying to generate
                     a PDF.
@@ -1260,14 +1248,6 @@ Whether it is line height, font size, margins, padding, or any other measurement
                         At the current stage of development and for the foreseeable future the linters should be considered experimental.
                     </div>
                 </div>
-
-            </div>
-        </div>
-        <div class="page">
-            <div class="subpage">
-
-
-
                 <p>
                     To use the utility you need to declare it:
                 </p>
@@ -1284,28 +1264,31 @@ Whether it is line height, font size, margins, padding, or any other measurement
                     </div>
                 </div>
                 <div class="code-caption">Pedantic linter declaration</div>
-
-
                 <p>
                     Once declared, when you open the page in a browser it will automatically monitor changes and notify as and when it detects issues.
                 </p>
                 <h3 id=jshelperreq>6.2.1 Monitored Issues</h3>
                 <p>
-                    Depending on which version of the linter you choose determines which issues are monitored. The basic linter monitors issues that are certain to cause rendering problems while the the pedantic linter monitors issues that may cause
-                    issues.
+                    The specific issues monitored by the design-time linter depend on the audit mode selected. The <b>Basic Linter</b> flags critical structural defects that are certain to cause document or rendering failures. The <b>Pedantic Linter</b> provides a strict auditing layer, monitoring layout patterns that carry a high probability of subpixel calculation drift.
                 </p>
                 <div class="important-box">
                     <span class="important-icon">★</span>
                     <div>
                         <strong>IMPORTANT:</strong>
-                        The font checker can only determine if a font is available at design time, it cannot determine whether it is available system wide or whether it is available on a remote server.
+                        The linter's font validation routine can only determine file availability within your active design-time workspace. It cannot guarantee cross-platform system-wide availability or confirm hosting reachability on external remote servers.
                     </div>
                 </div>
+
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
                 <table class=fixed>
                     <col width="120pt">
-                    <col width="99.75">
-                    <col width="99.75">
-                    <col width="179.5pt">
+                    <col width="99.75pt">
+                    <col width="99.75pt">
+                    <col width="179.25pt">
 
                     <tr>
                         <th>Issue</th>
@@ -1343,66 +1326,126 @@ Whether it is line height, font size, margins, padding, or any other measurement
                         <td class=" field check-cell"></td>
                         <td class="field">Check for sub-pixel rounding errors.</td>
                     </tr>
+                    <tr>
+                        <td class="field">Unitless declarations</td>
+                        <td class=" field"></td>
+                        <td class=" field check-cell"></td>
+                <td class="field">Detection of unitless line-height scaling multipliers that introduce fractional pixel splits.</                    </tr>
                 </table>
                 <div class="important-box">
                     <span class="important-icon">★</span>
                     <div>
                         <strong>IMPORTANT:</strong>
-                        Browsers will likely restrict access to resources that the pedantic linter needs to check your fonts. At the time of writing this seems to be limited to Linux.
+                        Modern browser security models (specifically CORS and local file origin policies) restrict the programmatic DOM access required by the Pedantic Linter to deeply inspect stylesheet rules and font faces. If blocked, an automated alert box will trigger at design time. This restriction is strictly enforced on Linux environments.
                     </div>
                 </div>
+                <h5>Blink Engines (Chromium Architecture)</h5>
+                 <p style="margin-bottom: 0;">
+                     To bypass local directory isolation boundaries for offline testing on Linux, execute your browser via the command line with file access flags enabled (replace <code>chromium</code> with your specific flavor, such as <code>brave</code> or <code>chrome</code>):
+                 </p>
+                 <div class="code-container" style="margin-top: 0;">
+                     <div class="code-container-sub">
+                         <pre><code>chromium --allow-file-access-from-files</code></pre>
+                     </div>
+                 </div>
+                 <p>
+                     In strict testing environments with rigorous multi-origin constraints, use this full security override string to safely isolate your layout auditing session:
+                 </p>
+                 <div class="code-container">
+                     <div class="code-container-sub">
+                         <pre><code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code></pre>
+                     </div>
+                 </div>
+
+
             </div>
         </div>
         <div class="page">
             <div class="subpage">
-
-
-
-
-
-                <h5>Blink Engines</h5>
-                <p style="margin-bottom: 0;">
-                    For Chrome based engines on linux try the following from the command line (replace <b>chromium</b> with whatever flavour of blink engine you wish to use eg. <b>brave</b>):
-                </p>
-                <div class="code-container" style="margin-top: 0;">
-                    <div class="code-container-sub">
-                        <pre><code>chromium  --allow-file-access-from-files </code></pre>
-                    </div>
-                </div>
+                <h5>Gecko Engines (Mozilla Firefox)</h5>
                 <p>
-                    In one test we had to use <code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code>
-                </p>
-
-                <ul class="box">
-                    <li><b>Microsoft Windows</b> - Edge and Chrome on Windows just worked with no special flags or anything. If security is tightened or your configuration is different to our test suite (which is a very basic Windows 11 virtual
-                        machine running blink engine 146) then you may have to pass the command line arguments required for Linux versions, but for now at least it works out of the box.</li>
-                    <li><b>Mac OS</b> - Our testing on Mac has been extremely limited as we have only tested on very old hardware. On our hardware Safari (WebKit) and Brave (blink 146) and FireFox (Gecko) Just worked, but the Safari version is quite
-                        old.</li>
-                </ul>
-
-
-                <h5>Gecko Engines</h5>
-                <p>
-                    We have only tested firefox and in tests all seemed to work out of the box on every operating sytsem but Linux where we had to go into <b>about:config</b> and change <b>security.fileuri.strict_origin_policy</b> to false.
-                </p>
-                <h5>WebKit Engines</h5>
-                <p>
-                    Despite sharing our WebKitGTK core, Epiphany’s security model is too rigid for local font auditing. Unlike Chromium or Firefox, it lacks the necessary flags to bypass the restrictions required by the linter.
-                </p>
-                <h3 id="jshelperfonts">6.2.2 Font Management</h3>
-                <p>
-                    To ensure your typography renders exactly as intended, please observe the following requirements:
+                    Extensive testing on Mozilla Firefox reveals that the linter functions out of the box across standard consumer operating systems. The lone exception is Linux-based environments, where strict local origin constraints block DOM stylesheet inspection. To bypass this barrier:
                 </p>
                 <ol class="box">
-                    <li><b>System-Wide Installation:</b> Fonts must be installed in the system font directory (e.g., <i>/usr/share/fonts</i> on Linux). The rendering library cannot "see" fonts stored only in local user directories
-                        or temporary session folders.</li>
-                    <li><b>Web Fonts (WOFF/WOFF2):</b> Modern web font formats are supported, provided they are hosted in a location accessible to the rendering engine at the time of PDF generation.</li>
-                    <!-- <li class="box"><b>Remote Rendering:</b> If generating documents on a remote server or CI/CD pipeline, that environment <b>must</b> have identical copies of your specific fonts installed to prevent silent font substitution.</li> -->
+                    <li>Navigate to <b>about:config</b> in the address bar.</li>
+                    <li>Acknowledge the configuration security warning.</li>
+                    <li>Locate the preference key <b>security.fileuri.strict_origin_policy</b> and toggle its value to <b>false</b>.</li>
                 </ol>
 
 
+
+                <h5>WebKit Engines (Linux / Native App Backends)</h5>
+                <p>
+                    Despite sharing a core layout lineage with our WebKitGTK production print stack, certain Linux desktop browsers—such as Epiphany (GNOME Web)—enforce an immutable local sandbox model. Because these implementations lack the standard command-line flags necessary to temporarily override origin restrictions, the pedantic design-time linter cannot execute deep local font-metric checks within those specific browser environments. For design-time auditing on Linux, utilizing a configured Chromium or Firefox instance is strictly mandated.
+                </p>
+
+                <ul class="box">
+                    <li><b>Microsoft Windows</b> — Microsoft Edge and Google Chrome on Windows function natively without requiring custom command-line overrides. If enterprise security policies are tightened or your environment diverges from our standard baseline configuration (running an updated Blink-architecture engine), you may need to pass the same command-line arguments specified for Linux. For standard environments, the system functions seamlessly out of the box.</li>
+                    <li><b>macOS</b> — Validation testing on macOS remains straightforward. Standard builds of Apple Safari (WebKit), Brave (Blink), and Mozilla Firefox (Gecko) execute the auditing scripts natively. Be advised that older versions of Safari may require enabling the "Allow local file restrictions" flag within the advanced Developer menu if local directory isolation is actively enforced by the operating system.</li>
+                </ul>
+
+    </div>
+</div>
+<div class="page">
+    <div class="subpage">
+
+        <img class="fullwidth" style="margin-top:0; margin-bottom:4.5pt;"src="images/cors-error.png" alt="CORS Error notice">
+        <div class="code-caption">Notification the linter is disabled by CORS</div>
+
+
+                <h3 id="jshelperfonts">6.2.2 Font Management</h3>
+                <p>
+                    To guarantee that your custom document templates match your screen previews exactly and fit cleanly onto your targeted page counts, we highly recommend utilizing modern, web-optimized open-source fonts rather than legacy desktop
+                    fonts.
+                </p>
+                <ol class="box">
+                    <li><b>System-Wide Installation -</b> Fonts must be installed in the system font directory (e.g., <i>/usr/share/fonts</i> on Linux). The rendering library cannot "see" fonts stored only in local user directories
+                        or temporary session folders.</li>
+                    <li><b>Web Fonts (WOFF/WOFF2)</b> <i>(Recommend)</i> <b>-</b> Modern web font formats are supported, provided they are hosted in a location accessible to the rendering engine at the time of PDF generation.</li>
+                    <!-- <li class="box"><b>Remote Rendering:</b> If generating documents on a remote server or CI/CD pipeline, that environment <b>must</b> have identical copies of your specific fonts installed to prevent silent font substitution.</li> -->
+                </ol>
+                <h5>A Note on Commercial & Proprietary Fonts (e.g., Helvetica)</h5>
+                <p>
+                    We advise against specifying proprietary system fonts like Helvetica within your custom template style sheets for two critical reasons:
+                </p>
             </div>
         </div>
+
+<div class="page">
+    <div class="subpage">
+        <ul class="box">
+            <li><b>Platform Licensing Restrictions - </b> Commercial typefaces are strictly licensed by their respective digital foundries. They are not universally installed across web hosting servers or headless PDF generation pipelines,
+                which can lead to unpredictable fallback substitutions.</li>
+            <li><b>Vertical Metric Drift - </b>Legacy desktop font files often contain internal spacing tables (hhea and OS/2 line-gap rules) that do not translate cleanly onto digital rendering grids. When forced into tight fractional line
+                heights (such as 9.75pt), these metrics can cause the text layout engine to inject unexpected vertical gaps between wrapped lines or drop entire rows.</li>
+        </ul>
+        <p>
+            For pixel-perfect technical documentation, data forms, and multi-page layouts, our rendering pipeline is optimized for modern typefaces designed specifically for unified cross-platform printing:
+        </p>
+
+        <p>To guarantee absolute rendering consistency, protect document layout bounds, and prevent server-side layout failures, is recommended that you observe a strict font asset protocol.
+        </p>
+        <p>
+            All custom font assets uploaded or referenced within your templates should be in the WOFF2 (.woff2) format.
+        </p>
+        <p>
+            Legacy desktop formats such as standard TrueType (.ttf), OpenType (.otf), and legacy PostScript (Type 1) files are not supported by wkgtk-html2pdf.
+        </p>
+
+        <h4 id=font-checklist>6.2.2.1 Strategic Checklist for Template Designers</h4>
+        <p>
+            If your templates require any of the following classic typefaces, avoid sourcing legacy desktop files (.ttf or .otf system versions). Their internal structural tables contain conflicting vertical metrics that will cause subpixel
+            line-wrapping drift and massive multi-line text chasms on headless layout engines:
+        </p>
+
+        <ul class="box">
+            <li><b>Enforce Clean Multipliers - </b>Ensure your target point sizes scale cleanly into pixel integers when evaluated by rendering engines</li>
+            <li><b>Prioritize Metric-Stable Clones - </b>When a layout requires the look of a classic typeface, specify Liberation Sans or Arimo. These options are engineered to deliver identical character spacing without the metric flaws that compromise document stability.</li>
+            <li><b>Isolate Structural Elements - </b> (Sometimes necessary) Manage vertical layout spacing with explicit container bounding boxes (padding and margin) rather than relying on font line-height definitions to separate text lines.</li>
+
+        </ul>
+    </div>
+</div>
         <div class="page">
             <div class="subpage">
 
@@ -1428,7 +1471,7 @@ Whether it is line height, font size, margins, padding, or any other measurement
                 </div>
                 <div class="code-caption">Notification when the content goes outside of the page margin</div>
 
-                <h4 id="fontofres">6.2.2.1 How to Resolve Overflows</h4>
+                <h4 id="fontofres">6.2.2.2 How to Resolve Overflows</h4>
                 <p>
                     If you see the red notification shown above, your content has exceeded the calculated <b>subpage</b> height. To fix this, you should:
                 </p>
@@ -1518,7 +1561,7 @@ Whether it is line height, font size, margins, padding, or any other measurement
             <div class="subpage">
                 <h3>7.1.1 Our Recommendation</h3>
                 <p>
-                    In PDF documents it is rare for the page number determined by the reader to the the same as the page number marked at the bottom of the page; this is because PDF readers start counting from the very first page (often the document
+                    In PDF documents it is rare for the page number determined by the reader to the same as the page number marked at the bottom of the page; this is because PDF readers start counting from the very first page (often the document
                     cover which is not paginated).
                 </p>
 
@@ -1635,7 +1678,7 @@ div.page.number ~ div.page div.subpage::after {
                     <li> <b>The Component Contract</b> - The code snippets provided in the next section (<span class="index-item"><a href="#ide-setup">7.5</a></span>) are mapped 1:1 to the classes defined in this baseline</li>
                 </ul>
                 <p>
-                    The template is by no means mandatory, but is the quickest way to get started or to test the suite is suited to your needs is to link to it either from our templates repository or the the default folder if you have the library
+                    The template is by no means mandatory, but is the quickest way to get started or to test the suite is suited to your needs is to link to it either from our templates repository or the default folder if you have the library
                     installed (See: <span class="index-item"><a href="#css-stylesheets">6.1 CSS Style sheets</a></span>)
                 <p>
 
@@ -1867,7 +1910,6 @@ div.page.number ~ div.page div.subpage::after {
                     need to manually refresh the page refresh. While probably not the world's greatest browser for daily internet use we have found it the best solution for live previewing while using your favourite text editor (be that vim, nano, or
                     something less hardcore) to design your pages.
                 </p>
-
                 <h1 id="calibration">8. Calibration</h1>
 
                 <p>
@@ -1954,7 +1996,7 @@ div.page.number ~ div.page div.subpage::after {
                     <b>.html</b>
                 </p>
                 <h3 id="calibrate-creep">8.2.1 Creep Validation</h3>
-                <p>HTMM doesn't actually generate pages at all so the engine is entirely reliant on coordinates to construct a PDF from an HTML layout. If these coordinates are incorrect (even by as little as a pixel) this will result in an
+                <p>HTML doesn't actually generate pages at all so the engine is entirely reliant on coordinates to construct a PDF from an HTML layout. If these coordinates are incorrect (even by as little as a pixel) this will result in an
                     accumulative creep problem where whole lines will be cropped appear on the wrong page. To ensure the engine isn't causing this look at the first page and the last page of the test document and they should be identical.
                 </p>
                 <div>
@@ -2470,7 +2512,7 @@ WantedBy=multi-user.target
 
             </div>
         </div>
-
+        <script src="../../overflow-monitor-pedantic.js"></script>
     </body>
 
 </html>

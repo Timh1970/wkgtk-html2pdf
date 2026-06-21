@@ -180,6 +180,7 @@ DISTFILES += \
         extra-examples/indexing-tests/test_modes.html \
         extra-examples/indexing-tests/testpage.html \
         extra-examples/indexing-tests/testpage_anchor_only.html \
+        overflow-monitor-pedantic.js \
         src/cli++/icprint-cli \
         src/wk2gtkpdf/makefile
 

@@ -1,3 +1,4 @@
+
 .page {
     background: white;
 }
@@ -159,7 +160,7 @@ div.center {
 .math-bracket-open, .math-bracket-close {
     font-style: normal;
     font-size: 36pt;
-    line-height: 0.7;
+    line-height: 25.5pt;
     display: flex;
     align-items: center;
 }
