@@ -20,13 +20,41 @@ sheet.replaceSync(`
         color: white;
         font-size: 7pt;
         padding: 0.75pt 3pt;
-        z-index: 10001;
+        z-index: 9999;
         pointer-events: none;
     }
 `);
 
 document.adoptedStyleSheets = [sheet];
 
+const injectLinterStyles = () => {
+    const styleId = 'linter-diagnostic-styles';
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+        /* Diagnostics: Locks the red overflow box strictly to the visible page boundaries */
+        .subpage.has-overflow {
+            position: relative !important;
+        }
+        .subpage.has-overflow::after {
+            content: "" !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            box-sizing: border-box !important;
+            pointer-events: none !important;
+            z-index: 9999 !important;
+            border: 8.25pt dashed red !important;
+        }
+    `;
+    document.head.appendChild(style);
+};
+
+injectLinterStyles();
 
 async function initDesignHelper() {
     console.log("🛠 Starting Design Helper...");
@@ -36,7 +64,6 @@ async function initDesignHelper() {
     document.querySelectorAll('.subpage').forEach((subpage) => {
         observer.observe(subpage);
     });
-    //
     console.log("✅ Observer active on corrected metrics.");
 };
 
@@ -109,8 +136,11 @@ const checkDesignIssues = async (element) => {
     if (element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth) {
         issues.push('OVERFLOW');
         //element.style.border = "3pt solid red";
-        element.style.outline = "8pt solid red";
-        element.style.outlineOffset = "0.75pt"; // Pulls it inside so it doesn't bleed off-page
+        // element.style.outline = "8pt solid red";
+        // element.style.outlineOffset = "0.75pt"; // Pulls it inside so it doesn't bleed off-page
+        element.classList.add('has-overflow');
+    } else {
+        element.classList.remove('has-overflow');
     }
 
     return issues;
@@ -228,17 +258,41 @@ const scanForLiarUnits = () => {
             }
 
             // 5. POINT PRECISION CHECK
-            const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
-            if (ptMatches) {
-                ptMatches.forEach(match => {
-                    const val = parseFloat(match.replace(/:\s*|pt/g, ''));
-                    const convertedPx = val * (4 / 3);
-                    const roundedPx = Number(convertedPx.toFixed(4));
+            // const ptMatches = text.match(/:\s*(\d*\.?\d+)pt/g);
+            // if (ptMatches) {
+            //     ptMatches.forEach(match => {
+            //         const val = parseFloat(match.replace(/:\s*|pt/g, ''));
+            //         const convertedPx = val * (4 / 3);
+            //         const roundedPx = Number(convertedPx.toFixed(4));
+            //
+            //         if (!Number.isInteger(roundedPx)) {
+            //             dodgySelectors.push(`DIRTY_PRECISION (${val}pt results in subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`);
+            //         }
+            //     });
+            // }
+            const propertyBlockRegex = /([\w-]+)\s*:\s*([^;}\n]+)/g;
+            let propMatch;
 
-                    if (!Number.isInteger(roundedPx)) {
-                        dodgySelectors.push(`DIRTY_PRECISION (${val}pt results in subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`);
-                    }
-                });
+            while ((propMatch = propertyBlockRegex.exec(text)) !== null) {
+                const propName = propMatch[1];
+                const rawValueBlock = propMatch[2];
+
+                // Find every individual point string inside this specific property's values
+                const ptMatches = rawValueBlock.match(/\b\d*\.?\d+pt\b/g);
+
+                if (ptMatches) {
+                    ptMatches.forEach(ptString => {
+                        const val = parseFloat(ptString);
+                        const convertedPx = val * (4 / 3);
+                        const roundedPx = Number(convertedPx.toFixed(4));
+
+                        if (!Number.isInteger(roundedPx)) {
+                            dodgySelectors.push(
+                                `DIRTY_PRECISION (${propName} has unsafe token '${ptString}' -> subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`
+                            );
+                        }
+                    });
+                }
             }
 
             // 6. NATIVE STYLE AUDIT (line-height, etc.)
@@ -292,9 +346,9 @@ const scanForLiarUnits = () => {
             const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
 
             if (!status.accessible) {
-                            allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
-                            console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
-                            return; // Skip this sheet                return;
+                allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
+                console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
+                return; // Skip this sheet                return;
             }
 
             // 3. EXECUTE DEEP SCAN

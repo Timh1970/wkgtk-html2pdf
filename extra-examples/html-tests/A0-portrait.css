@@ -52,7 +52,7 @@ html, body {
 
 .subpage {
     grid-area: 2 / 2 / 3 / 3;
-    display: flex;
+    display: block;
     flex-direction: column;
     position: relative;
     overflow: hidden;

@@ -1106,7 +1106,7 @@ namespace phtml {
             "printer=Print to File\n"
             "page-set=all\n"
             "[Page Setup]\n"
-            "PPDName=Custom\n"
+            "PPDName=\n" + std::string(szName) + "\n"
             "DisplayName=" + std::string(szName) + "\n"
             "Width=" + std::to_string(corrected_w) + "\n"
             "Height=" + std::to_string(corrected_h) + "\n"

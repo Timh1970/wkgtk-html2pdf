@@ -3,7 +3,8 @@
 
     <head>
         <title>wkgtk-html2pdf Manual</title>
-        <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait-lite.css">
+        <!-- <link rel="stylesheet" href="/usr/share/wk2gtkpdf/A4-portrait-lite.css"> -->
+
         <link rel="stylesheet" href="technical-manual.css">
         <link rel="stylesheet" href="api-manual.css">
 
@@ -122,7 +123,17 @@
                                         </ul>
                                     </li>
                                     <li class="index-item"> <a href="#usingpgtemplates"> <span>Using page templates</span> <span>6.1.2</span></a> </li>
+                                    <li class="index-item"> <a href="#csscontainers"> <span>Layout Containers</span> <span>6.1.3</span></a> </li>
+                                    <li class="index-branch">
+                                        <ul class="leaders index">
+                                            <li class="index-item"> <a href="#cssblock"> <span>Block Layout</span> <span>6.1.3.1</span></a> </li>
+                                            <li class="index-item"> <a href="#cssflex"> <span>Flex Layout</span> <span>6.1.3.2</span></a> </li>
+                                            <li class="index-item"> <a href="#cssgrid"> <span>Grid Layout</span> <span>6.1.3.3</span></a> </li>
+                                            <li class="index-item"> <a href="#cssfieldset"> <span>Fieldsets</span> <span>6.1.3.4</span></a> </li>
+                                            <li class="index-item"> <a href="#inline-containers"> <span>Inline Containers</span> <span>6.1.3.4</span></a> </li>
 
+                                        </ul>
+                                    </li>
                                 </ul>
                             </li>
                             <li class="index-item"> <a href="#jsutility"> <span>JavaScript helper utility</span> <span>6.2</span></a> </li>
@@ -984,7 +995,8 @@
                 </p>
                 <h4 id="custompgsz">6.1.1.1 Customising the page size </h4>
                 <p>
-                    Careful consideration is required when manually defining custom page sizes; your dimensions must result in a whole number of points to prevent the rendering engine from drifting. The high-precision millimetre values used in our templates
+                    Careful consideration is required when manually defining custom page sizes; your dimensions must result in a whole number of points to prevent the rendering engine from drifting. The high-precision millimetre values used in our
+                    templates
                     are calculated specifically to achieve a perfect, integer Point (pt) value based on the 72 DPI (Points Per Inch) standard.
                 </p>
                 <p>
@@ -1176,7 +1188,8 @@
                     While the Raster Logic manages the outer page constraints, our element-level calculations ensure that every single line of text sits perfectly on a predictable physical pixel grid.
                 </p>
                 <p>
-Standard, fluid CSS line-height values (such as 1.4 or 1.5) frequently generate fractional pixel totals (e.g., 16.8px). This forces rendering engines to make subpixel approximations, resulting in unexpected layout anomalies, text clipping, or baseline shifts. The exact same vulnerability applies to point-based font sizes (e.g., 16pt).                </p>
+                    Standard, fluid CSS line-height values (such as 1.4 or 1.5) frequently generate fractional pixel totals (e.g., 16.8px). This forces rendering engines to make subpixel approximations, resulting in unexpected layout anomalies, text
+                    clipping, or baseline shifts. The exact same vulnerability applies to point-based font sizes (e.g., 16pt). </p>
                 <p>
                     To achieve absolute zero-drift rendering, all text containers, font metrics, line boxes, and item margins must be declared in whole pixel values that are mathematically reconcilable with the point unit scale.
                 </p>
@@ -1228,6 +1241,125 @@ Whether it is line height, font size, margins, padding, or any other measurement
 
             </div>
         </div>
+
+        <div class="page">
+            <div class="subpage">
+                <h3 id="csscontainers">6.1.3 Layout Contaners</h3>
+                <p>
+                    When designing for print, your choice of CSS layout model (display) dictates how reliably content flows across physical page boundaries. While modern browsers handle flex and grid dynamically on screens, print engines require
+                    structural predictability.
+                </p>
+                <h4 id="cssblock">6.1.3.1 Block Layout (display: block)</h4>
+                <p>
+                    The standard block layout is the most stable and predictable model for our pixel-locked canvas system.
+                </p>
+                <ul class="box">
+                    <li><b>The Baseline - </b>Because block elements stack vertically using standard flow math, the rendering engine handles coordinate calculations with minimal subpixel drift.</li>
+                    <li><b>Deterministic Layout - </b> When you apply our integer-pixel snapping formulas to block heights, margins, and padding, the browser maps them reliably to the physical canvas.</li>
+                    <li><b>Recommendation - </b>Use <b>display: block</b> as your primary structural wrapper for all text bodies, columns, and general document sections to guarantee zero-overflow predictability.</li>
+
+                </ul>
+
+                <h4 id="cssflex">6.1.3.2 Flexbox Layout (display: flex)</h4>
+                <p>
+                    Flexbox calculates layouts dynamically based on fractionally available canvas space. In a precision print environment, this automatic sizing introduces severe subpixel rounding risks.
+                </p>
+
+                <ul class="box">
+                    <li><b>The Risk - </b>Flexbox relies heavily on fractional distribution math. Even when you attempt to force deterministic, floored point/pixel values, the browser's internal engine frequently introduces microscopic fractional
+                        remainders (e.g., creating a child height of 45.333px inside a locked 45px space).</li>
+                    <li><b>The Breakage - </b>These tiny subpixel rounding errors compound rapidly down the DOM tree. Because our system does not allow layout shifting, a fraction-of-a-pixel rounding error can cause an immediate container overflow,
+                        resulting in text being unexpectedly cropped at the edge of the .subpage.</li>
+                    <li><b>The Rule - </b>Use Flexbox with extreme caution. Limit its use to small, single-line horizontal components where dynamic alignment is mandatory (e.g., standardizing fractional brackets/equations as noted in<a
+                            href="#custompgsz">Section 6.1.1.1</a>.
+                        inline badges, or icon-text pairs). Never use Flexbox for primary, high-risk vertical structural wrappers.</li>
+                </ul>
+
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
+                <div class="warning-box" style="margin-top: 0;">
+                    <span class="warning-icon">&#9888;</span>
+                    <div>
+                        <strong>WARNING:</strong>
+                        During testing we found that flex box appeared to work for most of the page until it got to the bottom where any element close to the margin boundary would reposition itself randomly.
+                    </div>
+                </div>
+
+                <h4 id="cssgrid">6.1.3.3 Grid Layout (display: grid)</h4>
+                <p>
+                    CSS Grid provides a highly reliable, rigid layout model when you require two-dimensional alignment (such as labels, data tables, or multi-column forms).
+                </p>
+                <ul class="box" style="margin-top: 0;">
+                    <li><b>Strict Boundaries - </b>Modern browser engines calculate CSS Grid tracks using precise, predictable geometric structures.</li>
+                    <li><b>Zero-Drift Alignment - </b>Grid items respect their defined constraints and match the integer-pixel grid beautifully, making it an excellent alternative to block layouts.</li>
+                </ul>
+
+                <h4 id="cssfieldset">6.1.3.4 fieldset</h4>
+                <p>
+                    The semantic HTML <code>&lt;fieldset&gt;</code> element exhibits a unique and disruptive box-model calculation bug within web rendering engines when paired with a <code>&lt;legend&gt;</code> tag.
+                </p>
+                <ul class="box" style="margin-top: 0;">
+                    <li><b>The Problem - </b>If the physical padding-top of a <b>&lt;fieldset&gt;</b> container is greater than the exact distance between the top of the container's border and the top edge of the <b>&lt;legend&gt;</b> text, the
+                        engine's subpixel layout math breaks entirely.</li>
+                    <li><b>The Consequence - </b>The engine miscalculates the external coordinates of the container. This throws out the print alignment, displaces subsequent elements downward, and triggers an artificial box overflow that will cause
+                        your content to be cropped at the .subpage boundary.</li>
+                    <li><b>The Resolution - </b>If you must use a semantic <b>&lt;fieldset&gt;</b>, you must normalize and minimize your fieldset and legend spacing in your print stylesheet so the padding never exceeds the legend boundary. If the
+                        subpixel math remains unstable, replace the semantic <b>&lt;fieldset&gt;</b> with a standard <b>&lt;div&gt;</b> styled with a border, and use a standard heading element (<b>&lt;h3&gt;</b>) to visually mimic the legend
+                        safely.</li>
+                </ul>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>fieldset {
+    padding-top: 16.5pt; /* If this padding exceeds the legend line height, the layout overflows */
+}</code></pre>
+                        <div class="code-caption" style="margin-bottom: 0;">Avoid padding configurations like this in print stylesheets</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page">
+    <div class="subpage">
+        <h4 id="inline-containers" style="margin-top:0;">6.1.3.5 Inline Containers and Subpixel Drift</h4>
+        <p>
+            Standard inline text containers such as <code>&lt;span&gt;</code>, <code>&lt;b&gt;</code>,
+            and <code>&lt;i&gt;</code> are sized dynamically by the browser engine based on vector font metrics,
+            inevitably introducing trailing subpixel rounding variables into the layout canvas.
+        </p>
+
+        <p>
+            Under normal scaling conditions, these inline fragments are constrained safely within their
+            parent block containers (such as <code>&lt;p&gt;</code> or <code>&lt;div&gt;</code>) and do not
+            cause layout anomalies. However, stress testing revealed a highly specific aliasing artifact
+            within the desktop Mozilla Gecko rendering engine. At exactly 150% zoom, subpixel character
+            hinting can expand an inline box boundary outward. If the container is tightly packed, this
+            fractional expansion forces an unexpected horizontal word-wrap, which cascades downward to
+            trigger vertical pagination drift across large multi-page documents (note that at 140%, 160%,
+            or any other zoom scale, the layout remains completely unaffected).
+        </p>
+
+        <div class="important-box">
+            <span class="important-icon">★</span>
+            <div>
+                <strong>IMPORTANT:</strong>
+                This layout artifact is strictly confined to the client-side Gecko desktop engine (e.g. Mozilla Firefox)
+                under a localized zoom configuration. <b>It does not affect the server-side HTML-to-PDF rendering pipeline
+                in any way</b>. At the baseline 100% execution scale, the HTML preview and the compiled vector PDF document
+                remain completely identical down to the exact subpixel coordinate line.
+            </div>
+        </div>
+
+        <img class="fullwidth" style="margin-top:0; margin-bottom:4.5pt;" src="images/spanned-container.png" alt="Standard inline container layout rendering">
+        <div class="code-caption" style="margin-bottom: 0;">Figure 6.4: The text container rendering normally across standard web browsers.</div>
+
+        <img class="fullwidth" style="margin-top:0; margin-bottom:4.5pt;" src="images/SpanWhenZoomed150.png" alt="Firefox 150% zoom inline text line wrap bug illustration">
+        <div class="code-caption">Figure 6.5: Localized line-wrap anomaly tracking inside Firefox at exactly 150% zoom.</div>
+
+    </div>
+</div>
+
         <div class="page">
             <div class="subpage">
                 <h2 id="jsutility" style="margin-top:0;">6.2 JavaScript helper utility</h2>
@@ -1269,13 +1401,15 @@ Whether it is line height, font size, margins, padding, or any other measurement
                 </p>
                 <h3 id=jshelperreq>6.2.1 Monitored Issues</h3>
                 <p>
-                    The specific issues monitored by the design-time linter depend on the audit mode selected. The <b>Basic Linter</b> flags critical structural defects that are certain to cause document or rendering failures. The <b>Pedantic Linter</b> provides a strict auditing layer, monitoring layout patterns that carry a high probability of subpixel calculation drift.
+                    The specific issues monitored by the design-time linter depend on the audit mode selected. The <b>Basic Linter</b> flags critical structural defects that are certain to cause document or rendering failures. The <b>Pedantic
+                        Linter</b> provides a strict auditing layer, monitoring layout patterns that carry a high probability of subpixel calculation drift.
                 </p>
                 <div class="important-box">
                     <span class="important-icon">★</span>
                     <div>
                         <strong>IMPORTANT:</strong>
-                        The linter's font validation routine can only determine file availability within your active design-time workspace. It cannot guarantee cross-platform system-wide availability or confirm hosting reachability on external remote servers.
+                        The linter's font validation routine can only determine file availability within your active design-time workspace. It cannot guarantee cross-platform system-wide availability or confirm hosting reachability on external remote
+                        servers.
                     </div>
                 </div>
 
@@ -1330,32 +1464,34 @@ Whether it is line height, font size, margins, padding, or any other measurement
                         <td class="field">Unitless declarations</td>
                         <td class=" field"></td>
                         <td class=" field check-cell"></td>
-                <td class="field">Detection of unitless line-height scaling multipliers that introduce fractional pixel splits.</                    </tr>
+                        <td class="field">Detection of unitless line-height scaling multipliers that introduce fractional pixel splits.</ </tr>
                 </table>
                 <div class="important-box">
                     <span class="important-icon">★</span>
                     <div>
                         <strong>IMPORTANT:</strong>
-                        Modern browser security models (specifically CORS and local file origin policies) restrict the programmatic DOM access required by the Pedantic Linter to deeply inspect stylesheet rules and font faces. If blocked, an automated alert box will trigger at design time. This restriction is strictly enforced on Linux environments.
+                        Modern browser security models (specifically CORS and local file origin policies) restrict the programmatic DOM access required by the Pedantic Linter to deeply inspect stylesheet rules and font faces. If blocked, an automated
+                        alert box will trigger at design time. This restriction is strictly enforced on Linux environments.
                     </div>
                 </div>
                 <h5>Blink Engines (Chromium Architecture)</h5>
-                 <p style="margin-bottom: 0;">
-                     To bypass local directory isolation boundaries for offline testing on Linux, execute your browser via the command line with file access flags enabled (replace <code>chromium</code> with your specific flavor, such as <code>brave</code> or <code>chrome</code>):
-                 </p>
-                 <div class="code-container" style="margin-top: 0;">
-                     <div class="code-container-sub">
-                         <pre><code>chromium --allow-file-access-from-files</code></pre>
-                     </div>
-                 </div>
-                 <p>
-                     In strict testing environments with rigorous multi-origin constraints, use this full security override string to safely isolate your layout auditing session:
-                 </p>
-                 <div class="code-container">
-                     <div class="code-container-sub">
-                         <pre><code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code></pre>
-                     </div>
-                 </div>
+                <p style="margin-bottom: 0;">
+                    To bypass local directory isolation boundaries for offline testing on Linux, execute your browser via the command line with file access flags enabled (replace <code>chromium</code> with your specific flavor, such as
+                    <code>brave</code> or <code>chrome</code>):
+                </p>
+                <div class="code-container" style="margin-top: 0;">
+                    <div class="code-container-sub">
+                        <pre><code>chromium --allow-file-access-from-files</code></pre>
+                    </div>
+                </div>
+                <p>
+                    In strict testing environments with rigorous multi-origin constraints, use this full security override string to safely isolate your layout auditing session:
+                </p>
+                <div class="code-container">
+                    <div class="code-container-sub">
+                        <pre><code>chromium --user-data-dir="/tmp/audit_session" --disable-web-security --allow-file-access-from-files --disable-features=BlockInsecurePrivateNetworkRequests</code></pre>
+                    </div>
+                </div>
 
 
             </div>
@@ -1364,7 +1500,8 @@ Whether it is line height, font size, margins, padding, or any other measurement
             <div class="subpage">
                 <h5>Gecko Engines (Mozilla Firefox)</h5>
                 <p>
-                    Extensive testing on Mozilla Firefox reveals that the linter functions out of the box across standard consumer operating systems. The lone exception is Linux-based environments, where strict local origin constraints block DOM stylesheet inspection. To bypass this barrier:
+                    Extensive testing on Mozilla Firefox reveals that the linter functions out of the box across standard consumer operating systems. The lone exception is Linux-based environments, where strict local origin constraints block DOM
+                    stylesheet inspection. To bypass this barrier:
                 </p>
                 <ol class="box">
                     <li>Navigate to <b>about:config</b> in the address bar.</li>
@@ -1376,21 +1513,26 @@ Whether it is line height, font size, margins, padding, or any other measurement
 
                 <h5>WebKit Engines (Linux / Native App Backends)</h5>
                 <p>
-                    Despite sharing a core layout lineage with our WebKitGTK production print stack, certain Linux desktop browsers—such as Epiphany (GNOME Web)—enforce an immutable local sandbox model. Because these implementations lack the standard command-line flags necessary to temporarily override origin restrictions, the pedantic design-time linter cannot execute deep local font-metric checks within those specific browser environments. For design-time auditing on Linux, utilizing a configured Chromium or Firefox instance is strictly mandated.
+                    Despite sharing a core layout lineage with our WebKitGTK production print stack, certain Linux desktop browsers—such as Epiphany (GNOME Web)—enforce an immutable local sandbox model. Because these implementations lack the standard
+                    command-line flags necessary to temporarily override origin restrictions, the pedantic design-time linter cannot execute deep local font-metric checks within those specific browser environments. For design-time auditing on Linux,
+                    utilizing a configured Chromium or Firefox instance is strictly mandated.
                 </p>
 
                 <ul class="box">
-                    <li><b>Microsoft Windows</b> — Microsoft Edge and Google Chrome on Windows function natively without requiring custom command-line overrides. If enterprise security policies are tightened or your environment diverges from our standard baseline configuration (running an updated Blink-architecture engine), you may need to pass the same command-line arguments specified for Linux. For standard environments, the system functions seamlessly out of the box.</li>
-                    <li><b>macOS</b> — Validation testing on macOS remains straightforward. Standard builds of Apple Safari (WebKit), Brave (Blink), and Mozilla Firefox (Gecko) execute the auditing scripts natively. Be advised that older versions of Safari may require enabling the "Allow local file restrictions" flag within the advanced Developer menu if local directory isolation is actively enforced by the operating system.</li>
+                    <li><b>Microsoft Windows</b> — Microsoft Edge and Google Chrome on Windows function natively without requiring custom command-line overrides. If enterprise security policies are tightened or your environment diverges from our
+                        standard baseline configuration (running an updated Blink-architecture engine), you may need to pass the same command-line arguments specified for Linux. For standard environments, the system functions seamlessly out of the
+                        box.</li>
+                    <li><b>macOS</b> — Validation testing on macOS remains straightforward. Standard builds of Apple Safari (WebKit), Brave (Blink), and Mozilla Firefox (Gecko) execute the auditing scripts natively. Be advised that older versions of
+                        Safari may require enabling the "Allow local file restrictions" flag within the advanced Developer menu if local directory isolation is actively enforced by the operating system.</li>
                 </ul>
 
-    </div>
-</div>
-<div class="page">
-    <div class="subpage">
+            </div>
+        </div>
+        <div class="page">
+            <div class="subpage">
 
-        <img class="fullwidth" style="margin-top:0; margin-bottom:4.5pt;"src="images/cors-error.png" alt="CORS Error notice">
-        <div class="code-caption">Notification the linter is disabled by CORS</div>
+                <img class="fullwidth" style="margin-top:0; margin-bottom:4.5pt;" src="images/cors-error.png" alt="CORS Error notice">
+                <div class="code-caption">Notification the linter is disabled by CORS</div>
 
 
                 <h3 id="jshelperfonts">6.2.2 Font Management</h3>
@@ -1411,41 +1553,43 @@ Whether it is line height, font size, margins, padding, or any other measurement
             </div>
         </div>
 
-<div class="page">
-    <div class="subpage">
-        <ul class="box">
-            <li><b>Platform Licensing Restrictions - </b> Commercial typefaces are strictly licensed by their respective digital foundries. They are not universally installed across web hosting servers or headless PDF generation pipelines,
-                which can lead to unpredictable fallback substitutions.</li>
-            <li><b>Vertical Metric Drift - </b>Legacy desktop font files often contain internal spacing tables (hhea and OS/2 line-gap rules) that do not translate cleanly onto digital rendering grids. When forced into tight fractional line
-                heights (such as 9.75pt), these metrics can cause the text layout engine to inject unexpected vertical gaps between wrapped lines or drop entire rows.</li>
-        </ul>
-        <p>
-            For pixel-perfect technical documentation, data forms, and multi-page layouts, our rendering pipeline is optimized for modern typefaces designed specifically for unified cross-platform printing:
-        </p>
+        <div class="page">
+            <div class="subpage">
+                <ul class="box">
+                    <li><b>Platform Licensing Restrictions - </b> Commercial typefaces are strictly licensed by their respective digital foundries. They are not universally installed across web hosting servers or headless PDF generation pipelines,
+                        which can lead to unpredictable fallback substitutions.</li>
+                    <li><b>Vertical Metric Drift - </b>Legacy desktop font files often contain internal spacing tables (hhea and OS/2 line-gap rules) that do not translate cleanly onto digital rendering grids. When forced into tight fractional line
+                        heights (such as 9.75pt), these metrics can cause the text layout engine to inject unexpected vertical gaps between wrapped lines or drop entire rows.</li>
+                </ul>
+                <p>
+                    For pixel-perfect technical documentation, data forms, and multi-page layouts, our rendering pipeline is optimized for modern typefaces designed specifically for unified cross-platform printing:
+                </p>
 
-        <p>To guarantee absolute rendering consistency, protect document layout bounds, and prevent server-side layout failures, is recommended that you observe a strict font asset protocol.
-        </p>
-        <p>
-            All custom font assets uploaded or referenced within your templates should be in the WOFF2 (.woff2) format.
-        </p>
-        <p>
-            Legacy desktop formats such as standard TrueType (.ttf), OpenType (.otf), and legacy PostScript (Type 1) files are not supported by wkgtk-html2pdf.
-        </p>
+                <p>To guarantee absolute rendering consistency, protect document layout bounds, and prevent server-side layout failures, is recommended that you observe a strict font asset protocol.
+                </p>
+                <p>
+                    All custom font assets uploaded or referenced within your templates should be in the WOFF2 (.woff2) format.
+                </p>
+                <p>
+                    Legacy desktop formats such as standard TrueType (.ttf), OpenType (.otf), and legacy PostScript (Type 1) files are not supported by wkgtk-html2pdf.
+                </p>
 
-        <h4 id=font-checklist>6.2.2.1 Strategic Checklist for Template Designers</h4>
-        <p>
-            If your templates require any of the following classic typefaces, avoid sourcing legacy desktop files (.ttf or .otf system versions). Their internal structural tables contain conflicting vertical metrics that will cause subpixel
-            line-wrapping drift and massive multi-line text chasms on headless layout engines:
-        </p>
+                <h4 id=font-checklist>6.2.2.1 Strategic Checklist for Template Designers</h4>
+                <p>
+                    If your templates require any of the following classic typefaces, avoid sourcing legacy desktop files (.ttf or .otf system versions). Their internal structural tables contain conflicting vertical metrics that will cause subpixel
+                    line-wrapping drift and massive multi-line text chasms on headless layout engines:
+                </p>
 
-        <ul class="box">
-            <li><b>Enforce Clean Multipliers - </b>Ensure your target point sizes scale cleanly into pixel integers when evaluated by rendering engines</li>
-            <li><b>Prioritize Metric-Stable Clones - </b>When a layout requires the look of a classic typeface, specify Liberation Sans or Arimo. These options are engineered to deliver identical character spacing without the metric flaws that compromise document stability.</li>
-            <li><b>Isolate Structural Elements - </b> (Sometimes necessary) Manage vertical layout spacing with explicit container bounding boxes (padding and margin) rather than relying on font line-height definitions to separate text lines.</li>
+                <ul class="box">
+                    <li><b>Enforce Clean Multipliers - </b>Ensure your target point sizes scale cleanly into pixel integers when evaluated by rendering engines</li>
+                    <li><b>Prioritize Metric-Stable Clones - </b>When a layout requires the look of a classic typeface, specify Liberation Sans or Arimo. These options are engineered to deliver identical character spacing without the metric flaws
+                        that compromise document stability.</li>
+                    <li><b>Isolate Structural Elements - </b> (Sometimes necessary) Manage vertical layout spacing with explicit container bounding boxes (padding and margin) rather than relying on font line-height definitions to separate text
+                        lines.</li>
 
-        </ul>
-    </div>
-</div>
+                </ul>
+            </div>
+        </div>
         <div class="page">
             <div class="subpage">
 

@@ -27,17 +27,50 @@
     --font-sans: "Liberation Sans", sans-serif;
 }
 
-/******************************************************************************/
-/*                                                                            */
-/* BASIC CONTAINERS                                                           */
-/*                                                                            */
-/******************************************************************************/
+
+/*
+* Precision Layout Engine by Inplico (v1.3)
+* -----------------------------------------------------------------------
+* PAGE LAYOUT:
+*
+* Page Size - 210.0000 (209.8146)mm x 297.0000 (296.5979)mm
+* Margin H  - 15.8000mm
+* Margin V  - 16.9000mm
+* -----------------------------------------------------------------------
+* This CSS is mathematically quantized for 0-drift PDF generation.
+* Generated on: 2026-07-12 | License: Standard Attribution
+*
+* NOTICE: This header must remain intact for free commercial use.
+* To obtain a Private Label license (white-label / header removal),
+* please visit: https://inplico.uk
+*
+* Unauthorized removal of this notice is a breach of license.
+*
+* Technical Support: support@inplico.uk
+* -----------------------------------------------------------------------
+*/
+
 * {
-    box-sizing: border-box;
-    -webkit-print-color-adjust: exact;
-    font-family: var(--font-sans);
-    line-height: 16.5pt;
-    font-size: 12pt;
+   box-sizing: border-box;
+   margin: 0;
+   padding: 0;
+   line-height: 16.5pt;
+   font-family: var(--font-sans);
+   font-size: 12.0000pt;
+   -webkit-print-color-adjust: exact;
+
+}
+
+@page {
+   size: 594.7500pt 840.7500pt;
+   margin: 0;
+}
+
+html, body {
+   width: 594.7500pt;
+   margin: 0;
+   padding: 0;
+   background-color: transparent !important;
 }
 
 body {
@@ -46,6 +79,50 @@ body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
 }
+
+.page {
+   width: 594.7500pt;
+   height: 840.7500pt;
+   background-color: white !important;
+   display: grid;
+   grid-template-columns: 44.2500pt 506.2500pt 44.2500pt;
+   grid-template-rows: 47.2500pt 746.2500pt 47.2500pt;
+   break-after: page;
+   position: relative;
+   overflow: hidden;
+   border-radius: 0;
+   box-shadow: 0 0 3.75pt rgba(0, 0, 0, 0.1);
+}
+
+.subpage {
+   grid-area: 2 / 2 / 3 / 3;
+   display: block;
+   position: relative;
+   overflow: hidden;
+   outline: .75pt solid blue;
+}
+
+@media print {
+   .page {
+      border: none;
+      box-shadow: none;
+   }
+
+   .page:last-of-type {
+       break-after: avoid !important;
+       page-break-after: avoid !important;
+   }
+
+   .subpage { outline: none; }
+}
+
+
+/******************************************************************************/
+/*                                                                            */
+/* BASIC CONTAINERS                                                           */
+/*                                                                            */
+/******************************************************************************/
+
 
 h1, h2, h3, h4 {
     color: var(--color-heading);
@@ -119,17 +196,11 @@ ul.index {
 }
 
 ol>li.header {
-    --font-size: 30;
-    --line-height: 1.2;
-    /* Line height calculator - DO NOT ALTER */
-    --lh-pure-px: calc(var(--font-size) * var(--line-height) * 96 / 72);
-    --lh-floored-px: round(down, var(--lh-pure-px), 1);
-    --lh-pt: calc(var(--lh-floored-px) * 0.75);
-    line-height: calc(var(--lh-pt) * 1pt);
-    font-size: calc(var(--font-size) * 1pt);
+    line-height: 36pt;
+    font-size: 30pt;
     margin: 0;
     padding-left: 6pt;
-    margin-left: 16pt;
+    margin-left: 16.5pt;
     margin-top: 9pt;
 }
 

@@ -69,6 +69,7 @@ SOURCES += \
         examples/demo-form/demo_jobsheet.cpp \
         extra-examples/greyscale/greyscale.cpp \
         extra-examples/html-tests/gridtest.cpp \
+        extra-examples/html-tests/newcsstest.cpp \
         extra-examples/indexing-tests/indextest.cpp \
         misc/template_maker/template_maker.cpp \
         src/cli++/main.cpp \
