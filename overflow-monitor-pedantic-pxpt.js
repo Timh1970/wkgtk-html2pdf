@@ -212,42 +212,76 @@ const initViewportPersistence = () => {
     });
 };
 
-
 const scanForLiarUnits = () => {
     const dodgySelectors = [];
+    const cascadeRegistry = {}; // Tracks normalized state: { selector: { fontSizePx: X, lineHeightPx: Y } }
 
-    // Helper function to process rules recursively
+    // Unified helper: Normalizes any pt or px unit string cleanly down to standard Pixels
+    const parseToPxValue = (styleBlock, property) => {
+        const val = styleBlock[property];
+        if (!val) return null;
+
+        const cleanVal = val.trim().toLowerCase();
+        if (cleanVal.includes('px')) {
+            return parseFloat(cleanVal);
+        }
+        if (cleanVal.includes('pt')) {
+            // pt to px is a crisp 1.3333... scalar mapping
+            return parseFloat(cleanVal) * (4 / 3);
+        }
+        return null;
+    };
+
+    // Helper to evaluate layout parity for a resolved pair using true px targets
+    const verifyParityFromPx = (fontSizePx, lineHeightPx, contextLabel) => {
+        // Enforce integer crispness for Skia raster boundaries
+        const isFontSizePxInt = Math.abs(fontSizePx - Math.round(fontSizePx)) < 0.0001;
+        const isLineHeightPxInt = Math.abs(lineHeightPx - Math.round(lineHeightPx)) < 0.0001;
+
+        if (!isFontSizePxInt || !isLineHeightPxInt) {
+            // Convert back to pt format ONLY for the error report message to match context
+            const fSizePt = (fontSizePx * 0.75).toFixed(2);
+            const lHeightPt = (lineHeightPx * 0.75).toFixed(2);
+            dodgySelectors.push(
+                `SUBPIXEL_FONT_METRIC (font-size: ${fSizePt}pt [${fontSizePx.toFixed(1)}px], line-height: ${lHeightPt}pt [${lineHeightPx.toFixed(1)}px] forces fractional layout grid): ${contextLabel}`
+            );
+            return;
+        }
+
+        const totalLeadingPx = Math.round(lineHeightPx) - Math.round(fontSizePx);
+        if (totalLeadingPx % 2 !== 0) {
+            const topHalfLeading = totalLeadingPx / 2;
+            const fSizePt = (fontSizePx * 0.75).toFixed(2);
+            const lHeightPt = (lineHeightPx * 0.75).toFixed(2);
+            dodgySelectors.push(
+                `ODD_LEADING_TRAP (font: ${fSizePt}pt [${Math.round(fontSizePx)}px], lh: ${lHeightPt}pt [${Math.round(lineHeightPx)}px] -> Leading is ${totalLeadingPx}px, splitting into unsafe ${topHalfLeading}px half-leading): ${contextLabel}`
+            );
+        }
+    };
+
+    // Recursive stylesheet scanner rule-processor
     const processRule = (rule) => {
         try {
-            // 1. DANGEROUS MEDIA QUERY TRAP & RECURSION BRANCH
             if (rule.media) {
                 const mediaType = rule.media.mediaText.toLowerCase();
                 if (mediaType.includes('screen') && !mediaType.includes('print') && !mediaType.includes('all')) {
                     dodgySelectors.push(`SCREEN_ONLY_MEDIA_QUERY: @media ${rule.media.mediaText}`);
                 }
-
-                // Unpack and process the rules nested inside the media block safely
                 if (rule.cssRules) {
                     Array.from(rule.cssRules).forEach(nestedRule => processRule(nestedRule));
                 }
                 return;
             }
 
-            // Standard validation guard for styling rules
-            // Wrapped carefully inside the try block to avoid strict type crashes
             if (!rule.style || !rule.selectorText) return;
-
-            // 2. IGNORE SYSTEM UI: Keep the linter panel from reporting its own styling
-            if (rule.selectorText.includes('design-helper')) {
-                return;
-            }
+            if (rule.selectorText.includes('design-helper')) return;
 
             const text = rule.cssText ? rule.cssText.toLowerCase() : '';
             if (!text) return;
 
-            // 3. BAN PX UNITS
-            if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]\s*px/.test(text)) {
-                dodgySelectors.push(`PX_UNIT: ${rule.selectorText}`);
+            // 3. IDENTIFY FRACTIONAL PX UNITS ONLY (Safe integer px bypasses check)
+            if (/\b\d+\.\d+px\b/i.test(text)) {
+                dodgySelectors.push(`FRACTIONAL_PX_UNIT: ${rule.selectorText}`);
             }
 
             // 4. BAN EM & REM UNITS
@@ -257,7 +291,7 @@ const scanForLiarUnits = () => {
                 dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
             }
 
-            // 5. POINT PRECISION CHECK
+            // 5. COMPREHENSIVE COMPONENT PRECISION CHECK
             const propertyBlockRegex = /([\w-]+)\s*:\s*([^;}\n]+)/g;
             let propMatch;
 
@@ -265,93 +299,326 @@ const scanForLiarUnits = () => {
                 const propName = propMatch[1];
                 const rawValueBlock = propMatch[2];
 
-                // Find every individual point string inside this specific property's values
                 const ptMatches = rawValueBlock.match(/\b\d*\.?\d+pt\b/g);
+                const pxMatches = rawValueBlock.match(/\b\d*\.?\d+px\b/g);
 
                 if (ptMatches) {
                     ptMatches.forEach(ptString => {
                         const val = parseFloat(ptString);
                         const convertedPx = val * (4 / 3);
                         const roundedPx = Number(convertedPx.toFixed(4));
-
                         if (!Number.isInteger(roundedPx)) {
-                            dodgySelectors.push(
-                                `DIRTY_PRECISION (${propName} has unsafe token '${ptString}' -> subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`
-                            );
+                            dodgySelectors.push(`DIRTY_PRECISION (${propName} has unsafe token '${ptString}' -> subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`);
+                        }
+                    });
+                }
+
+                if (pxMatches) {
+                    pxMatches.forEach(pxString => {
+                        const val = parseFloat(pxString);
+                        if (!Number.isInteger(val)) {
+                            dodgySelectors.push(`DIRTY_PX_PRECISION (${propName} has fractional pixel '${pxString}'): ${rule.selectorText}`);
                         }
                     });
                 }
             }
 
-            // 6. NATIVE STYLE AUDIT (line-height, etc.)
-            const targetedProps = ['lineHeight'];
-
-            targetedProps.forEach(prop => {
-                const rawValue = rule.style[prop];
-                if (rawValue && rawValue !== '') {
-                    const trimmedValue = rawValue.trim();
-
-                    if (trimmedValue.includes('%')) {
-                        dodgySelectors.push(`PERCENTAGE_UNIT (${prop}: ${trimmedValue}): ${rule.selectorText}`);
-                    } else if (!isNaN(trimmedValue) && parseFloat(trimmedValue) !== 0) {
-                        dodgySelectors.push(`UNITLESS_VALUE (${prop}: ${trimmedValue}): ${rule.selectorText}`);
-                    }
+            // 6. NATIVE STYLE AUDIT
+            const rawLineHeight = rule.style.lineHeight;
+            if (rawLineHeight && rawLineHeight.trim() !== '') {
+                const trimmedValue = rawLineHeight.trim();
+                if (trimmedValue.includes('%')) {
+                    dodgySelectors.push(`PERCENTAGE_UNIT (line-height: ${trimmedValue}): ${rule.selectorText}`);
+                } else if (!isNaN(trimmedValue) && parseFloat(trimmedValue) !== 0) {
+                    dodgySelectors.push(`UNITLESS_VALUE (line-height: ${trimmedValue}): ${rule.selectorText}`);
                 }
+            }
+
+            // 7. CASCADE REGISTRY EXTRACTION (Now cleanly unified via Px normalizing)
+            const fSizePx = parseToPxValue(rule.style, 'fontSize');
+            const lHeightPx = parseToPxValue(rule.style, 'lineHeight');
+
+            const selectors = rule.selectorText.split(',');
+            selectors.forEach(sel => {
+                const cleanSel = sel.trim();
+                if (!cascadeRegistry[cleanSel]) cascadeRegistry[cleanSel] = {};
+                if (fSizePx !== null) cascadeRegistry[cleanSel].fontSizePx = fSizePx;
+                if (lHeightPx !== null) cascadeRegistry[cleanSel].lineHeightPx = lHeightPx;
             });
+
+            if (fSizePx !== null && lHeightPx !== null) {
+                verifyParityFromPx(fSizePx, lHeightPx, rule.selectorText);
+            }
+
         } catch (ruleException) {
-            // Catches strict-mode properties anomalies from specific rule types
-            // and lets the loop smoothly continue auditing everything else
             console.debug("Skipped non-standard style rule token alignment check:", ruleException);
         }
     };
 
-
     // Main stylesheet iterator loop
     Array.from(document.styleSheets).forEach(sheet => {
         try {
-            // 1. RESOLVE SECURE HREF PASS
-            // If running remotely on a local file, sheet.href might be null,
-            // but the sheet is still our local template stylesheet.
             if (sheet.href) {
                 const hrefLower = sheet.href.toLowerCase();
-
-                // Absolute skip for browser internals or external non-app metrics
-                if (hrefLower.startsWith('chrome') || hrefLower.startsWith('resource')) {
-                    return;
-                }
-
-                // If we are developing locally, allow any local stylesheets to pass
+                if (hrefLower.startsWith('chrome') || hrefLower.startsWith('resource')) return;
                 const isLocalDev = window.location.protocol === 'file:';
                 const isSameDomain = window.location.hostname && hrefLower.includes(window.location.hostname.toLowerCase());
-
-                if (!isLocalDev && !isSameDomain) {
-                    return; // Skip genuine third-party external CDNs in production
-                }
+                if (!isLocalDev && !isSameDomain) return;
             }
-
-            // 2. SAFETY GAUNTLET PASS
-            const status = checkStylesheetAccess(sheet);
-            const sheetName = sheet.href ? sheet.href.split('/').pop() : 'inline-style';
-
-            if (!status.accessible) {
-                allIssues.add(`READ_ERROR: [${sheetName}] - ${status.reason}`);
-                console.warn(`Linter cannot audit: ${sheetName}. ${status.reason}`);
-                return; // Skip this sheet                return;
-            }
-
-            // 3. EXECUTE DEEP SCAN
             if (sheet.cssRules) {
                 Array.from(sheet.cssRules).forEach(rule => processRule(rule));
             }
         } catch (stylesheetException) {
-            // Catches strict cross-origin security context blocks silently
             console.debug("Linter styleSheet context evaluation skipped:", stylesheetException);
         }
     });
-    return [...new Set(dodgySelectors)];
+
+    // Pass 2: Evaluate cascade inheritance using clean pixel metrics
+    Object.keys(cascadeRegistry).forEach(selector => {
+        const metrics = cascadeRegistry[selector];
+
+        if (metrics.lineHeightPx && !metrics.fontSizePx) {
+            let inheritedFontSizePx = null;
+            const potentialParents = ['body', 'html', '.page', '.container', 'main'];
+
+            // Match structural parent properties inside the local file registry
+            for (const parent of potentialParents) {
+                if (cascadeRegistry[parent] && cascadeRegistry[parent].fontSizePx) {
+                    inheritedFontSizePx = cascadeRegistry[parent].fontSizePx;
+                    break;
+                }
+            }
+
+            if (inheritedFontSizePx !== null) {
+                verifyParityFromPx(inheritedFontSizePx, metrics.lineHeightPx, `${selector} (inherits font-size)`);
+            }
+        }
+    });
+
+    return dodgySelectors;
 };
 
+//NEWER PX AND PT VERSION
+// const scanForLiarUnits = () => {
+//     const dodgySelectors = [];
+//     const cascadeRegistry = {}; // Tracks: { selector: { fontSize: X, lineHeight: Y } }
+//
+//     // Helper to safely extract clean pt values from a rule block
+//     const getPtValue = (styleBlock, property) => {
+//         const val = styleBlock[property];
+//         if (val && val.trim().toLowerCase().includes('pt')) {
+//             return parseFloat(val);
+//         }
+//         return null;
+//     };
+//
+//     // Helper to evaluate layout parity for a resolved pair
+//     const verifyParity = (fontSizePt, lineHeightPt, contextLabel) => {
+//         const fontSizePx = fontSizePt / 0.75;
+//         const lineHeightPx = lineHeightPt / 0.75;
+//
+//         const isFontSizePxInt = Math.abs(fontSizePx - Math.round(fontSizePx)) < 0.0001;
+//         const isLineHeightPxInt = Math.abs(lineHeightPx - Math.round(lineHeightPx)) < 0.0001;
+//
+//         if (!isFontSizePxInt || !isLineHeightPxInt) {
+//             dodgySelectors.push(
+//                 `SUBPIXEL_FONT_METRIC (font-size: ${fontSizePt}pt, line-height: ${lineHeightPt}pt forces fractional layout grid): ${contextLabel}`
+//             );
+//             return;
+//         }
+//
+//         const totalLeadingPx = Math.round(lineHeightPx) - Math.round(fontSizePx);
+//         if (totalLeadingPx % 2 !== 0) {
+//             const topHalfLeading = totalLeadingPx / 2;
+//             dodgySelectors.push(
+//                 `ODD_LEADING_TRAP (font: ${fontSizePt}pt [${Math.round(fontSizePx)}px], lh: ${lineHeightPt}pt [${Math.round(lineHeightPx)}px] -> Leading is ${totalLeadingPx}px, splitting into unsafe ${topHalfLeading}px half-leading): ${contextLabel}`
+//             );
+//         }
+//     };
+//
+//     // Recursive stylesheet scanner rule-processor
+//     const processRule = (rule) => {
+//         try {
+//             // 1. DANGEROUS MEDIA QUERY TRAP & RECURSION BRANCH
+//             if (rule.media) {
+//                 const mediaType = rule.media.mediaText.toLowerCase();
+//                 if (mediaType.includes('screen') && !mediaType.includes('print') && !mediaType.includes('all')) {
+//                     dodgySelectors.push(`SCREEN_ONLY_MEDIA_QUERY: @media ${rule.media.mediaText}`);
+//                 }
+//
+//                 if (rule.cssRules) {
+//                     Array.from(rule.cssRules).forEach(nestedRule => processRule(nestedRule));
+//                 }
+//                 return;
+//             }
+//
+//             // Standard validation guard for styling rules
+//             if (!rule.style || !rule.selectorText) return;
+//
+//             // 2. IGNORE SYSTEM UI: Keep the linter panel from reporting its own styling
+//             if (rule.selectorText.includes('design-helper')) {
+//                 return;
+//             }
+//
+//             const text = rule.cssText ? rule.cssText.toLowerCase() : '';
+// if (!text) return;
+//
+// // 3. IDENTIFY FRACTIONAL PX UNITS ONLY (Safe integer px bypasses check)
+// // Matches any pixel token containing a dot followed by numbers (e.g., 12.5px, 0.25px)
+// if (/\b\d+\.\d+px\b/i.test(text)) {
+//     dodgySelectors.push(`FRACTIONAL_PX_UNIT: ${rule.selectorText}`);
+// }
+//
+// // 4. BAN EM & REM UNITS
+// if (/\b\d*\.?\d+rem\b/.test(text)) {
+//     dodgySelectors.push(`REM_UNIT: ${rule.selectorText}`);
+// } else if (/\b\d*\.?\d+em\b/.test(text)) {
+//     dodgySelectors.push(`EM_UNIT: ${rule.selectorText}`);
+// }
+//
+// // 5. COMPREHENSIVE COMPONENT PRECISION CHECK (Evaluates both pt and px values)
+// const propertyBlockRegex = /([\w-]+)\s*:\s*([^;}\n]+)/g;
+// let propMatch;
+//
+// while ((propMatch = propertyBlockRegex.exec(text)) !== null) {
+//     const propName = propMatch[1];
+//     const rawValueBlock = propMatch[2];
+//
+//     // Track down any point values or pixel tokens in the declaration block
+//     const ptMatches = rawValueBlock.match(/\b\d*\.?\d+pt\b/g);
+//     const pxMatches = rawValueBlock.match(/\b\d*\.?\d+px\b/g);
+//
+//     // A. Legacy Point Checker
+//     if (ptMatches) {
+//         ptMatches.forEach(ptString => {
+//             const val = parseFloat(ptString);
+//             const convertedPx = val * (4 / 3);
+//             const roundedPx = Number(convertedPx.toFixed(4));
+//
+//             if (!Number.isInteger(roundedPx)) {
+//                 dodgySelectors.push(
+//                     `DIRTY_PRECISION (${propName} has unsafe token '${ptString}' -> subpixel ${convertedPx.toFixed(2)}px): ${rule.selectorText}`
+//                 );
+//             }
+//         });
+//     }
+//
+//     // B. Modern Pixel Checker
+//     if (pxMatches) {
+//         pxMatches.forEach(pxString => {
+//             const val = parseFloat(pxString);
+//             // Catch floating-point or explicit decimals in layout math (e.g., 14.5px)
+//             if (!Number.isInteger(val)) {
+//                 dodgySelectors.push(
+//                     `DIRTY_PX_PRECISION (${propName} has fractional pixel '${pxString}'): ${rule.selectorText}`
+//                 );
+//             }
+//         });
+//     }
+// }
+//
+//
+//             // 6. NATIVE STYLE AUDIT (Unit checking for invalid fluid/relative lines)
+//             const rawLineHeight = rule.style.lineHeight;
+//             if (rawLineHeight && rawLineHeight.trim() !== '') {
+//                 const trimmedValue = rawLineHeight.trim();
+//
+//                 if (trimmedValue.includes('%')) {
+//                     dodgySelectors.push(`PERCENTAGE_UNIT (line-height: ${trimmedValue}): ${rule.selectorText}`);
+//                 } else if (!isNaN(trimmedValue) && parseFloat(trimmedValue) !== 0) {
+//                     dodgySelectors.push(`UNITLESS_VALUE (line-height: ${trimmedValue}): ${rule.selectorText}`);
+//                 }
+//             }
+//
+//             // 7. CASCADE REGISTRY EXTRACTION
+//             const fSize = getPtValue(rule.style, 'fontSize');
+//             const lHeight = getPtValue(rule.style, 'lineHeight');
+//
+//             // Split comma-separated rules to track selectors cleanly
+//             const selectors = rule.selectorText.split(',');
+//             selectors.forEach(sel => {
+//                 const cleanSel = sel.trim();
+//                 if (!cascadeRegistry[cleanSel]) cascadeRegistry[cleanSel] = {};
+//                 if (fSize !== null) cascadeRegistry[cleanSel].fontSize = fSize;
+//                 if (lHeight !== null) cascadeRegistry[cleanSel].lineHeight = lHeight;
+//             });
+//
+//             // Local context verification if both properties are explicitly paired on this specific rule
+//             if (fSize !== null && lHeight !== null) {
+//                 verifyParity(fSize, lHeight, rule.selectorText);
+//             }
+//
+//         } catch (ruleException) {
+//             console.debug("Skipped non-standard style rule token alignment check:", ruleException);
+//         }
+//     };
+//
+//     // Main stylesheet iterator loop (Pass 1: Collects tokens & builds the flat registry)
+//     Array.from(document.styleSheets).forEach(sheet => {
+//         try {
+//             if (sheet.href) {
+//                 const hrefLower = sheet.href.toLowerCase();
+//
+//                 if (hrefLower.startsWith('chrome') || hrefLower.startsWith('resource')) {
+//                     return;
+//                 }
+//
+//                 const isLocalDev = window.location.protocol === 'file:';
+//                 const isSameDomain = window.location.hostname && hrefLower.includes(window.location.hostname.toLowerCase());
+//
+//                 if (!isLocalDev && !isSameDomain) {
+//                     return;
+//                 }
+//             }
+//
+//             if (sheet.cssRules) {
+//                 Array.from(sheet.cssRules).forEach(rule => processRule(rule));
+//             }
+//         } catch (stylesheetException) {
+//             console.debug("Linter styleSheet context evaluation skipped:", stylesheetException);
+//         }
+//     });
+//
+//     // Pass 2: Statically cross-examine elements missing a local font-size block against the cascade
+//     Object.keys(cascadeRegistry).forEach(selector => {
+//         const metrics = cascadeRegistry[selector];
+//
+//         // Evaluate rule blocks that declare a line-height but depend on structural inheritance for font sizing
+//         if (metrics.lineHeight && !metrics.fontSize) {
+//             let inheritedFontSize = null;
+//
+//             // Search hierarchy: Check root scopes, structural containers, and explicit parent classes in complex selectors
+//             const potentialParents = ['body', 'html', '.page', '.container', 'main'];
+//
+//             // If the selector points to a nested node (e.g. ".parent .child" or ".parent > .child")
+//             // dynamically extract the parent chain string to search the registry
+//             const parentChainMatch = selector.match(/(.+)\s+[>\s*]?\s+[\w-.:#]+/);
+//             if (parentChainMatch && parentChainMatch[1]) {
+//                 potentialParents.unshift(parentChainMatch[1].trim());
+//             }
+//
+//             // Extract the closest available parent context matching our registered rules
+//             for (const parent of potentialParents) {
+//                 if (cascadeRegistry[parent] && cascadeRegistry[parent].fontSize) {
+//                     inheritedFontSize = cascadeRegistry[parent].fontSize;
+//                     break;
+//                 }
+//             }
+//
+//             if (inheritedFontSize !== null) {
+//                 verifyParity(inheritedFontSize, metrics.lineHeight, `${selector} (inheriting font-size: ${inheritedFontSize}pt from layout context)`);
+//             } else {
+//                 dodgySelectors.push(
+//                     `UNRESOLVED_FONT_CONTEXT (line-height defined as ${metrics.lineHeight}pt but no valid structural parent font-size found in sheet): ${selector}`
+//                 );
+//             }
+//         }
+//     });
+//
+//     return [...new Set(dodgySelectors)];
+// };
 
+// ORIGINAL PT ONLY VERSION
 // const scanForLiarUnits = () => {
 //     const dodgySelectors = [];
 //
@@ -492,6 +759,58 @@ const scanForLiarUnits = () => {
 
 
 
+// const scanForInlineLiarUnits = () => {
+//     const inlineDodgy = [];
+//
+//     // First, clear any old snitch classes so we start fresh
+//     document.querySelectorAll('.design-helper-inline-liar')
+//         .forEach(el => el.classList.remove('design-helper-inline-liar'));
+//
+//     const elementsWithStyle = document.querySelectorAll('[style]');
+//
+//     elementsWithStyle.forEach(el => {
+//         const styleAttr = el.getAttribute('style').toLowerCase();
+//
+//         // Use your "Non-Zero" regex
+//         if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]px/.test(styleAttr)) {
+//             const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
+//             inlineDodgy.push(`INLINE_PX: ${identifier}`);
+//
+//             // SNITCH: Apply the visual highlight
+//             el.setAttribute('data-label', 'INLINE_PX');
+//             el.classList.add('design-helper-inline-liar');
+//         }
+//
+//         if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
+//             const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
+//             inlineDodgy.push(`INLINE_EM: ${identifier}`);
+//
+//             // SNITCH: Apply the visual highlight
+//             el.setAttribute('data-label', 'INLINE_EM');
+//
+//             el.classList.add('design-helper-inline-liar');
+//         }
+//
+//         if (!allIssues.has('OVERFLOW')) {
+//
+//             const ptMatches = styleAttr.match(/(\d*\.?\d+)pt/g);
+//             if (ptMatches) {
+//                 ptMatches.forEach(match => {
+//                     const val = match.replace('pt', '');
+//                     if (isDirtyPT(val)) {
+//                         inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline`);
+//                         el.setAttribute('data-label', `DIRTY_PRECISION: ${val}pt`);
+//                         el.classList.add('design-helper-inline-liar');
+//                     }
+//                 });
+//             }
+//         }
+//
+//     });
+//
+//     return [...new Set(inlineDodgy)];
+// };
+
 const scanForInlineLiarUnits = () => {
     const inlineDodgy = [];
 
@@ -503,42 +822,41 @@ const scanForInlineLiarUnits = () => {
 
     elementsWithStyle.forEach(el => {
         const styleAttr = el.getAttribute('style').toLowerCase();
+        const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
 
-        // Use your "Non-Zero" regex
-        if (/:\s*[1-9]\d*\.?\d*px|:\s*0\.\d*[1-9]px/.test(styleAttr)) {
-            const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
-            inlineDodgy.push(`INLINE_PX: ${identifier}`);
+        // 1. IDENTIFY FRACTIONAL INLINE PX UNITS ONLY (Safe integer px bypasses check)
+        // Catches explicit dots with trailing fractional values like: style="margin: 4.5px;"
+        if (/:\s*\d+\.\d+px/i.test(styleAttr)) {
+            inlineDodgy.push(`FRACTIONAL_INLINE_PX: ${identifier}`);
 
             // SNITCH: Apply the visual highlight
-            el.setAttribute('data-label', 'INLINE_PX');
+            el.setAttribute('data-label', 'FRACTIONAL_PX');
             el.classList.add('design-helper-inline-liar');
         }
 
-        if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/.test(styleAttr)) {
-            const identifier = el.id ? `#${el.id}` : `<${el.tagName.toLowerCase()}>`;
+        // 2. BAN INLINE EM & REM UNITS (Unchanged logic)
+        if (/:\s*[1-9]\d*\.?\d*em|:\s*0\.\d*[1-9]em/i.test(styleAttr)) {
             inlineDodgy.push(`INLINE_EM: ${identifier}`);
 
             // SNITCH: Apply the visual highlight
             el.setAttribute('data-label', 'INLINE_EM');
-
             el.classList.add('design-helper-inline-liar');
         }
 
+        // 3. POINT PRECISION CHECK (Unchanged logic for legacy documents)
         if (!allIssues.has('OVERFLOW')) {
-
             const ptMatches = styleAttr.match(/(\d*\.?\d+)pt/g);
             if (ptMatches) {
                 ptMatches.forEach(match => {
                     const val = match.replace('pt', '');
                     if (isDirtyPT(val)) {
-                        inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline`);
+                        inlineDodgy.push(`DIRTY_PRECISION (${val}pt) inline: ${identifier}`);
                         el.setAttribute('data-label', `DIRTY_PRECISION: ${val}pt`);
                         el.classList.add('design-helper-inline-liar');
                     }
                 });
             }
         }
-
     });
 
     return [...new Set(inlineDodgy)];

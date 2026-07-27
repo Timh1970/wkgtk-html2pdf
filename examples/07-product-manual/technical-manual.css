@@ -170,7 +170,7 @@ p {
 code, pre {
     font-family: var(--font-mono);
     font-size: 9.75pt !important;
-    line-height: 15pt !important;
+    line-height: 14.25pt !important;
     /* Mono usually looks larger than Sans, so we step down */
     background-color: #f5f5f5;
 }

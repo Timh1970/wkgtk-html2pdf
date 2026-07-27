@@ -93,7 +93,7 @@ table.fixed {
     content: "\2714";
     font-family: "Liberation Sans";
     font-size: 9.75pt;
-    line-height: 12pt;
+    line-height: 11.25pt;
     font-weight: 700;
     color: var(--color-accent);
     display: block;
