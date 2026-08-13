@@ -3,13 +3,34 @@
 # It is used to contitionally start xvfb there are no existing 
 # desktops available for webkit to use to generate pdf's
 
+LOG_FILE="/var/log/wk2gtkpdf.log"
+
+log_message() {
+    # Generate a clean timestamp string
+    TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+    MSG="[$TIMESTAMP] (XVFB-INIT) $1"
+
+    # Route A: Write directly to your explicit text log if it exists
+    if [ -w "$LOG_FILE" ]; then
+        echo "$MSG" >> "$LOG_FILE"
+    else
+        # Route B: Universal POSIX fallback to ensure high visibility
+        logger -t wk2gtkpdf "$MSG"
+    fi
+}
+
+
 # Desktop Conflict Check: Probe for active local X11 or Wayland display sockets
 if [ -d /tmp/.X11-unix ] && [ "$(ls -A /tmp/.X11-unix 2>/dev/null)" ] || [ -e "$XDG_RUNTIME_DIR/wayland-0" ] || ls /run/user/*/wayland-* &>/dev/null; then
-    echo "Active graphical display detected (X11 or Wayland). Aborting Xvfb startup to prevent conflict."
+    log_message "Active graphical display environment detected (DISPLAY=$DISPLAY, WAYLAND=$WAYLAND_DISPLAY)."
+    log_message "Aborting headless Xvfb daemon startup to prevent display socket conflict."
     exit 0
 fi
 
-# WebKit6 / GTK4 Skia Headless Environment Options
+
+log_message "No active graphics layer found. Initializing high-availability framework on display :99..."
+
+# Headless Environment Options
 export DISPLAY=:99
 export WEBKIT_FORCE_SANDBOX=0
 export WEBKIT_DISABLE_COMPOSITING_MODE=1

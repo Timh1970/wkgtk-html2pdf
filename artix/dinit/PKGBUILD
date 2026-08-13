@@ -1,6 +1,6 @@
 # Maintainer: Inplico UK James@inplico.uk
 pkgname=wkgtk-html2pdf
-pkgver=1.0.13
+pkgver=1.0.34
 pkgrel=2
 pkgdesc="C++ Library with CLI tool to convert HTML to PDF, A modern replacement for wkhtmltopdf (Dinit Edition)"
 arch=(x86_64)
@@ -12,11 +12,12 @@ depends=('podofo' 'webkit2gtk-4.1' 'webkitgtk-6.0' 'json-c' 'xorg-server-xvfb')
 conflicts=()
 install=wk2gtkpdf.install
 # TESTING
-source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git")
+# source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git")
 # RC1
 # source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git#tag=v${pkgver}-rc1")
 # REL
 # source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git#tag=v${pkgver}")
+source=("${pkgname}-${pkgver}::git+https://github.com/Timh1970/wkgtk-html2pdf.git#tag=v${pkgver}")
 sha256sums=('SKIP')
 
 
@@ -54,7 +55,7 @@ package() {
 
     # 2. Deploy your modern dinit daemon service files to their native system directories
     install -Dm644 "${srcdir}/${pkgname}-${pkgver}/init/dinit/xvfb" "${pkgdir}/etc/dinit.d/xvfb"
-    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/init/dinit/xvfb-conditional-start" "${pkgdir}/usr/bin/xvfb-conditional-start"
+    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/init/xvfb-start" "${pkgdir}/usr/bin/xvfb-start"
 
     # 3. Deploy Option A: Your pristine tmpfiles.d layout to solve the ACL paradox
     # Vendor packages drop configurations into /usr/lib/tmpfiles.d/ rather than /etc/
