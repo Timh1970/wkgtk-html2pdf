@@ -60,14 +60,14 @@
    -webkit-print-color-adjust: exact;
 
 }
-
+/*
 @page {
    size: 594.7500pt 840.7500pt;
    margin: 0;
-}
+} */
 
 html, body {
-   width: 594.7500pt;
+   width: 594.00pt;
    margin: 0;
    padding: 0;
    background-color: transparent !important;
@@ -82,11 +82,11 @@ body {
 
 .page {
    width: 594.7500pt;
-   height: 840.7500pt;
+   height: 840.00pt;
    background-color: white !important;
    display: grid;
-   grid-template-columns: 44.2500pt 506.2500pt 44.2500pt;
-   grid-template-rows: 47.2500pt 746.2500pt 47.2500pt;
+   grid-template-columns: 44.2500pt 1fr 44.2500pt;
+   grid-template-rows: 47.2500pt 1fr 47.2500pt;
    break-after: page;
    position: relative;
    overflow: hidden;

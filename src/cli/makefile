@@ -11,6 +11,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 USER_INCDIR ?= -I/usr/include/wk2gtkpdf
 USER_LIBDIR ?=
+INIT_SYS ?= systemd
 
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
@@ -26,15 +27,22 @@ ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
 
     PC_NAME = wk2gtkpdf$(ENGINE_SUFFIX)
 
-    # Use = instead of += for the first assignment to ensure they aren't empty strings
-    # and remove the 2>/dev/null so you can actually see if pkg-config fails
-    PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
-    PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
+    ifeq ($(INIT_SYS),systemd)
+        # Standard production path: include libsystemd queries
+        PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
+        PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
+    else
+        ifeq ($(INIT_SYS),dinit)
+            PKG_CPP := $(shell pkg-config --cflags $(PC_NAME))
+            PKG_LIB := $(shell pkg-config --libs $(PC_NAME))
+        endif
+    endif
 
     CPPFLAGS += $(USER_INCDIR) $(PKG_CPP)
     LDLIBS   += $(USER_LIBDIR) $(PKG_LIB)
 
 endif
+
 
 PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin

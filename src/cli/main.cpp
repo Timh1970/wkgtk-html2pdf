@@ -1,8 +1,15 @@
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <getopt.h>
 #include <iostream>
+#ifdef USE_SYSTEMD
 #include <systemd/sd-journal.h>
+#else
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 #include <unistd.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
@@ -350,7 +357,23 @@ int main(int argc, char *argv[]) {
     }
 
     // REDIRECT WEBKIT LOGGING TO SYSLOG
+#ifdef
     dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
+#else
+    string logPath = "/var/log/wkgtk-html2pdf";
+    // Artix / POSIX alternative path: Open your explicit config file directly
+    // O_APPEND ensures multi-threaded or parallel jobs won't overwrite each other's traces
+    int    log_fd  = open(logPath.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+    if (log_fd >= 0) {
+        // Force fully buffered stderr straight into your designated file descriptor
+        dup2(log_fd, STDERR_FILENO);
+        close(log_fd);
+    } else {
+        wkJlog << iclog::loglevel::error << iclog::category::CORE
+               << "Failed to open custom logfile path: " << logPath << iclog::endl;
+    }
+
+#endif
     setlogmask(LOG_UPTO(LOG_LEVEL));
     setlocale(LC_CTYPE, "en_GB.UTF-8");
 

@@ -1,0 +1,4 @@
+#!/bin/sh
+exec 2>&1
+# chpst handles dropping privileges cleanly down to the dedicated user
+exec chpst -u xvfb /usr/local/bin/xvfb-start

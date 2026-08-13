@@ -95,6 +95,8 @@ namespace iclog {
     ICLOG_API logstream &endl(logstream &os);
     ICLOG_API logstream &operator<<(logstream &os, loglevel lev);
     ICLOG_API logstream &operator<<(logstream &os, category cat);
+
+    ICLOG_API bool init_file_logging(const char *filepath);
 } // namespace iclog
 
 // The global logger instance

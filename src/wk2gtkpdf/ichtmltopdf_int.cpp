@@ -7,8 +7,10 @@
 #include <condition_variable>
 #include <mutex>
 #include <stdexcept>
+#ifdef USE_SYSTEMD
 #include <string>
 #include <systemd/sd-bus.h>
+#endif
 #include <thread>
 #include <wayland-client.h>
 #ifdef USE_WEBKIT_6
@@ -86,11 +88,14 @@ WKGTK_init::~WKGTK_init() {
 struct icGTK_impl {
         WKGTK_init      *tk      = nullptr; // Allocated on the heap to hide its size
         std::atomic_bool gui_run = false;
-
+#ifdef USE_SYSTEMD
         std::string check_xvfb(sd_bus *bus, const std::string &service);
-        WKGTK_init  handle_xvfb_daemon();
         bool        start_service(sd_bus *bus);
         bool        stop_service(sd_bus *bus);
+#else
+        bool check_xvfb_socket();
+#endif
+        WKGTK_init handle_xvfb_daemon();
 };
 
 /**
@@ -124,7 +129,7 @@ WKGTK_init::WKGTK_init(WKGTK_init &&other) noexcept
 }
 
 icGTK::~icGTK() {
-
+#ifdef USE_SYSTEMD
     if (phtml::WKGTK_run_mode == WKGTKRunMode::START_STOP) {
         sd_bus *bus = nullptr;
         if (sd_bus_open_system(&bus) >= 0) {
@@ -135,6 +140,11 @@ icGTK::~icGTK() {
             sd_bus_unref(bus);
         }
     }
+#else
+    wkJlog << iclog::loglevel::info << iclog::category::CORE
+           << "Exiting application context."
+           << iclog::endl;
+#endif
 }
 
 /**
@@ -149,6 +159,12 @@ icGTK &icGTK::init(WKGTKRunMode runMode) {
     static icGTK instance(runMode);
     return instance;
 }
+
+#ifndef USE_SYSTEMD
+bool icGTK_impl::check_xvfb_socket() {
+    return (access("/tmp/.X11-unix/X99", F_OK) == 0);
+}
+#endif
 
 /**
  * @brief pdf_init::handle_xvfb_daemon
@@ -186,11 +202,11 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         }
     }
 
-    sd_bus *bus = nullptr;
-
     if (!display_connected) {
         wkJlog << iclog::loglevel::info << iclog::category::CORE
                << "No valid display found (X11/Wayland). Preparing headless mode..." << iclog::endl;
+#ifdef USE_SYSTEMD
+        sd_bus *bus = nullptr;
 
         int r = sd_bus_open_system(&bus);
         if (r < 0) {
@@ -218,6 +234,22 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         }
 
         sd_bus_unref(bus);
+#else
+        wkJlog << iclog::loglevel::info << iclog::category::CORE
+               << "Probing high-availability virtual display filesystem socket..." << iclog::endl;
+
+        int retries = 15; // Give the background service 3 seconds max to warm up if booting simultaneously
+        while (!check_xvfb_socket() && retries > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            retries--;
+        }
+
+        if (!check_xvfb_socket()) {
+            wkJlog << iclog::loglevel::error << "High-Availability Xvfb target display :99 unavailable." << iclog::endl;
+            throw std::runtime_error("Headless initialization failed: /tmp/.X11-unix/X99 socket missing.");
+        }
+#endif
+
         setenv("DISPLAY", ":99", 1);
 
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
@@ -278,6 +310,7 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
     return (WKGTK_init());
 }
 
+#ifdef USE_SYSTEMD
 /**
  * @brief icGTK::check_xvfb
  * @param bus
@@ -410,3 +443,4 @@ bool icGTK_impl::stop_service(sd_bus *bus) {
     sd_bus_error_free(&error);
     return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
+#endif

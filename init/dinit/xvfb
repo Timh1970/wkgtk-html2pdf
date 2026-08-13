@@ -1,0 +1,5 @@
+type = process
+command = /usr/local/bin/xvfb-start
+user = xvfb
+logfile = /var/log/xvfb.log
+depends-on = network

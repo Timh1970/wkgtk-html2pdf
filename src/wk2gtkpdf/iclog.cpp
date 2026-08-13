@@ -4,9 +4,12 @@
 
 #include "iclog.h"
 
+#include <fcntl.h>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <syslog.h>
+#include <unistd.h>
 
 // 1. Global Externs (C-Linkage)
 extern "C" {
@@ -15,6 +18,70 @@ uint64_t LOG_IGNORE = 0;
 }
 
 namespace iclog {
+
+    class log_manager {
+        private:
+            // Primitive integer FD: Zero memory overhead, zero stream buffer traps
+            int        m_log_fd = -1;
+            std::mutex m_log_mutex;
+
+            // Default constructor initializes safely into a dormant state
+            log_manager() = default;
+
+        public:
+            log_manager(const log_manager &)            = delete;
+            log_manager &operator=(const log_manager &) = delete;
+
+            static log_manager &get_instance() {
+                static log_manager instance;
+                return instance;
+            }
+
+            // RAII Destructor: Safely flushes and unmaps the kernel handle automatically
+            ~log_manager() {
+                std::lock_guard<std::mutex> lock(m_log_mutex);
+                if (m_log_fd >= 0) {
+                    close(m_log_fd);
+                    m_log_fd = -1;
+                }
+            }
+
+            bool set_file_target(const char *filepath) {
+                if (!filepath || filepath[0] == '\0')
+                    return false;
+
+                std::lock_guard<std::mutex> lock(m_log_mutex);
+
+                // Safely close the existing handle if the path is recycled
+                if (m_log_fd >= 0) {
+                    close(m_log_fd);
+                    m_log_fd = -1;
+                }
+
+                // Open the file descriptor directly using native kernel flags
+                // O_APPEND ensures multi-threaded batch jobs write atomically without collision
+                m_log_fd = open(filepath, O_WRONLY | O_CREAT | O_APPEND, 0644);
+                return (m_log_fd >= 0);
+            }
+
+            void write_to_file(const std::string &data) {
+                std::lock_guard<std::mutex> lock(m_log_mutex);
+                if (m_log_fd >= 0) {
+                    // Raw, bare-metal kernel write operation
+                    ::write(m_log_fd, data.c_str(), data.size());
+                }
+            }
+
+            bool has_active_file() {
+                std::lock_guard<std::mutex> lock(m_log_mutex);
+                return (m_log_fd >= 0);
+            }
+    };
+
+    bool init_file_logging(const char *filepath) {
+        return log_manager::get_instance().set_file_target(filepath);
+    }
+
     const std::pair<category, std::string> catLUT[]{
         {SQL_SEL,     "(SQL SELECT) "            },
         {SQL_UPD,     "(SQL UPDATE) "            },
@@ -64,26 +131,62 @@ namespace iclog {
     }
 
     // 2. The Internal Engine (Hidden from Header)
+    // class streambuf_internal : public std::streambuf {
+    //     public:
+    //         std::string m_buf;
+    //         int         m_level    = LOG_INFO;
+    //         uint64_t    m_category = CORE;
+
+    //     protected:
+    //         int sync() override {
+    //             if (!m_buf.empty()) {
+    //                 if (!(LOG_IGNORE & m_category)) {
+    //                     syslog(m_level, "%s", m_buf.c_str());
+    //                 }
+    //                 m_buf.clear();
+    //             }
+    //             return 0;
+    //         }
+
+    //         int_type overflow(int_type c) override {
+    //             if (c != traits_type::eof()) {
+    //                 m_buf += static_cast<char>(c);
+    //             }
+    //             return c;
+    //         }
+    // };
+
     class streambuf_internal : public std::streambuf {
         public:
-            std::string m_buf;
-            int         m_level    = LOG_INFO;
-            uint64_t    m_category = CORE;
+            int      m_level    = LOG_INFO;
+            uint64_t m_category = CORE;
+
+        private:
+            inline static thread_local std::string tl_buffer;
 
         protected:
             int sync() override {
-                if (!m_buf.empty()) {
+                if (!tl_buffer.empty()) {
                     if (!(LOG_IGNORE & m_category)) {
-                        syslog(m_level, "%s", m_buf.c_str());
+
+                        log_manager &manager = log_manager::get_instance();
+
+                        if (manager.has_active_file()) {
+                            // Path A: Pure file writing via the hot kernel descriptor
+                            manager.write_to_file(tl_buffer);
+                        } else {
+                            // Path B: Fallback to your classic universal POSIX syslog channel
+                            syslog(m_level, "%s", tl_buffer.c_str());
+                        }
                     }
-                    m_buf.clear();
+                    tl_buffer.clear();
                 }
                 return 0;
             }
 
             int_type overflow(int_type c) override {
                 if (c != traits_type::eof()) {
-                    m_buf += static_cast<char>(c);
+                    tl_buffer += static_cast<char>(c);
                 }
                 return c;
             }

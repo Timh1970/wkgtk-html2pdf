@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Desktop Conflict Check: Probe for active local X11 or Wayland display sockets
+if [ -d /tmp/.X11-unix ] && [ "$(ls -A /tmp/.X11-unix 2>/dev/null)" ] || [ -e "$XDG_RUNTIME_DIR/wayland-0" ] || ls /run/user/*/wayland-* &>/dev/null; then
+    echo "Active graphical display detected (X11 or Wayland). Aborting Xvfb startup to prevent conflict."
+    exit 0
+fi
+
+# WebKit6 / GTK4 Skia Headless Environment Options
+export DISPLAY=:99
+export WEBKIT_FORCE_SANDBOX=0
+export WEBKIT_DISABLE_COMPOSITING_MODE=1
+
+# Force Mesa/Skia to render entirely via CPU rasterisation
+export LIBGL_ALWAYS_SOFTWARE=1
+
+# Tell GTK4 to use the modern Skia rendering path but force the software backend
+export GSK_RENDERER=ngskia 
+# Fallback flag just in case the specific micro-version uses the older nomenclature
+export GSK_RENDER_NODE=software
+
+# Force pure X11 surface translation and fully kill portals/dbus dialogs
+export GDK_BACKEND=x11
+export GTK_USE_PORTAL=0
+export GDK_DEBUG=no-portals
+export GDK_USE_XDG_PORTAL=0
+
+# Direct Command Execution
+exec /usr/bin/Xvfb :99 -screen 0 1024x768x24 -nolisten tcp -noreset
+

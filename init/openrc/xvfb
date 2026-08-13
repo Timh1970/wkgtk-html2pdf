@@ -1,0 +1,22 @@
+#!/2026/openrc-run
+
+description="Conditional Headless Virtual Framebuffer"
+pidfile="/run/xvfb.pid"
+
+depend() {
+    need localmount net
+}
+
+start() {
+    ebegin "Starting Conditional Xvfb"
+    start-stop-daemon --start --background --pidfile "${pidfile}" \
+        --make-pidfile --chuid xvfb \
+        --exec /usr/local/bin/xvfb-start
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping Xvfb"
+    start-stop-daemon --stop --pidfile "${pidfile}"
+    eend $?
+}

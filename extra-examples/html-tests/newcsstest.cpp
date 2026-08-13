@@ -1,12 +1,70 @@
 #include <filesystem>
 #include <fstream>
+#include <gtk/gtk.h>
+#include <iostream>
+#include <math.h>
+#include <stdio.h>
 #include <systemd/sd-journal.h>
 #include <unistd.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
 #include <wk2gtkpdf/pretty_html.h>
-
 using namespace phtml;
+
+#define DETECTOR_TOLERANCE_MM (5.0 * 25.4 / 72.0)
+
+gboolean check_if_dimensions_are_standard(double width_mm, double height_mm) {
+    gboolean matched_standard = FALSE;
+
+    // 1. Fetch the raw internal list of ALL paper sizes registered in GTK
+    // Passing FALSE excludes legacy custom profile additions
+    GList *all_papers = gtk_paper_size_get_paper_sizes(FALSE);
+    GList *node;
+
+    for (node = all_papers; node != NULL; node = node->next) {
+        GtkPaperSize *std_paper = (GtkPaperSize *)node->data;
+
+        double std_w = gtk_paper_size_get_width(std_paper, GTK_UNIT_MM);
+        double std_h = gtk_paper_size_get_height(std_paper, GTK_UNIT_MM);
+
+        // If the user's size sits inside the standard definition boundary...
+        if (fabs(std_w - width_mm) <= DETECTOR_TOLERANCE_MM && fabs(std_h - height_mm) <= DETECTOR_TOLERANCE_MM) {
+
+            printf("  [Match Found] System Token: \"%s\" (%.1f x %.1f mm)\n", gtk_paper_size_get_name(std_paper), std_w, std_h);
+            matched_standard = TRUE;
+            break;
+        }
+    }
+
+    // 2. Clean up the dynamic list elements safely using the standard macro
+    g_list_free_full(all_papers, (GDestroyNotify)gtk_paper_size_free);
+
+    return matched_standard;
+}
+
+double evaluate_dimensions(double width_mm, double height_mm) {
+    printf("Evaluating Input: %.2f mm x %.2f mm...\n", width_mm, height_mm);
+
+    gboolean is_standard = check_if_dimensions_are_standard(width_mm, height_mm);
+
+    double final_w = width_mm;
+    double final_h = height_mm;
+
+    if (!is_standard) {
+        // True custom template -> Apply the 0.2mm buffer safely
+        final_w += 0.2;
+        final_h += 0.2;
+        printf("RESULT: TRUE CUSTOM CANVAS -> Output Sizing: %.2f x %.2f mm\n", final_w, final_h);
+        return (0.3);
+
+    } else {
+        // Standard profile -> Skip padding completely
+        printf("RESULT: STANDARD PRESET    -> Output Sizing: %.2f x %.2f mm\n", final_w, final_h);
+    }
+    printf("--------------------------------------------------\n");
+
+    return (0.0);
+}
 
 /**
  * @brief main
@@ -37,66 +95,65 @@ int main(int argc, char *argv[]) {
 
     head->new_node("style")->set_node_content(
 
-        "        /*\n"
-        "         * Precision Layout Engine by Inplico (v2.0-Skia)\n"
-        "         * -----------------------------------------------------------------------\n"
-        "         * PAGE LAYOUT:\n"
-        "         *          * Page Size         - 841.0000 (840.8458)mm x 1189.0000 (1188.7729)mm\n"
-        "         * Target Dimensions - 3178.0000px x 4493.0000px\n"
-        "         * Margin H          - 8.0000mm (30.0000px)\n"
-        "         * Margin V          - 8.0000mm (30.0000px)\n"
-        "         * -----------------------------------------------------------------------\n"
-        "         * This CSS is mathematically quantized for 0-drift PDF generation.\n"
-        "         * Generated on: 2026-07-24 | License: Standard Attribution\n"
-        "         *          * NOTICE: This header must remain intact for free commercial use.\n"
-        "         * To obtain a Private Label license (white-label / header removal),\n"
-        "         * please visit: https://inplico.uk\n"
-        "         *          * Technical Support: support@inplico.uk\n"
-        "         * -----------------------------------------------------------------------\n"
-        "         */\n"
-        "        \n"
+        /*
+         * Precision Layout Engine by Inplico (v1.3)
+         * -----------------------------------------------------------------------
+         * PAGE LAYOUT:
+         *          * Page Size - 256.0000 (255.8521)mm x 180.0000 (179.9167)mm
+         * Margin H  - 5.0000mm
+         * Margin V  - 5.0000mm
+         * -----------------------------------------------------------------------
+         * This CSS is mathematically quantized for 0-drift PDF generation.
+         * Generated on: 2026-08-05 | License: Standard Attribution
+         *          * NOTICE: This header must remain intact for free commercial use.
+         * To obtain a Private Label license (white-label / header removal),
+         * please visit: https://inplico.uk
+         *          * Unauthorized removal of this notice is a breach of license.
+         *          * Technical Support: support@inplico.uk
+         * -----------------------------------------------------------------------
+         */
+
         "        * {\n"
         "            box-sizing: border-box;\n"
         "        margin: 0;\n"
         "        padding: 0;\n"
-        "            line-height: 24px;\n"
+        "            line-height: 18.0000pt;\n"
         "            font-family: 'Liberation Sans', sans-serif;\n"
-        "            font-size: 16px;\n"
+        "            font-size: 12.0000pt;\n"
         "        }\n"
         "        \n"
         "        @page {\n"
-        "            size: 3178.0000px 4493.0000px;\n"
+        "            size: 726.0000pt 510.0000pt;\n"
         "            margin: 0;\n"
         "        }\n"
         "        \n"
         "        html, body {\n"
-        "            width: 3178.0000px;\n"
+        "            width: 726.0000pt;\n"
         "            margin: 0;\n"
         "            padding: 0;\n"
         "                background-color: transparent !important;\n"
         "        }\n"
         "            \n"
         "            .page {\n"
-        "                width: 3178.0000px;\n"
-        "                height: 4493.0000px;\n"
+        "                width: 726.0000pt;\n"
+        "                height: 510.0000pt;\n"
         "                    background-color: white !important;\n"
         "                display: grid;\n"
-        "                    /* Using 1fr prevents edge overflow bugs during layout engine grid resolution */\n"
-        "                    grid-template-columns: 30.0000px 1fr 30.0000px;\n"
-        "                    grid-template-rows: 30.0000px 1fr 30.0000px;\n"
+        "                    grid-template-columns: 13.5000pt 699.00pt 13.5000pt;\n"
+        "                    grid-template-rows: 13.5000pt 483.0000pt 13.5000pt;\n"
         "                    break-after: page;\n"
         "                position: relative;\n"
         "                overflow: hidden;\n"
         "                    border-radius: 0;\n"
-        "                    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);\n"
+        "                    box-shadow: 0 0 3.75pt rgba(0, 0, 0, 0.1);\n"
         "            }\n"
         "            \n"
         "            .subpage {\n"
         "                grid-area: 2 / 2 / 3 / 3;\n"
-        "            display: block;\n"
-        "            position: relative;\n"
+        "            display: grid;\n"
+        "            position: absolute; top: 0; left: 0; width: 699pt; height: 483pt;\n"
         "            overflow: hidden;\n"
-        "            outline: 1px solid blue;\n"
+        "            outline: .75pt solid blue;\n"
         "            }\n"
         "        \n"
         "        @media print {\n"
@@ -113,7 +170,6 @@ int main(int argc, char *argv[]) {
         "            .subpage { outline: none; }\n"
         "        }\n"
 
-        /* The Grid: 1pt red line every 10mm */
         ".grid-line { "
         "    position: absolute; "
         "    left: 0; "
@@ -137,10 +193,10 @@ int main(int argc, char *argv[]) {
 
     html_tree *body = dom.new_node("body");
 
-    for (int p = 0; p != 250; ++p) {
+    for (int p = 0; p != 100; ++p) {
         html_tree *page = body->new_node("div class=\"page\"")->new_node("div class=\"subpage\"");
         page->new_node("div class=\"top-marker\"");
-        for (int i = 0; i != 119; ++i) {
+        for (int i = 0; i != 19; ++i) {
             page->new_node_f("div class=\"grid-line\" style=\"top: %.2fpt\"", (i + 1) * 28.25)->set_node_content_f("%dmm", (i + 1) * 10);
         }
         page->new_node("div class=\"page-number\"")->set_node_content_f("page %d", p + 1);
@@ -149,39 +205,46 @@ int main(int argc, char *argv[]) {
     process_nodes(&dom);
 
     const char   *html = dom.get_html();
-    std::ofstream file(std::filesystem::current_path().string() + "/newcsstestA0.html");
+    std::ofstream file(std::filesystem::current_path().string() + "/187x105.html");
     if (file) {
         file << html;
         file.close();
     }
 
+    int w = 105;
+    int h = 187;
+
     std::string printSettings(
         /* clang-format off */
-            "[Print Settings]\n"
-            "quality=high\n"
-            "resolution=96\n"
-            "output-file-format=pdf\n"
-            "printer=Print to File\n"
-            "page-set=all\n"
-            "[Page Setup]\n"
-            "PPDName=inplico\n"
-            "DisplayName=inplicoa0\n"
-            "Width=841\n"
-            "Height=1189\n"
-            "MarginTop=0\n"
-            "MarginBottom=0\n"
-            "MarginLeft=0\n"
-            "MarginRight=0\n"
-            "Orientation=portrait\n"
+        "[Print Settings]\n"
+        "quality=high\n"
+        "resolution=1200\n"
+        "output-file-format=pdf\n"
+        "printer=Print to File\n"
+        "page-set=all\n"
+        "[Page Setup]\n"
+        // "Name="+std::to_string(w)+"x"+std::to_string(h)+"\n"
+        "Name=inplico_custom\n"
+        "DisplayName=inplico105x187mm\n"
+        // "Width="+std::to_string(w+evaluate_dimensions(w,h))+"\n"
+        // "Height="+std::to_string(h+evaluate_dimensions(w,h))+"\n"
+        "Width=256\n"
+        "Height=180\n"
+        "MarginTop=0\n"
+        "MarginBottom=0\n"
+        "MarginLeft=0\n"
+        "MarginRight=0\n"
+        "Orientation=portrait\n"
         /* clang-format on */
     );
 
+    std::cout << printSettings << std::endl;
     std::string baseURI = "file://" + std::filesystem::current_path().string() + "/";
     PDFprinter  pdf(baseURI.c_str());
     pdf.set_param(
         html,
         printSettings.c_str(),
-        (std::filesystem::current_path().string() + "/newcsstestA0.pdf").c_str()
+        (std::filesystem::current_path().string() + "/187x105.pdf").c_str()
     );
 
     pdf.make_pdf();

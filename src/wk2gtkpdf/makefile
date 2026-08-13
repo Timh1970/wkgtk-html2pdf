@@ -9,11 +9,21 @@ SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
+ifeq ($(NO_SYSTEMD),1)
+    SYS_CXXFLAGS =
+    SYS_LIBS =
+else
+    SYS_CXXFLAGS = -DUSE_SYSTEMD
+    SYS_LIBS = $(shell pkg-config --libs libsystemd)
+endif
+
+
 CXX = g++
 
 CXXFLAGS +=
 CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden -g
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
+CXXFLAGS += $(SYS_CXXFLAGS)
 
 CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
@@ -22,9 +32,10 @@ LDFLAGS += -Wl,--version-script=libwk2gtkpdf.map
 
 LDLIBS += $(shell pkg-config --libs libpodofo )
 LDLIBS += $(shell pkg-config --libs json-c)
-LDLIBS += $(shell pkg-config --libs libsystemd)
 LDLIBS += $(shell pkg-config --libs x11)
 LDLIBS += $(shell pkg-config --libs wayland-client)
+LDLIBS += $(SYS_LIBS)
+
 
 ifneq (,$(findstring -DUSE_WEBKIT_6,$(CXXFLAGS) $(CPPFLAGS) $(DEB_CXXFLAGS_MAINT_APPEND)))
     ENGINE_SUFFIX = -6
@@ -85,6 +96,16 @@ install:
 	echo "Requires.private: $(WEBKIT_NAME) libpodofo json-c" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
 	echo "Libs: -L\$${libdir} -lwk2gtkpdf$(ENGINE_SUFFIX)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
 	echo "Cflags: -I\$${includedir}" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file
+
+.PHONY: install-dinit
+install-dinit:
+	install -Dm644 ../../init/dinit/xvfb /etc/dinit.d/xvfb
+	install -Dm755 ../../init/xvfb-start /usr/bin/xvfb-start
+
+.PHONY: install-openrc
+install-openrc:
+	install -Dm755 ../../init/openrc/xvfb /etc/init.d/xvfb
+	install -Dm755 ../../init/xvfb-start /usr/bin/xvfb-start
 
 
 .PHONY: smoke-install
