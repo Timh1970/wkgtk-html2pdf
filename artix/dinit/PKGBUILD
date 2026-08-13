@@ -1,0 +1,72 @@
+# Maintainer: Inplico UK James@inplico.uk
+pkgname=wkgtk-html2pdf
+pkgver=1.0.13
+pkgrel=2
+pkgdesc="C++ Library with CLI tool to convert HTML to PDF, A modern replacement for wkhtmltopdf (Dinit Edition)"
+arch=(x86_64)
+url="https://github.com/Timh1970/wkgtk-html2pdf"
+license=('MIT')
+makedepends=('git' 'pkgconf')
+# CRITICAL EVICTION: libsystemd is removed from the array
+depends=('podofo' 'webkit2gtk-4.1' 'webkitgtk-6.0' 'json-c' 'xorg-server-xvfb')
+conflicts=()
+install=wk2gtkpdf.install
+# TESTING
+source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git")
+# RC1
+# source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git#tag=v${pkgver}-rc1")
+# REL
+# source=("git+https://github.com/Timh1970/wkgtk-html2pdf.git#tag=v${pkgver}")
+sha256sums=('SKIP')
+
+
+build() {
+
+    stagedir="${srcdir}/staging"
+    rm -rf "${stagedir}"
+    mkdir -p "${stagedir}"
+
+    # --- PASS 1: GTK3 / WEBKIT2 (4.1) ---
+    # Enforce INIT_SYS=dinit to drop libsystemd link flags inside the engine build
+    CPPFLAGS="$CPPFLAGS -DPODOFO_010" make INIT_SYS=dinit -C ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf
+    CPPFLAGS="$CPPFLAGS -DPODOFO_010" make INIT_SYS=dinit -C "${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf" install DESTDIR="${stagedir}"
+
+    # Clear object files before changing engine targets to prevent -fPIC collisions
+    rm ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf/*.o
+
+    # --- PASS 2: GTK4 / WEBKIT6 (6.0) ---
+    CPPFLAGS="-DPODOFO_010 -DUSE_WEBKIT_6 $CPPFLAGS" make INIT_SYS=dinit -C ${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf
+    CPPFLAGS="-DPODOFO_010 -DUSE_WEBKIT_6 $CPPFLAGS" make INIT_SYS=dinit -C "${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf" install DESTDIR="${stagedir}"
+    
+    # Export staging symbols so your CLI wrapper links natively against your local dynamic variables
+    export PKG_CONFIG_PATH="${stagedir}/usr/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+    export LDFLAGS="-L${stagedir}/usr/lib ${LDFLAGS:-}"
+    CPPFLAGS="-I${stagedir}/usr/include -DPODOFO_010 -DUSE_WEBKIT_6 $CPPFLAGS" make INIT_SYS=dinit -C ${srcdir}/${pkgname}-${pkgver}/src/cli
+
+}
+
+package() {
+
+    # 1. Execute primary engine installations directly into your packaging workspace target
+    CPPFLAGS="-DPODOFO_010 -DUSE_WEBKIT_6 ${CPPFLAGS:-}" make INIT_SYS=dinit install -C "${srcdir}/${pkgname}-${pkgver}/src/cli" DESTDIR="${pkgdir}"
+    CPPFLAGS="-DPODOFO_010 -DUSE_WEBKIT_6 ${CPPFLAGS:-}" make INIT_SYS=dinit install -C "${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf" DESTDIR="${pkgdir}"
+    make INIT_SYS=dinit install -C "${srcdir}/${pkgname}-${pkgver}/src/wk2gtkpdf" DESTDIR="${pkgdir}"
+
+    # 2. Deploy your modern dinit daemon service files to their native system directories
+    install -Dm644 "${srcdir}/${pkgname}-${pkgver}/init/dinit/xvfb" "${pkgdir}/etc/dinit.d/xvfb"
+    install -Dm755 "${srcdir}/${pkgname}-${pkgver}/init/dinit/xvfb-conditional-start" "${pkgdir}/usr/bin/xvfb-conditional-start"
+
+    # 3. Deploy Option A: Your pristine tmpfiles.d layout to solve the ACL paradox
+    # Vendor packages drop configurations into /usr/lib/tmpfiles.d/ rather than /etc/
+    install -d "${pkgdir}/usr/lib/tmpfiles.d"
+    echo "a+ /run/dinitctl - - - - u:xvfb:rw" > "${pkgdir}/usr/lib/tmpfiles.d/${pkgname}-permissions.conf"
+
+    # 4. Install Examples (Your clean recursive find mapping is working beautifully)
+    cd "$srcdir/$pkgname-${pkgver}/examples"
+    find . -type f -exec install -Dm644 "{}" "$pkgdir/usr/share/doc/$pkgname/examples/{}" \;
+
+    # 5. Core licensing target registry
+    install -Dm644 -t "$pkgdir/usr/share/licenses/${pkgname}" ${srcdir}/${pkgname}-${pkgver}/LICENSE
+
+}
+

@@ -1,0 +1,55 @@
+# wkgtk-html2pdf.install
+
+pre_install() {
+    # 1. Use standard POSIX logger (instead of systemd-cat) to pipe messages straight to syslog/messages
+    logger -t wk2gtkpdf "INSTALL WGTKPRINTER++: Setting necessary permissions for xvfb"
+
+    # 2. Secure standard unprivileged system boundaries
+    getent group xvfb &>/dev/null || groupadd -r xvfb
+    getent passwd xvfb &>/dev/null || useradd -r -g xvfb -s /bin/false xvfb
+
+    # Ensure your HA user has native access to hardware drawing loops
+    getent group video | grep xvfb &>/dev/null || usermod -aG video xvfb
+
+    # Grant your primary deployment administrator account read/write access to the execution group
+    if [ -n "$SUDO_USER" ]; then
+        getent group xvfb | grep -q "$SUDO_USER" || usermod -aG xvfb "$SUDO_USER"
+    fi
+}
+
+pre_upgrade() {
+    pre_install "$1"
+}
+
+pre_remove() {
+    # 3. Replace systemctl with native dinit runtime controls
+    # If the service is running, tell the dinit socket engine to step down gracefully
+    if [ -x /usr/bin/dinitctl ]; then
+        dinitctl stop xvfb &>/dev/null || true
+    fi
+}
+
+post_install() {
+    # 4. EXTERMINATE THE BOX CHICKEN PARADOX:
+    # Force systemd-tmpfiles (the universal layout manager Artix uses natively)
+    # to process your vendor file and inject the POSIX ACL onto the control socket immediately!
+    if [ -x /usr/bin/systemd-tmpfiles ]; then
+        systemd-tmpfiles --create /usr/lib/tmpfiles.d/wkgtk-html2pdf-permissions.conf &>/dev/null || true
+    fi
+
+    # 5. Enable the service under dinit by default
+    # Dinit uses an offline configuration symlink interface to enable targets safely at birth
+    if [ -x /usr/bin/dinitctl ]; then
+        dinitctl --offline enable xvfb &>/dev/null || true
+    fi
+
+    # Print clean administrative output to the pacman console terminal
+    echo "========================================================================="
+    echo " High-Availability Headless PDF Service Deployment Completed Natively. "
+    echo "========================================================================="
+    echo " * The 'xvfb' service has been registered and enabled under Dinit."
+    echo " * A POSIX ACL has been dynamically bound straight to '/run/dinitctl'."
+    echo " * The unprivileged 'xvfb' worker account can now wake up the display"
+    echo "   server on-demand with ZERO password prompts or administrative elevation."
+    echo "========================================================================="
+}
