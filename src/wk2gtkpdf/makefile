@@ -4,17 +4,20 @@ MAJOR := $(major)
 MINOR := $(minor)
 PATCH := $(patch)
 VERSION := $(MAJOR).$(MINOR).$(PATCH)
+INIT_SYS ?= systemd
+LOGFILE = /var/log/wkgtk-html2pdf.log
+
 
 SOURCES = $(wildcard *.cpp)
 HEADERS = $(wildcard *.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
-ifeq ($(NO_SYSTEMD),1)
-    SYS_CXXFLAGS =
-    SYS_LIBS =
-else
+ifeq ($(INIT_SYS),systemd)
     SYS_CXXFLAGS = -DUSE_SYSTEMD
     SYS_LIBS = $(shell pkg-config --libs libsystemd)
+else
+    SYS_CXXFLAGS =
+    SYS_LIBS =
 endif
 
 
@@ -97,16 +100,12 @@ install:
 	echo "Libs: -L\$${libdir} -lwk2gtkpdf$(ENGINE_SUFFIX)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
 	echo "Cflags: -I\$${includedir}" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file
 
-.PHONY: install-dinit
-install-dinit:
-	install -Dm644 ../../init/dinit/xvfb /etc/dinit.d/xvfb
-	install -Dm755 ../../init/xvfb-start /usr/bin/xvfb-start
-
-.PHONY: install-openrc
-install-openrc:
-	install -Dm755 ../../init/openrc/xvfb /etc/init.d/xvfb
-	install -Dm755 ../../init/xvfb-start /usr/bin/xvfb-start
-
+	# Non Systemd logging
+ifneq ($(INIT_SYS),systemd)
+	install -d $(DESTDIR)/var/log
+	touch $(DESTDIR)$(LOGFILE)
+	chmod 0666 $(DESTDIR)$(LOGFILE)
+endif
 
 .PHONY: smoke-install
 smoke-install:

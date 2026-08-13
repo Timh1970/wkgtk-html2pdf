@@ -10,7 +10,14 @@
 #ifdef USE_SYSTEMD
 #include <string>
 #include <systemd/sd-bus.h>
+#else
+#include <cstring>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#include <vector>
 #endif
+
 #include <thread>
 #include <wayland-client.h>
 #ifdef USE_WEBKIT_6
@@ -94,6 +101,8 @@ struct icGTK_impl {
         bool        stop_service(sd_bus *bus);
 #else
         bool check_xvfb_socket();
+        bool dinit_wake_service(const std::string &service_name);
+
 #endif
         WKGTK_init handle_xvfb_daemon();
 };
@@ -238,15 +247,27 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
         wkJlog << iclog::loglevel::info << iclog::category::CORE
                << "Probing high-availability virtual display filesystem socket..." << iclog::endl;
 
-        int retries = 15; // Give the background service 3 seconds max to warm up if booting simultaneously
-        while (!check_xvfb_socket() && retries > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
-            retries--;
-        }
+        // Perform a fast filesystem probe for the active shared frame buffer
+        if (access("/tmp/.X11-unix/X99", F_OK) != 0) {
+            wkJlog << iclog::loglevel::notice << iclog::category::CORE
+                   << "High-Availability display :99 cold. Activating via dinit socket..." << iclog::endl;
 
-        if (!check_xvfb_socket()) {
-            wkJlog << iclog::loglevel::error << "High-Availability Xvfb target display :99 unavailable." << iclog::endl;
-            throw std::runtime_error("Headless initialization failed: /tmp/.X11-unix/X99 socket missing.");
+            // Direct socket invocation without shelling out or spawning threads
+            if (!dinit_wake_service("xvfb")) {
+                wkJlog << iclog::loglevel::error << "Dinit IPC transaction failed. Check socket write access." << iclog::endl;
+                throw std::runtime_error("Headless initialization failed: Unable to communicate with dinit.");
+            }
+
+            // High-Availability Safeguard: Wait for the hardware file socket to warm up
+            int retries = 15;
+            while (access("/tmp/.X11-unix/X99", F_OK) != 0 && retries > 0) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                retries--;
+            }
+
+            if (access("/tmp/.X11-unix/X99", F_OK) != 0) {
+                throw std::runtime_error("Dinit activated xvfb, but display socket failed to initialize.");
+            }
         }
 #endif
 
@@ -444,3 +465,86 @@ bool icGTK_impl::stop_service(sd_bus *bus) {
     return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #endif
+
+/**
+ * @brief icGTK_impl::dinit_wake_service
+ * @param service_name
+ * @return
+ * ============================================================================
+ * DINIT SERVICE ORCHESTRATION ARCHITECTURE NOTE
+ * ============================================================================
+ * 1. WHY POLICYKIT / POLKIT FAILS HERE:
+ *    Unlike systemd, which routes process manipulation over a userspace D-Bus
+ *    broker namespace (allowing polkit JavaScript interception), Dinit handles
+ *    IPC entirely at the Linux kernel VFS layer via the '/run/dinitctl' UNIX
+ *    domain socket. The kernel evaluates strict file permission bits immediately.
+ *
+ * 2. THE SECURITY CONSTRAINTS:
+ *    By default, '/run/dinitctl' is owned by root:root with 0600 permissions.
+ *    Because this library executes under an unprivileged, sandboxed daemon
+ *    account (e.g., 'User=xvfb') to meet strict Lintian-pedantic policy, a
+ *    direct socket connection will instantly trigger a kernel EACCES trap.
+ *
+ * 3. THE SOLUTION (POSIX ACCESS CONTROL LISTS):
+ *    To bypass the need for 'sudo' or administrative shell elevation at runtime,
+ *    a surgical hole must be punched through the root file boundary using an ACL.
+ *    This allows the kernel to authorize the stream descriptor natively.
+ *
+ * 4. TESTING LABORATORY & HEADLESS VM PROVISIONING MANDATE:
+ *    Since '/run/' sits on a temporary memory filesystem (tmpfs), the ACL is
+ *    wiped on reboot. In the test VM, ensure the rule is automatically bound
+ *    at boot by injecting the following command into the Dinit target unit
+ *    file definition (e.g., inside /etc/dinit.d/xvfb):
+ *
+ *    init-command = /usr/bin/setfacl -m u:xvfb:rw /run/dinitctl
+ *
+ *    This forces Dinit to execute the permission modification as root prior to
+ *    dropping execution privileges down to the unprivileged worker context.
+ * ============================================================================
+ */
+bool icGTK_impl::dinit_wake_service(const std::string &service_name) {
+    const char *dinit_socket_path = "/run/dinitctl";
+
+    // Open a standard local UNIX domain stream socket
+    int sock = ::socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0)
+        return false;
+
+    struct sockaddr_un addr;
+    std::memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    std::strncpy(addr.sun_path, dinit_socket_path, sizeof(addr.sun_path) - 1);
+
+    // Connect straight to the init engine's runtime manager control socket
+    if (::connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        ::close(sock);
+        return false;
+    }
+
+    // Dinit Binary IPC Protocol Packet Construction:
+    // [1 byte Packet Type] + [2 bytes Service Name Length] + [Service Name String]
+    // Packet Type 0x02 tells the dinit daemon to explicitly load & start the service
+    std::vector<uint8_t> packet;
+    packet.push_back(0x02);
+
+    uint16_t name_len = static_cast<uint16_t>(service_name.size());
+    packet.push_back(static_cast<uint8_t>(name_len & 0xFF));
+    packet.push_back(static_cast<uint8_t>((name_len >> 8) & 0xFF));
+    packet.insert(packet.end(), service_name.begin(), service_name.end());
+
+    // Blast the transaction packet straight down the pipe
+    ssize_t bytes_sent = ::write(sock, packet.data(), packet.size());
+    if (bytes_sent < 0) {
+        ::close(sock);
+        return false;
+    }
+
+    // Read the 1-byte return status verification from the init engine
+    uint8_t response_buffer = 0xFF;
+    ssize_t bytes_read      = ::read(sock, &response_buffer, sizeof(response_buffer));
+
+    ::close(sock);
+
+    // Dinit returns 0x00 if the service successfully triggered an active transition
+    return (bytes_read > 0 && response_buffer == 0x00);
+}

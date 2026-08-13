@@ -35,6 +35,9 @@ LIBWK2GTKPDF_1.0 {
         _ZN5iclog4endl*;
         _ZN5iclogls*;
 
+        # The file logging initializer!
+        _ZN5iclog17init_file_logging*;
+
         # GTK Init
         _ZN5icGTK4init*;
 
