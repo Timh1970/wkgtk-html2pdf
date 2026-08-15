@@ -361,12 +361,11 @@ int main(int argc, char *argv[]) {
     dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
 #else
     string logPath = "/var/log/wkgtk-html2pdf/wkgtk-html2pdf.log";
-    int    log_fd  = iclog::log_file_fd();
+    iclog::init_file_logging(logPath.c_str());
+    int log_fd = iclog::log_file_fd();
     if (log_fd >= 0) {
         // Force fully buffered stderr straight into your designated file descriptor
         dup2(log_fd, STDERR_FILENO);
-        close(log_fd);
-        iclog::init_file_logging(logPath.c_str());
         wkJlog << iclog::loglevel::error << iclog::category::CORE
                << "Logging to file: " << logPath << iclog::endl;
     } else {

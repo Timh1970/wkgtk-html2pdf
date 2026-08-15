@@ -1,6 +1,6 @@
 # Maintainer: Inplico UK James@inplico.uk
 pkgname=wkgtk-html2pdf
-pkgver=1.0.36
+pkgver=1.0.37
 pkgrel=2
 pkgdesc="C++ Library with CLI tool to convert HTML to PDF, A modern replacement for wkhtmltopdf (Dinit Edition)"
 arch=(x86_64)
