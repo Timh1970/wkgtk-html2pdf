@@ -58,6 +58,10 @@ clean:
 
 install:
 	install -Dm755 -t $(DESTDIR)$(BINDIR) wkgtk-html2pdf
+ifneq ($(INIT_SYS),systemd)
+	install -d -m 1777 $(DESTDIR)/var/log/wkgtk-html2pdf
+endif
+
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/wkgtk-html2pdf

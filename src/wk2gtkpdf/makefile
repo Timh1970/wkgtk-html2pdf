@@ -103,13 +103,6 @@ install:
 	echo "Libs: -L\$${libdir} -lwk2gtkpdf$(ENGINE_SUFFIX)" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file; \
 	echo "Cflags: -I\$${includedir}" >> $(DESTDIR)$(LIBDIR)/pkgconfig/$$pc_file
 
-	# Non Systemd logging
-ifneq ($(INIT_SYS),systemd)
-	install -d $(DESTDIR)/var/log
-	touch $(DESTDIR)$(LOGFILE)
-	chmod 0666 $(DESTDIR)$(LOGFILE)
-endif
-
 .PHONY: smoke-install
 smoke-install:
 	@stagedir=$$(mktemp -d /tmp/icframework-stage.XXXXXX); \

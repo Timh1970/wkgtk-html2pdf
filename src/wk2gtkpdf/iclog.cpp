@@ -60,7 +60,7 @@ namespace iclog {
 
                 // Open the file descriptor directly using native kernel flags
                 // O_APPEND ensures multi-threaded batch jobs write atomically without collision
-                m_log_fd = open(filepath, O_WRONLY | O_CREAT | O_APPEND, 0644);
+                m_log_fd = open(filepath, O_WRONLY | O_CREAT | O_APPEND, 0666);
                 return (m_log_fd >= 0);
             }
 
@@ -76,10 +76,18 @@ namespace iclog {
                 std::lock_guard<std::mutex> lock(m_log_mutex);
                 return (m_log_fd >= 0);
             }
+
+            int log_file_fd() {
+                return (m_log_fd);
+            }
     };
 
     bool init_file_logging(const char *filepath) {
         return log_manager::get_instance().set_file_target(filepath);
+    }
+
+    int log_file_fd() {
+        return log_manager::get_instance().log_file_fd();
     }
 
     const std::pair<category, std::string> catLUT[]{

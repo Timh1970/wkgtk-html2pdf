@@ -1,6 +1,6 @@
 # Maintainer: Inplico UK James@inplico.uk
 pkgname=wkgtk-html2pdf
-pkgver=1.0.34
+pkgver=1.0.36
 pkgrel=2
 pkgdesc="C++ Library with CLI tool to convert HTML to PDF, A modern replacement for wkhtmltopdf (Dinit Edition)"
 arch=(x86_64)
@@ -8,7 +8,7 @@ url="https://github.com/Timh1970/wkgtk-html2pdf"
 license=('MIT')
 makedepends=('git' 'pkgconf')
 # CRITICAL EVICTION: libsystemd is removed from the array
-depends=('podofo' 'webkit2gtk-4.1' 'webkitgtk-6.0' 'json-c' 'xorg-server-xvfb')
+depends=('podofo' 'webkit2gtk-4.1' 'webkitgtk-6.0' 'json-c' 'xorg-server-xvfb' 'libdinitctl')
 conflicts=()
 install=wk2gtkpdf.install
 # TESTING
