@@ -3,7 +3,7 @@
 # It is used to contitionally start xvfb there are no existing 
 # desktops available for webkit to use to generate pdf's
 
-LOG_FILE="/var/log/wk2gtkpdf.log"
+LOG_FILE="/var/log/wkgtk-html2pdf.log"
 
 log_message() {
     # Generate a clean timestamp string

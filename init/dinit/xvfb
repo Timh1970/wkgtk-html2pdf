@@ -2,3 +2,5 @@ type = process
 command = /usr/bin/xvfb-start
 run-as = xvfb
 logfile = /var/log/wkgtk-html2pdf.log
+log-type = append
+smooth-recovery = true

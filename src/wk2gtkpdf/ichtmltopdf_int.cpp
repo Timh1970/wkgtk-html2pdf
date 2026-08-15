@@ -12,10 +12,11 @@
 #include <systemd/sd-bus.h>
 #else
 #include <cstring>
+#include <libdinitctl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#include <vector>
+
 #endif
 
 #include <thread>
@@ -28,6 +29,13 @@
 
 WKGTKRunMode phtml::WKGTK_run_mode = WKGTKRunMode::UNSET;
 
+/**************************************/
+/*                                    */
+/*                                    */
+/*  WKGTK_init PIMPL                  */
+/*                                    */
+/*                                    */
+/**************************************/
 struct WKGTK_init_impl {
         GMainLoop              *glob_loop = nullptr;
         std::thread             glob_Thread;
@@ -92,6 +100,13 @@ WKGTK_init::~WKGTK_init() {
            << "GTK Global loop exiting." << iclog::endl;
 }
 
+/**************************************/
+/*                                    */
+/*                                    */
+/*  icGTK_impl PIMPL                  */
+/*                                    */
+/*                                    */
+/**************************************/
 struct icGTK_impl {
         WKGTK_init      *tk      = nullptr; // Allocated on the heap to hide its size
         std::atomic_bool gui_run = false;
@@ -102,6 +117,9 @@ struct icGTK_impl {
 #else
         bool check_xvfb_socket();
         bool dinit_wake_service(const std::string &service_name);
+        bool dinit_is_service_running(const std::string &service_name);
+        bool dinit_stop_service(const std::string &service_name);
+        bool ensure_xvfb_is_ready();
 
 #endif
         WKGTK_init handle_xvfb_daemon();
@@ -332,6 +350,13 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
 }
 
 #ifdef USE_SYSTEMD
+/**************************************/
+/*                                    */
+/*                                    */
+/*  SYSTEMD METHODS                   */
+/*                                    */
+/*                                    */
+/**************************************/
 /**
  * @brief icGTK::check_xvfb
  * @param bus
@@ -466,85 +491,115 @@ bool icGTK_impl::stop_service(sd_bus *bus) {
 }
 #endif
 
+/**************************************/
+/*                                    */
+/*                                    */
+/*  DINIT METHODS                     */
+/*                                    */
+/*                                    */
+/**************************************/
 /**
  * @brief icGTK_impl::dinit_wake_service
- * @param service_name
- * @return
- * ============================================================================
- * DINIT SERVICE ORCHESTRATION ARCHITECTURE NOTE
- * ============================================================================
- * 1. WHY POLICYKIT / POLKIT FAILS HERE:
- *    Unlike systemd, which routes process manipulation over a userspace D-Bus
- *    broker namespace (allowing polkit JavaScript interception), Dinit handles
- *    IPC entirely at the Linux kernel VFS layer via the '/run/dinitctl' UNIX
- *    domain socket. The kernel evaluates strict file permission bits immediately.
- *
- * 2. THE SECURITY CONSTRAINTS:
- *    By default, '/run/dinitctl' is owned by root:root with 0600 permissions.
- *    Because this library executes under an unprivileged, sandboxed daemon
- *    account (e.g., 'User=xvfb') to meet strict Lintian-pedantic policy, a
- *    direct socket connection will instantly trigger a kernel EACCES trap.
- *
- * 3. THE SOLUTION (POSIX ACCESS CONTROL LISTS):
- *    To bypass the need for 'sudo' or administrative shell elevation at runtime,
- *    a surgical hole must be punched through the root file boundary using an ACL.
- *    This allows the kernel to authorize the stream descriptor natively.
- *
- * 4. TESTING LABORATORY & HEADLESS VM PROVISIONING MANDATE:
- *    Since '/run/' sits on a temporary memory filesystem (tmpfs), the ACL is
- *    wiped on reboot. In the test VM, ensure the rule is automatically bound
- *    at boot by injecting the following command into the Dinit target unit
- *    file definition (e.g., inside /etc/dinit.d/xvfb):
- *
- *    init-command = /usr/bin/setfacl -m u:xvfb:rw /run/dinitctl
- *
- *    This forces Dinit to execute the permission modification as root prior to
- *    dropping execution privileges down to the unprivileged worker context.
- * ============================================================================
+ * @param service_name - The target dinit service to wake up
+ * @return true if the service command is accepted successfully
  */
 bool icGTK_impl::dinit_wake_service(const std::string &service_name) {
-    const char *dinit_socket_path = "/run/dinitctl";
-
-    // Open a standard local UNIX domain stream socket
-    int sock = ::socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock < 0)
-        return false;
-
-    struct sockaddr_un addr;
-    std::memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    std::strncpy(addr.sun_path, dinit_socket_path, sizeof(addr.sun_path) - 1);
-
-    // Connect straight to the init engine's runtime manager control socket
-    if (::connect(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        ::close(sock);
+    dinitctl *ctl = dinitctl_open_system();
+    if (!ctl) {
         return false;
     }
 
-    // Dinit Binary IPC Protocol Packet Construction:
-    // [1 byte Packet Type] + [2 bytes Service Name Length] + [Service Name String]
-    // Packet Type 0x02 tells the dinit daemon to explicitly load & start the service
-    std::vector<uint8_t> packet;
-    packet.push_back(0x02);
+    dinitctl_service_handle *handle = nullptr;
 
-    uint16_t name_len = static_cast<uint16_t>(service_name.size());
-    packet.push_back(static_cast<uint8_t>(name_len & 0xFF));
-    packet.push_back(static_cast<uint8_t>((name_len >> 8) & 0xFF));
-    packet.insert(packet.end(), service_name.begin(), service_name.end());
+    dinitctl_service_state current_state;
+    dinitctl_service_state target_state;
 
-    // Blast the transaction packet straight down the pipe
-    ssize_t bytes_sent = ::write(sock, packet.data(), packet.size());
-    if (bytes_sent < 0) {
-        ::close(sock);
+    int load_res = dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state);
+    if (load_res < 0) {
+        dinitctl_close(ctl);
         return false;
     }
 
-    // Read the 1-byte return status verification from the init engine
-    uint8_t response_buffer = 0xFF;
-    ssize_t bytes_read      = ::read(sock, &response_buffer, sizeof(response_buffer));
+    int start_res = dinitctl_start_service(ctl, handle, false);
 
-    ::close(sock);
+    dinitctl_close(ctl);
 
-    // Dinit returns 0x00 if the service successfully triggered an active transition
-    return (bytes_read > 0 && response_buffer == 0x00);
+    return (start_res >= 0);
+}
+
+/**
+ * @brief icGTK_impl::dinit_is_service_running
+ * @param service_name - The service to inspect (e.g., "xvfb")
+ * @return true if the service is currently fully running (STARTED)
+ */
+bool icGTK_impl::dinit_is_service_running(const std::string &service_name) {
+    dinitctl *ctl = dinitctl_open_system();
+    if (!ctl) {
+        return false;
+    }
+
+    dinitctl_service_handle *handle        = nullptr;
+    dinitctl_service_state   current_state = DINITCTL_SERVICE_STATE_STOPPED;
+    dinitctl_service_state   target_state  = DINITCTL_SERVICE_STATE_STOPPED;
+
+    // Load the service data. This fills 'current_state' with the real status
+    int load_res = dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state);
+
+    dinitctl_close(ctl);
+
+    if (load_res < 0) {
+        return false;
+    }
+
+    return (current_state == DINITCTL_SERVICE_STATE_STARTED);
+}
+
+/**
+ * @brief icGTK_impl::dinit_stop_service
+ * @param service_name - The target dinit service to stop
+ * @return true if the service teardown signal is sent successfully
+ */
+bool icGTK_impl::dinit_stop_service(const std::string &service_name) {
+    dinitctl *ctl = dinitctl_open_system();
+    if (!ctl) {
+        return false;
+    }
+
+    dinitctl_service_handle *handle = nullptr;
+
+    // FIXED: Use the specific enum type requested by libdinitctl.h
+    dinitctl_service_state current_state;
+    dinitctl_service_state target_state;
+
+    if (dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state) < 0) {
+        dinitctl_close(ctl);
+        return false;
+    }
+
+    // Execute stop command
+    int stop_res = dinitctl_stop_service(ctl, handle, 0, false, false);
+
+    dinitctl_close(ctl);
+
+    return (stop_res >= 0);
+}
+
+bool icGTK_impl::ensure_xvfb_is_ready() {
+    // 1. Fire the start trigger
+    if (!dinit_wake_service("xvfb")) {
+        return false;
+    }
+
+    // 2. Poll the status until the state moves past STARTING to STARTED
+    int retry_limit = 20; // 20 * 50ms = 1 second max timeout
+    while (retry_limit > 0) {
+        if (dinit_is_service_running("xvfb")) {
+            return true; // The virtual framebuffer is active! WebKit can render now.
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        retry_limit--;
+    }
+
+    return false; // Timed out waiting for Xvfb to settle
 }
