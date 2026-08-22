@@ -407,7 +407,9 @@ int main(int argc, char *argv[]) {
 
     if (infile.empty() || outfile.empty()) {
         help();
-        exit(0);
+        std::fflush(stdout);
+        std::fflush(stderr);
+        _exit(0);
     }
 
     std::cout << "\nProcessing HTML: " << infile
