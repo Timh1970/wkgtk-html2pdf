@@ -11,12 +11,7 @@
 #include <string>
 #include <systemd/sd-bus.h>
 #else
-#include <cstring>
-#include <libdinitctl.h>
-#include <sys/socket.h>
-#include <sys/un.h>
-#include <unistd.h>
-
+#include <gio/gio.h>
 #endif
 
 #include <thread>
@@ -115,12 +110,8 @@ struct icGTK_impl {
         bool        start_service(sd_bus *bus);
         bool        stop_service(sd_bus *bus);
 #else
-        bool check_xvfb_socket();
-        bool dinit_wake_service(const std::string &service_name);
-        bool dinit_is_service_running(const std::string &service_name);
-        bool dinit_stop_service(const std::string &service_name);
-        bool ensure_xvfb_is_ready();
-
+        std::string dinit_check_xvfb();
+        std::string dinit_start_xvfb();
 #endif
         WKGTK_init handle_xvfb_daemon();
 };
@@ -186,12 +177,6 @@ icGTK &icGTK::init(WKGTKRunMode runMode) {
     static icGTK instance(runMode);
     return instance;
 }
-
-#ifndef USE_SYSTEMD
-bool icGTK_impl::check_xvfb_socket() {
-    return (access("/tmp/.X11-unix/X99", F_OK) == 0);
-}
-#endif
 
 /**
  * @brief pdf_init::handle_xvfb_daemon
@@ -262,30 +247,46 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
 
         sd_bus_unref(bus);
 #else
+
+        std::string serviceState = dinit_check_xvfb();
+
+        if (serviceState.compare("active") != 0) {
+            wkJlog << iclog::loglevel::notice << "Service cold or dead on bus. Waking it up..." << iclog::endl;
+            dinit_start_xvfb();
+        }
+
         wkJlog << iclog::loglevel::info << iclog::category::CORE
                << "Probing high-availability virtual display filesystem socket..." << iclog::endl;
 
-        // Perform a fast filesystem probe for the active shared frame buffer
+        // 1. Check if the socket node is missing entirely from the system
         if (access("/tmp/.X11-unix/X99", F_OK) != 0) {
             wkJlog << iclog::loglevel::notice << iclog::category::CORE
                    << "High-Availability display :99 cold. Activating via dinit socket..." << iclog::endl;
 
-            // Direct socket invocation without shelling out or spawning threads
-            if (!dinit_wake_service("xvfb")) {
+            if (dinit_start_xvfb().compare("active") != 0) {
                 wkJlog << iclog::loglevel::error << "Dinit IPC transaction failed. Check socket write access." << iclog::endl;
                 throw std::runtime_error("Headless initialization failed: Unable to communicate with dinit.");
             }
+        }
 
-            // High-Availability Safeguard: Wait for the hardware file socket to warm up
-            int retries = 15;
-            while (access("/tmp/.X11-unix/X99", F_OK) != 0 && retries > 0) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(200));
-                retries--;
+        // Do not trust the filesystem file state node!
+        // Force an explicit X11 protocol handshake loop to ensure Xvfb is completely awake
+        // and accepting rendering instructions before GTK is initialized.
+        int retries = 25; // 25 * 100ms = 2.5 second total patience threshold
+        while (retries > 0) {
+            Display *x_test = XOpenDisplay(":99");
+            if (x_test) {
+                XCloseDisplay(x_test);
+                display_connected = true;
+                break; // Xvfb is confirmed up and fully healthy!
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            retries--;
+        }
 
-            if (access("/tmp/.X11-unix/X99", F_OK) != 0) {
-                throw std::runtime_error("Dinit activated xvfb, but display socket failed to initialize.");
-            }
+        if (!display_connected) {
+            wkJlog << iclog::loglevel::error << "Xvfb socket exists, but server is frozen or refused handshakes." << iclog::endl;
+            throw std::runtime_error("Dinit activated xvfb, but protocol handshake failed. Aborting to protect host process.");
         }
 #endif
 
@@ -503,103 +504,146 @@ bool icGTK_impl::stop_service(sd_bus *bus) {
  * @param service_name - The target dinit service to wake up
  * @return true if the service command is accepted successfully
  */
-bool icGTK_impl::dinit_wake_service(const std::string &service_name) {
-    dinitctl *ctl = dinitctl_open_system();
-    if (!ctl) {
-        return false;
+
+std::string icGTK_impl::dinit_check_xvfb() {
+    GError          *error      = nullptr;
+    GDBusConnection *connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, &error);
+    if (error != nullptr) {
+        wkJlog << iclog::loglevel::notice << iclog::category::CORE
+               << "Failed to connect to System Bus: " << error->message
+               << iclog::endl;
+        g_clear_error(&error);
+        return ""; // Safe fallback if bus connection fails
     }
 
-    dinitctl_service_handle *handle = nullptr;
+    GVariant *reply = g_dbus_connection_call_sync(
+        connection,
+        "uk.inplico.dinit-dbus",
+        "/uk/inplico/dinit_dbus",
+        "uk.inplico.dinit_dbus.Manager",
+        "GetServiceStatus",
+        g_variant_new("(s)", "xvfb"),
+        G_VARIANT_TYPE("(su)"),
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        &error
+    );
 
-    dinitctl_service_state current_state;
-    dinitctl_service_state target_state;
+    g_object_unref(connection);
 
-    int load_res = dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state);
-    if (load_res < 0) {
-        dinitctl_close(ctl);
-        return false;
+    if (error != nullptr) {
+        wkJlog << iclog::loglevel::notice << iclog::category::CORE
+               << "Transport Failure: " << error->message
+               << iclog::endl;
+        g_clear_error(&error);
+        return "";
     }
 
-    int start_res = dinitctl_start_service(ctl, handle, false);
+    const gchar *state  = nullptr;
+    guint32      uptime = 0;
+    g_variant_get(reply, "(&su)", &state, &uptime);
 
-    dinitctl_close(ctl);
+    wkJlog << iclog::loglevel::notice << iclog::category::CORE
+           << "XvFb state " << state << "  -  Uptime: " << uptime << "s"
+           << iclog::endl;
 
-    return (start_res >= 0);
+    std::string savedState(state ? state : "");
+    g_variant_unref(reply);
+
+    return (savedState);
 }
 
 /**
- * @brief icGTK_impl::dinit_is_service_running
- * @param service_name - The service to inspect (e.g., "xvfb")
- * @return true if the service is currently fully running (STARTED)
+ * @brief icGTK_impl::start_xvfb
+ * @return The final staus after starting (needs to be "active" or we
+ * assume failed)
  */
-bool icGTK_impl::dinit_is_service_running(const std::string &service_name) {
-    dinitctl *ctl = dinitctl_open_system();
-    if (!ctl) {
-        return false;
+std::string icGTK_impl::dinit_start_xvfb() {
+    GError          *error      = nullptr;
+    // 1. Establish a single shared connection container
+    GDBusConnection *connection = g_bus_get_sync(G_BUS_TYPE_SYSTEM, nullptr, &error);
+    if (error != nullptr) {
+        wkJlog << iclog::loglevel::error << iclog::category::CORE
+               << "Failed to connect to System Bus: " << error->message << iclog::endl;
+        g_clear_error(&error);
+        return "";
     }
 
-    dinitctl_service_handle *handle        = nullptr;
-    dinitctl_service_state   current_state = DINITCTL_SERVICE_STATE_STOPPED;
-    dinitctl_service_state   target_state  = DINITCTL_SERVICE_STATE_STOPPED;
+    wkJlog << iclog::loglevel::notice << iclog::category::CORE
+           << "Issuing startup sequence for service: xvfb" << iclog::endl;
 
-    // Load the service data. This fills 'current_state' with the real status
-    int load_res = dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state);
+    // 2. Call #1: Trigger the ControlService initialization sequence
+    GVariant *start_reply = g_dbus_connection_call_sync(
+        connection,
+        "uk.inplico.dinit-dbus",
+        "/uk/inplico/dinit_dbus",
+        "uk.inplico.dinit_dbus.Manager",
+        "ControlService",
+        g_variant_new("(ss)", "xvfb", "start"),
+        G_VARIANT_TYPE("(u)"),
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        &error
+    );
 
-    dinitctl_close(ctl);
-
-    if (load_res < 0) {
-        return false;
+    if (error != nullptr) {
+        wkJlog << iclog::loglevel::error << iclog::category::CORE
+               << "ControlService Transport Failure: " << error->message << iclog::endl;
+        g_clear_error(&error);
+        g_object_unref(connection); // Always match reference lifecycle hooks
+        return "";
     }
 
-    return (current_state == DINITCTL_SERVICE_STATE_STARTED);
-}
+    guint32 start_err_code = 0;
+    g_variant_get(start_reply, "(u)", &start_err_code);
+    g_variant_unref(start_reply);
 
-/**
- * @brief icGTK_impl::dinit_stop_service
- * @param service_name - The target dinit service to stop
- * @return true if the service teardown signal is sent successfully
- */
-bool icGTK_impl::dinit_stop_service(const std::string &service_name) {
-    dinitctl *ctl = dinitctl_open_system();
-    if (!ctl) {
-        return false;
+    if (start_err_code != 0) {
+        wkJlog << iclog::loglevel::error << iclog::category::CORE
+               << "Dinit supervisor rejected activation. Code: " << start_err_code << iclog::endl;
+        g_object_unref(connection);
+        return "";
     }
 
-    dinitctl_service_handle *handle = nullptr;
+    wkJlog << iclog::loglevel::info << iclog::category::CORE
+           << "Service spin-up acknowledged. Invoking threaded settled validation..." << iclog::endl;
 
-    // FIXED: Use the specific enum type requested by libdinitctl.h
-    dinitctl_service_state current_state;
-    dinitctl_service_state target_state;
+    // 3. Call #2: Re-use the SAME connection to execute the ServiceSettled verification
+    GVariant *settled_reply = g_dbus_connection_call_sync(
+        connection,
+        "uk.inplico.dinit-dbus",
+        "/uk/inplico/dinit_dbus",
+        "uk.inplico.dinit_dbus.Manager",
+        "ServiceSettled",
+        g_variant_new("(s)", "xvfb"),
+        G_VARIANT_TYPE("(s)"), // Adjust to match your precise ServiceSettled output tuple signature
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        nullptr,
+        &error
+    );
 
-    if (dinitctl_load_service(ctl, service_name.c_str(), false, &handle, &current_state, &target_state) < 0) {
-        dinitctl_close(ctl);
-        return false;
+    // Safe to unref connection here since we are completely done with IPC transactions
+    g_object_unref(connection);
+
+    if (error != nullptr) {
+        wkJlog << iclog::loglevel::error << iclog::category::CORE
+               << "ServiceSettled Verification Failure: " << error->message << iclog::endl;
+        g_clear_error(&error);
+        return "";
     }
 
-    // Execute stop command
-    int stop_res = dinitctl_stop_service(ctl, handle, 0, false, false);
+    const gchar *settled_state = nullptr;
+    g_variant_get(settled_reply, "(&s)", &settled_state);
 
-    dinitctl_close(ctl);
+    wkJlog << iclog::loglevel::notice << iclog::category::CORE
+           << "Verified settled state reality: " << settled_state << iclog::endl;
 
-    return (stop_res >= 0);
-}
+    // Capture the state token into C++ stack storage safely before unreferencing GVariant memory
+    std::string final_state(settled_state ? settled_state : "");
+    g_variant_unref(settled_reply);
 
-bool icGTK_impl::ensure_xvfb_is_ready() {
-    // 1. Fire the start trigger
-    if (!dinit_wake_service("xvfb")) {
-        return false;
-    }
-
-    // 2. Poll the status until the state moves past STARTING to STARTED
-    int retry_limit = 20; // 20 * 50ms = 1 second max timeout
-    while (retry_limit > 0) {
-        if (dinit_is_service_running("xvfb")) {
-            return true; // The virtual framebuffer is active! WebKit can render now.
-        }
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        retry_limit--;
-    }
-
-    return false; // Timed out waiting for Xvfb to settle
+    return final_state;
 }
