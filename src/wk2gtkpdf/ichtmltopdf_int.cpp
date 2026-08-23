@@ -573,7 +573,7 @@ std::string icGTK_impl::dinit_start_xvfb() {
     wkJlog << iclog::loglevel::notice << iclog::category::CORE
            << "Issuing startup sequence for service: xvfb" << iclog::endl;
 
-    // 2. Call #1: Trigger the ControlService initialization sequence
+    // START SERVICE
     GVariant *start_reply = g_dbus_connection_call_sync(
         connection,
         "uk.inplico.dinit-dbus",
@@ -592,7 +592,7 @@ std::string icGTK_impl::dinit_start_xvfb() {
         wkJlog << iclog::loglevel::error << iclog::category::CORE
                << "ControlService Transport Failure: " << error->message << iclog::endl;
         g_clear_error(&error);
-        g_object_unref(connection); // Always match reference lifecycle hooks
+        g_object_unref(connection);
         return "";
     }
 
@@ -610,7 +610,7 @@ std::string icGTK_impl::dinit_start_xvfb() {
     wkJlog << iclog::loglevel::info << iclog::category::CORE
            << "Service spin-up acknowledged. Invoking threaded settled validation..." << iclog::endl;
 
-    // 3. Call #2: Re-use the SAME connection to execute the ServiceSettled verification
+    // IS SERVICE SETTLED
     GVariant *settled_reply = g_dbus_connection_call_sync(
         connection,
         "uk.inplico.dinit-dbus",
@@ -618,14 +618,13 @@ std::string icGTK_impl::dinit_start_xvfb() {
         "uk.inplico.dinit_dbus.Manager",
         "ServiceSettled",
         g_variant_new("(s)", "xvfb"),
-        G_VARIANT_TYPE("(s)"), // Adjust to match your precise ServiceSettled output tuple signature
+        G_VARIANT_TYPE("(s)"),
         G_DBUS_CALL_FLAGS_NONE,
         -1,
         nullptr,
         &error
     );
 
-    // Safe to unref connection here since we are completely done with IPC transactions
     g_object_unref(connection);
 
     if (error != nullptr) {
@@ -641,7 +640,6 @@ std::string icGTK_impl::dinit_start_xvfb() {
     wkJlog << iclog::loglevel::notice << iclog::category::CORE
            << "Verified settled state reality: " << settled_state << iclog::endl;
 
-    // Capture the state token into C++ stack storage safely before unreferencing GVariant memory
     std::string final_state(settled_state ? settled_state : "");
     g_variant_unref(settled_reply);
 
