@@ -35,6 +35,14 @@ struct index_pdf_impl {
 #endif
 };
 
+/**
+ * @brief ALPHA_SHIFT
+ *
+ * We add ths to the char value to enable us to parse Alpha prefixes like the were
+ * numbers without them intefereing with existing numeric only indexes
+ */
+const int ALPHA_SHIFT = 10000;
+
 /////////////////////////////////////////////////////////////////////////////////////
 
 index_pdf::index_pdf(const PDF_Anchor *links, size_t count, int tocPage, bool debug)
@@ -64,23 +72,68 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
  *
  * Parse numbering from the title
  */
+// 08/09/2026
+// std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
+//     std::vector<int> levels;
+//     std::regex       numberPattern(R"(^(\d+(?:\.\d+)*))");
+//     std::smatch      match;
+
+//     if (std::regex_search(title, match, numberPattern)) {
+//         std::string       numbering = match.str();
+//         std::stringstream ss(numbering);
+//         std::string       token;
+
+//         while (std::getline(ss, token, '.')) {
+//             levels.push_back(std::stoi(token));
+//         }
+//     }
+
+//     return levels;
+// }
+
+/**
+ * @brief index_pdf_impl::parseNumbering
+ * @param title
+ * @return
+ *
+ * Parse numbering from title
+ */
+// ADDED 08/09/2026 to allow parsing with character prefix (A.1, A.1.1 etc.)
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
-    std::regex       numberPattern(R"(^(\d+(?:\.\d+)*))");
+
+    // Matches "1.1", "A.1.1", "B.2"
+    std::regex       numberPattern(R"(^([A-Za-z]|\d+)(?:\.\d+)*)");
     std::smatch      match;
 
     if (std::regex_search(title, match, numberPattern)) {
         std::string       numbering = match.str();
         std::stringstream ss(numbering);
         std::string       token;
+        bool              isFirstToken = true;
 
         while (std::getline(ss, token, '.')) {
-            levels.push_back(std::stoi(token));
+            if (token.empty()) continue;
+
+            if (isFirstToken && std::isalpha(static_cast<unsigned char>(token[0]))) {
+                char letter = std::toupper(static_cast<unsigned char>(token[0]));
+
+                // Pure positive shift: 'A' (65) -> 10065, 'B' (66) -> 10066
+                // Keeps alphabetical order completely intact: A < B < C
+                int positiveIdentifier = ALPHA_SHIFT + static_cast<int>(letter);
+                levels.push_back(positiveIdentifier);
+            } else {
+                levels.push_back(std::stoi(token));
+            }
+            isFirstToken = false;
         }
     }
 
     return levels;
 }
+
+
+
 #ifdef PODOFO_010
 
 // Build nested outline structure
@@ -89,15 +142,60 @@ void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<Outl
         return;
 
     // Sort by numbering hierarchy
-    std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+    // 08/09/2026
+    // std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+    //     size_t minSize = std::min(a.levels.size(), b.levels.size());
+    //     for (size_t i = 0; i < minSize; ++i) {
+    //         if (a.levels[i] != b.levels[i]) {
+    //             return a.levels[i] < b.levels[i];
+    //         }
+    //     }
+    //     return a.levels.size() < b.levels.size();
+    // });
+
+    // ADDED 08/09/2026 to allow parsing with character prefix (A.1, A.1.1 etc.)
+    // 1. DYNAMIC CONVENTION DETECTION
+    // Check if the majority of things starting with letters or high offsets should be at the front.
+    // Standard approach: if the document contains mixed types, determine if alpha sections come first.
+    /**
+     * @brief alphaFirst
+     * @todo This should have a way to set it somehow; it is currently set to false for testing
+     * and will result in indxing beginning with numeric values and then alpha values afterwards
+     * so
+     */
+    bool alphaFirst = false;
+
+    // Quick heuristic: Check if there's an early item that implies an Alpha-first document layout
+    // (Or you can expose this via a simple boolean flag in your generic configuration struct!)
+    // 2. SORT WITH CONVENTION AWARENESS
+    std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](OutlineData &a, OutlineData &b) {
         size_t minSize = std::min(a.levels.size(), b.levels.size());
         for (size_t i = 0; i < minSize; ++i) {
             if (a.levels[i] != b.levels[i]) {
-                return a.levels[i] < b.levels[i];
+                int valA = a.levels[i];
+                int valB = b.levels[i];
+
+                // Detect if either value is an alpha token (>= 10000)
+                bool isAlphaA = (valA >= ALPHA_SHIFT);
+                bool isAlphaB = (valB >= ALPHA_SHIFT);
+
+                if (isAlphaA != isAlphaB) {
+                    // Mixed comparison: One is a number, one is a letter!
+                    if (alphaFirst) {
+                        return isAlphaA; // Alpha comes first (Letters < Numbers)
+                    } else {
+                        return isAlphaB; // Numbers come first, Alpha goes to end (Appendices mode)
+                    }
+                }
+
+                // If they are both numbers OR both letters, standard evaluation handles it perfectly
+                return valA < valB;
             }
         }
         return a.levels.size() < b.levels.size();
     });
+
+
 
     PdfOutlineItem *root = outlines.CreateRoot(PdfString("Contents"));
     if (toc) {
