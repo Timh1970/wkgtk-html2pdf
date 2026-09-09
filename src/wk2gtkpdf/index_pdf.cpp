@@ -11,7 +11,7 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
-#define PODOFO_010
+// #define PODOFO_010
 #ifdef PODOFO_010
         struct OutlineData {
                 std::string      title;
@@ -150,13 +150,14 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
 
-    // STRICT BOUNDARY REGEX: Group 1 allows ONLY 1 to 3 standalone letters (e.g., A, B, AA, EMP).
-    // Alternation block falls back to your working composite numbers loop.
-    std::regex       numberPattern(R"(^([A-Za-z]{1,3})$|^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
+    // REMOVED $: The pattern now strictly matches the START of the string.
+    // Group 1: 1 to 3 standalone letters followed by an optional dot/space/dash separator boundary
+    // Group 2, 3, 4: Composite alphanumeric patterns (e.g., AA1.1)
+    std::regex       numberPattern(R"(^([A-Za-z]{1,3})(?:[\s\.\-]+(?:[A-Za-z]{4,}.*|$))|^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
     std::smatch      match;
 
     if (std::regex_search(title, match, numberPattern)) {
-        // 1. Standalone Prefix Match Caught (1-3 letters exactly, no numbers)
+        // 1. Standalone Prefix Match Caught (e.g., "A", "A - First Aid", "BA. Safeguarding")
         if (match[1].matched) {
             std::string pureAlpha = match[1].str();
             int letterValue = 0;
@@ -167,7 +168,7 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
             }
             levels.push_back(ALPHA_SHIFT + letterValue);
         }
-        // 2. Standard Composite Match Sequence (e.g., A1.1, C4)
+        // 2. Standard Composite Match Sequence (e.g., "A1.1", "C4.4 - Evacuation")
         else {
             std::string alphaPart   = match[2].str();
             std::string firstNum    = match[3].str();
@@ -199,6 +200,7 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     }
     return levels;
 }
+
 
 #ifdef PODOFO_010
 // 08/09/2026
