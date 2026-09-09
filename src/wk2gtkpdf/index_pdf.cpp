@@ -103,64 +103,47 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
 
-    // Updated Regex: Matches 1 or more starting letters, immediately followed by digits,
-    // and then standard dot-separated numbers. (e.g., "AA1.1", "B12.3", "1.1")
-    std::regex       numberPattern(R"(^([A-Za-z]+\d+)(?:\.\d+)*)");
+    // Explicit regex to isolate the alpha-numeric prefix block from the dot-segments
+    // Group 1 catches the alpha letters (e.g., "C")
+    // Group 2 catches the immediate number (e.g., "4")
+    // Group 3 catches all trailing dot parameters (e.g., ".1.1")
+    std::regex       numberPattern(R"(^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
     std::smatch      match;
 
     if (std::regex_search(title, match, numberPattern)) {
-        std::string       numbering = match.str();
-        std::stringstream ss(numbering);
-        std::string       token;
-        bool              isFirstToken = true;
+        std::string alphaPart   = match[1].str();
+        std::string firstNum    = match[2].str();
+        std::string trailingDot = match[3].str();
 
-        while (std::getline(ss, token, '.')) {
-            if (token.empty()) continue;
+               // 1. Process Alpha Prefix if present
+        if (!alphaPart.empty()) {
+            int letterValue = 0;
+            for (size_t i = 0; i < alphaPart.length(); ++i) {
+                char letter = std::toupper(static_cast<unsigned char>(alphaPart[i]));
+                int  val    = letter - 'A' + 1;
+                letterValue = letterValue * 26 + val;
+            }
+            // Push base offset (e.g., 'C' -> 10003)
+            levels.push_back(10000 + letterValue);
+        }
 
-            if (isFirstToken) {
-                // Count how many alphabetical letters are at the front of this token
-                size_t letterCount = 0;
-                while (letterCount < token.length() && std::isalpha(static_cast<unsigned char>(token[letterCount]))) {
-                    letterCount++;
-                }
+               // 2. Process the primary numerical block (e.g., the '4' in 'C4')
+        if (!firstNum.empty()) {
+            levels.push_back(std::stoi(firstNum));
+        }
 
-                if (letterCount > 0) {
-                    // 1. Calculate a base-26 numeric value for the letter combination
-                    int letterValue = 0;
-                    for (size_t i = 0; i < letterCount; ++i) {
-                        char letter = std::toupper(static_cast<unsigned char>(token[i]));
-                        int  val    = letter - 'A' + 1; // 'A'=1, 'B'=2...
-                        letterValue = letterValue * 26 + val;
-                    }
-
-                   // 2. Add our base offset.
-                   // 'A'   = 10001
-                   // 'Z'   = 10026
-                   // 'AA'  = 10027
-                   // 'AB'  = 10028
-                    int positiveIdentifier = ALPHA_SHIFT + letterValue;
-                    levels.push_back(positiveIdentifier);
-
-                    // 3. Extract the remaining fused numbers (e.g., the "1" out of "AA1")
-                    std::string numericPart = token.substr(letterCount);
-                    if (!numericPart.empty()) {
-                        levels.push_back(std::stoi(numericPart));
-                    }
-                } else {
-                    // Standard pure numerical start (e.g., "1")
-                    levels.push_back(std::stoi(token));
-                }
-            } else {
-                // Subsequent dot segments are always pure integers
+               // 3. Process secondary dot segments safely (e.g., the '.1' in 'C4.1')
+        if (!trailingDot.empty()) {
+            std::stringstream ss(trailingDot);
+            std::string       token;
+            while (std::getline(ss, token, '.')) {
+                if (token.empty()) continue;
                 levels.push_back(std::stoi(token));
             }
-            isFirstToken = false;
         }
     }
-
     return levels;
 }
-
 
 
 
