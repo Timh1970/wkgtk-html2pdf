@@ -106,48 +106,99 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
  * Parse numbering from title
  */
 // ADDED 08/09/2026 to allow parsing with character prefix (A.1, A.1.1 etc.)
+// std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
+//     std::vector<int> levels;
+
+//     // Group 1: Optional letters, Group 2: First digit, Group 3: Trailing dots
+//     std::regex       numberPattern(R"(^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
+//     std::smatch      match;
+
+//     if (std::regex_search(title, match, numberPattern)) {
+//         std::string alphaPart   = match[1].str();
+//         std::string firstNum    = match[2].str();
+//         std::string trailingDot = match[3].str();
+
+//                // 1. Process Alpha Prefix if present
+//         if (!alphaPart.empty()) {
+//             int letterValue = 0;
+//             for (size_t i = 0; i < alphaPart.length(); ++i) {
+//                 char letter = std::toupper(static_cast<unsigned char>(alphaPart[i]));
+//                 int  val    = letter - 'A' + 1;
+//                 letterValue = letterValue * 26 + val;
+//             }
+//             levels.push_back(ALPHA_SHIFT + letterValue);
+//         }
+
+//                // 2. Process primary numerical position
+//         if (!firstNum.empty()) {
+//             levels.push_back(std::stoi(firstNum));
+//         }
+
+//                // 3. Process remaining sub-levels
+//         if (!trailingDot.empty()) {
+//             std::stringstream ss(trailingDot);
+//             std::string       token;
+//             while (std::getline(ss, token, '.')) {
+//                 if (token.empty()) continue;
+//                 levels.push_back(std::stoi(token));
+//             }
+//         }
+//     }
+//     return levels;
+// }
+// ADDED 09/09/2026 to include Alpha Only indexing  (MAX 3 CHARS)
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
 
-    // Group 1: Optional letters, Group 2: First digit, Group 3: Trailing dots
-    std::regex       numberPattern(R"(^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
+    // STRICT BOUNDARY REGEX: Group 1 allows ONLY 1 to 3 standalone letters (e.g., A, B, AA, EMP).
+    // Alternation block falls back to your working composite numbers loop.
+    std::regex       numberPattern(R"(^([A-Za-z]{1,3})$|^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
     std::smatch      match;
 
     if (std::regex_search(title, match, numberPattern)) {
-        std::string alphaPart   = match[1].str();
-        std::string firstNum    = match[2].str();
-        std::string trailingDot = match[3].str();
-
-               // 1. Process Alpha Prefix if present
-        if (!alphaPart.empty()) {
+        // 1. Standalone Prefix Match Caught (1-3 letters exactly, no numbers)
+        if (match[1].matched) {
+            std::string pureAlpha = match[1].str();
             int letterValue = 0;
-            for (size_t i = 0; i < alphaPart.length(); ++i) {
-                char letter = std::toupper(static_cast<unsigned char>(alphaPart[i]));
+            for (size_t i = 0; i < pureAlpha.length(); ++i) {
+                char letter = std::toupper(static_cast<unsigned char>(pureAlpha[i]));
                 int  val    = letter - 'A' + 1;
                 letterValue = letterValue * 26 + val;
             }
             levels.push_back(ALPHA_SHIFT + letterValue);
         }
+        // 2. Standard Composite Match Sequence (e.g., A1.1, C4)
+        else {
+            std::string alphaPart   = match[2].str();
+            std::string firstNum    = match[3].str();
+            std::string trailingDot = match[4].str();
 
-               // 2. Process primary numerical position
-        if (!firstNum.empty()) {
-            levels.push_back(std::stoi(firstNum));
-        }
+            if (!alphaPart.empty()) {
+                int letterValue = 0;
+                for (size_t i = 0; i < alphaPart.length(); ++i) {
+                    char letter = std::toupper(static_cast<unsigned char>(alphaPart[i]));
+                    int  val    = letter - 'A' + 1;
+                    letterValue = letterValue * 26 + val;
+                }
+                levels.push_back(ALPHA_SHIFT + letterValue);
+            }
 
-               // 3. Process remaining sub-levels
-        if (!trailingDot.empty()) {
-            std::stringstream ss(trailingDot);
-            std::string       token;
-            while (std::getline(ss, token, '.')) {
-                if (token.empty()) continue;
-                levels.push_back(std::stoi(token));
+            if (!firstNum.empty()) {
+                levels.push_back(std::stoi(firstNum));
+            }
+
+            if (!trailingDot.empty()) {
+                std::stringstream ss(trailingDot);
+                std::string       token;
+                while (std::getline(ss, token, '.')) {
+                    if (token.empty()) continue;
+                    levels.push_back(std::stoi(token));
+                }
             }
         }
     }
     return levels;
 }
-
-
 
 #ifdef PODOFO_010
 // 08/09/2026
