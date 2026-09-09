@@ -13,6 +13,7 @@ struct index_pdf_impl {
         struct OutlineData {
                 std::string      title;
                 std::vector<int> levels;
+#define PODOFO_010
 #ifdef PODOFO_010
                 std::shared_ptr<PoDoFo::PdfDestination> dest;
 #else
@@ -102,8 +103,9 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
 
-    // Matches "1.1", "A.1.1", "B.2"
-    std::regex       numberPattern(R"(^([A-Za-z]|\d+)(?:\.\d+)*)");
+    // Updated Regex: Matches 1 or more starting letters, immediately followed by digits,
+    // and then standard dot-separated numbers. (e.g., "AA1.1", "B12.3", "1.1")
+    std::regex       numberPattern(R"(^([A-Za-z]+\d+)(?:\.\d+)*)");
     std::smatch      match;
 
     if (std::regex_search(title, match, numberPattern)) {
@@ -115,14 +117,41 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
         while (std::getline(ss, token, '.')) {
             if (token.empty()) continue;
 
-            if (isFirstToken && std::isalpha(static_cast<unsigned char>(token[0]))) {
-                char letter = std::toupper(static_cast<unsigned char>(token[0]));
+            if (isFirstToken) {
+                // Count how many alphabetical letters are at the front of this token
+                size_t letterCount = 0;
+                while (letterCount < token.length() && std::isalpha(static_cast<unsigned char>(token[letterCount]))) {
+                    letterCount++;
+                }
 
-                // Pure positive shift: 'A' (65) -> 10065, 'B' (66) -> 10066
-                // Keeps alphabetical order completely intact: A < B < C
-                int positiveIdentifier = ALPHA_SHIFT + static_cast<int>(letter);
-                levels.push_back(positiveIdentifier);
+                if (letterCount > 0) {
+                    // 1. Calculate a base-26 numeric value for the letter combination
+                    int letterValue = 0;
+                    for (size_t i = 0; i < letterCount; ++i) {
+                        char letter = std::toupper(static_cast<unsigned char>(token[i]));
+                        int  val    = letter - 'A' + 1; // 'A'=1, 'B'=2...
+                        letterValue = letterValue * 26 + val;
+                    }
+
+                   // 2. Add our base offset.
+                   // 'A'   = 10001
+                   // 'Z'   = 10026
+                   // 'AA'  = 10027
+                   // 'AB'  = 10028
+                    int positiveIdentifier = ALPHA_SHIFT + letterValue;
+                    levels.push_back(positiveIdentifier);
+
+                    // 3. Extract the remaining fused numbers (e.g., the "1" out of "AA1")
+                    std::string numericPart = token.substr(letterCount);
+                    if (!numericPart.empty()) {
+                        levels.push_back(std::stoi(numericPart));
+                    }
+                } else {
+                    // Standard pure numerical start (e.g., "1")
+                    levels.push_back(std::stoi(token));
+                }
             } else {
+                // Subsequent dot segments are always pure integers
                 levels.push_back(std::stoi(token));
             }
             isFirstToken = false;
@@ -134,80 +163,119 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 
 
 
-#ifdef PODOFO_010
 
+#ifdef PODOFO_010
+// 08/09/2026
 // Build nested outline structure
+// void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
+//     if (outlineData.empty())
+//         return;
+
+//     //Sort by numbering hierarchy
+//     std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+//         size_t minSize = std::min(a.levels.size(), b.levels.size());
+//         for (size_t i = 0; i < minSize; ++i) {
+//             if (a.levels[i] != b.levels[i]) {
+//                 return a.levels[i] < b.levels[i];
+//             }
+//         }
+//         return a.levels.size() < b.levels.size();
+//     });
+
+
+//     PdfOutlineItem *root = outlines.CreateRoot(PdfString("Contents"));
+//     if (toc) {
+//         root->SetDestination(toc);
+//     }
+
+//     // Map to track the last item at each depth level
+//     std::map<int, PdfOutlineItem *> lastItemAtLevel{
+//         {0, root}
+//     };
+
+//     for (const auto &data : outlineData) {
+//         if (data.levels.empty())
+//             continue;
+
+//         if (!data.dest || !data.dest->GetPage()) {
+//             continue;
+//         }
+
+//         int             depth  = data.levels.size();
+//         PdfOutlineItem *parent = nullptr;
+
+//         // Find the appropriate parent
+//         // For "1.1.1", parent should be the last "1.1" item
+//         if (depth == 1) {
+//             parent = root;
+//         } else {
+//             // Look for parent at depth-1
+//             parent = lastItemAtLevel[depth - 1];
+//             if (!parent)
+//                 parent = root;
+//         }
+
+//         PdfOutlineItem *newItem = nullptr;
+
+//         // Check if we need to create a child or sibling
+//         if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr) {
+//             // First item at this depth - create as child
+//             newItem = parent->CreateChild(PdfString(data.title.c_str()), data.dest);
+//         } else {
+//             // Compare with previous item at same depth
+//             // If parent is the same, create sibling; otherwise create child
+//             newItem = lastItemAtLevel[depth]->CreateNext(PdfString(data.title.c_str()), data.dest);
+//         }
+
+//         // Update tracking
+//         lastItemAtLevel[depth] = newItem;
+
+//         // Clear deeper levels (we've moved to a new branch)
+//         auto it = lastItemAtLevel.upper_bound(depth);
+//         lastItemAtLevel.erase(it, lastItemAtLevel.end());
+//     }
+// }
+
 void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
     if (outlineData.empty())
         return;
 
-    // Sort by numbering hierarchy
-    // 08/09/2026
-    // std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
-    //     size_t minSize = std::min(a.levels.size(), b.levels.size());
-    //     for (size_t i = 0; i < minSize; ++i) {
-    //         if (a.levels[i] != b.levels[i]) {
-    //             return a.levels[i] < b.levels[i];
-    //         }
-    //     }
-    //     return a.levels.size() < b.levels.size();
-    // });
-
-    // ADDED 08/09/2026 to allow parsing with character prefix (A.1, A.1.1 etc.)
-    // 1. DYNAMIC CONVENTION DETECTION
-    // Check if the majority of things starting with letters or high offsets should be at the front.
-    // Standard approach: if the document contains mixed types, determine if alpha sections come first.
-    /**
-     * @brief alphaFirst
-     * @todo This should have a way to set it somehow; it is currently set to false for testing
-     * and will result in indxing beginning with numeric values and then alpha values afterwards
-     * so
-     */
+           // Sort by numbering hierarchy (Using the alphaFirst logic)
     bool alphaFirst = false;
-
-    // Quick heuristic: Check if there's an early item that implies an Alpha-first document layout
-    // (Or you can expose this via a simple boolean flag in your generic configuration struct!)
-    // 2. SORT WITH CONVENTION AWARENESS
-    std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](OutlineData &a, OutlineData &b) {
+    std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](const OutlineData &a, const OutlineData &b) -> bool {
         size_t minSize = std::min(a.levels.size(), b.levels.size());
         for (size_t i = 0; i < minSize; ++i) {
             if (a.levels[i] != b.levels[i]) {
                 int valA = a.levels[i];
                 int valB = b.levels[i];
-
-                // Detect if either value is an alpha token (>= 10000)
                 bool isAlphaA = (valA >= ALPHA_SHIFT);
                 bool isAlphaB = (valB >= ALPHA_SHIFT);
 
                 if (isAlphaA != isAlphaB) {
-                    // Mixed comparison: One is a number, one is a letter!
-                    if (alphaFirst) {
-                        return isAlphaA; // Alpha comes first (Letters < Numbers)
-                    } else {
-                        return isAlphaB; // Numbers come first, Alpha goes to end (Appendices mode)
-                    }
+                    return alphaFirst ? isAlphaA : isAlphaB;
                 }
-
-                // If they are both numbers OR both letters, standard evaluation handles it perfectly
                 return valA < valB;
             }
         }
         return a.levels.size() < b.levels.size();
     });
 
-
-
     PdfOutlineItem *root = outlines.CreateRoot(PdfString("Contents"));
     if (toc) {
         root->SetDestination(toc);
     }
 
-    // Map to track the last item at each depth level
+           // Map to track the last item at each depth level
     std::map<int, PdfOutlineItem *> lastItemAtLevel{
         {0, root}
     };
 
-    for (const auto &data : outlineData) {
+    // Track the raw integer vectors of what was written last to verify branch alignment
+    std::map<int, std::vector<int>> lastVectorAtLevel;
+
+    for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
+        const OutlineData &data = *itData;
+
         if (data.levels.empty())
             continue;
 
@@ -218,35 +286,42 @@ void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<Outl
         int             depth  = data.levels.size();
         PdfOutlineItem *parent = nullptr;
 
-        // Find the appropriate parent
-        // For "1.1.1", parent should be the last "1.1" item
         if (depth == 1) {
             parent = root;
         } else {
-            // Look for parent at depth-1
             parent = lastItemAtLevel[depth - 1];
+
+            // EDGE CASE FIX: Verify if the parent belongs to the same main branch!
+            if (parent && parent != root) {
+                const std::vector<int> &parentLevels = lastVectorAtLevel[depth - 1];
+                if (!parentLevels.empty() && parentLevels != data.levels) {
+                    // Branch mismatch caught! Force it to attach cleanly to the Root instead.
+                    parent = root;
+                }
+            }
+
             if (!parent)
                 parent = root;
         }
 
         PdfOutlineItem *newItem = nullptr;
 
-        // Check if we need to create a child or sibling
-        if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr) {
-            // First item at this depth - create as child
+        if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr || parent == root) {
             newItem = parent->CreateChild(PdfString(data.title.c_str()), data.dest);
         } else {
-            // Compare with previous item at same depth
-            // If parent is the same, create sibling; otherwise create child
             newItem = lastItemAtLevel[depth]->CreateNext(PdfString(data.title.c_str()), data.dest);
         }
 
-        // Update tracking
-        lastItemAtLevel[depth] = newItem;
+               // Update tracking systems
+        lastItemAtLevel[depth]  = newItem;
+        lastVectorAtLevel[depth] = data.levels;
 
-        // Clear deeper levels (we've moved to a new branch)
-        auto it = lastItemAtLevel.upper_bound(depth);
-        lastItemAtLevel.erase(it, lastItemAtLevel.end());
+               // Clear deeper levels safely using explicit type iterators
+        std::map<int, PdfOutlineItem *>::iterator itBound = lastItemAtLevel.upper_bound(depth);
+        lastItemAtLevel.erase(itBound, lastItemAtLevel.end());
+
+        std::map<int, std::vector<int>>::iterator vitBound = lastVectorAtLevel.upper_bound(depth);
+        lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
 }
 
