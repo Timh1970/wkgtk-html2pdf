@@ -10,16 +10,22 @@ using std::vector;
 using namespace PoDoFo;
 
 struct index_pdf_impl {
+
+#define PODOFO_010
+#ifdef PODOFO_010
+        struct OutlineData {
+                std::string      title;
+                std::shared_ptr<PoDoFo::PdfDestination> dest;
+                std::vector<int> levels;
+        };
+
+#else
         struct OutlineData {
                 std::string      title;
                 std::vector<int> levels;
-#define PODOFO_010
-#ifdef PODOFO_010
-                std::shared_ptr<PoDoFo::PdfDestination> dest;
-#else
+        };
                 PoDoFo::PdfDestination *dest;
 #endif
-        };
 
         int                      m_tocPage;
         bool                     m_debug;
@@ -103,10 +109,7 @@ static double scale_css_to_pdf(double pdf_page_width_pts, double css_page_width_
 std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     std::vector<int> levels;
 
-    // Explicit regex to isolate the alpha-numeric prefix block from the dot-segments
-    // Group 1 catches the alpha letters (e.g., "C")
-    // Group 2 catches the immediate number (e.g., "4")
-    // Group 3 catches all trailing dot parameters (e.g., ".1.1")
+    // Group 1: Optional letters, Group 2: First digit, Group 3: Trailing dots
     std::regex       numberPattern(R"(^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
     std::smatch      match;
 
@@ -123,16 +126,15 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
                 int  val    = letter - 'A' + 1;
                 letterValue = letterValue * 26 + val;
             }
-            // Push base offset (e.g., 'C' -> 10003)
-            levels.push_back(10000 + letterValue);
+            levels.push_back(ALPHA_SHIFT + letterValue);
         }
 
-               // 2. Process the primary numerical block (e.g., the '4' in 'C4')
+               // 2. Process primary numerical position
         if (!firstNum.empty()) {
             levels.push_back(std::stoi(firstNum));
         }
 
-               // 3. Process secondary dot segments safely (e.g., the '.1' in 'C4.1')
+               // 3. Process remaining sub-levels
         if (!trailingDot.empty()) {
             std::stringstream ss(trailingDot);
             std::string       token;
@@ -219,11 +221,10 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 //     }
 // }
 
-void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PdfDestination> toc) {
+void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PoDoFo::PdfDestination> toc) {
     if (outlineData.empty())
         return;
 
-           // Sort by numbering hierarchy (Using the alphaFirst logic)
     bool alphaFirst = false;
     std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](const OutlineData &a, const OutlineData &b) -> bool {
         size_t minSize = std::min(a.levels.size(), b.levels.size());
@@ -243,17 +244,14 @@ void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<Outl
         return a.levels.size() < b.levels.size();
     });
 
-    PdfOutlineItem *root = outlines.CreateRoot(PdfString("Contents"));
+    PoDoFo::PdfOutlineItem *root = outlines.CreateRoot(PoDoFo::PdfString("Contents"));
     if (toc) {
         root->SetDestination(toc);
     }
 
-           // Map to track the last item at each depth level
-    std::map<int, PdfOutlineItem *> lastItemAtLevel{
+    std::map<int, PoDoFo::PdfOutlineItem *> lastItemAtLevel{
         {0, root}
     };
-
-    // Track the raw integer vectors of what was written last to verify branch alignment
     std::map<int, std::vector<int>> lastVectorAtLevel;
 
     for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
@@ -267,40 +265,40 @@ void index_pdf_impl::buildNestedOutlines(PdfOutlines &outlines, std::vector<Outl
         }
 
         int             depth  = data.levels.size();
-        PdfOutlineItem *parent = nullptr;
+        PoDoFo::PdfOutlineItem *parent = nullptr;
 
         if (depth == 1) {
             parent = root;
         } else {
             parent = lastItemAtLevel[depth - 1];
 
-            // EDGE CASE FIX: Verify if the parent belongs to the same main branch!
+            // DYNAMIC PREFIX ALIGNMENT CHECK:
+            // Ensure the active item shares the exact same base branch prefix (index 0)
+            // as the active tracking parent chain.
             if (parent && parent != root) {
                 const std::vector<int> &parentLevels = lastVectorAtLevel[depth - 1];
-                if (!parentLevels.empty() && parentLevels != data.levels) {
-                    // Branch mismatch caught! Force it to attach cleanly to the Root instead.
+                if (!parentLevels.empty() && parentLevels[0] != data.levels[0]) {
+                    // Mismatched major branch detected (e.g. comparing B to C)! Fall back to root.
                     parent = root;
                 }
             }
-
             if (!parent)
                 parent = root;
         }
 
-        PdfOutlineItem *newItem = nullptr;
+        PoDoFo::PdfOutlineItem *newItem = nullptr;
 
+               // If forced to root due to a major prefix shift, always drop down as a new top-level child
         if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr || parent == root) {
-            newItem = parent->CreateChild(PdfString(data.title.c_str()), data.dest);
+            newItem = parent->CreateChild(PoDoFo::PdfString(data.title.c_str()), data.dest);
         } else {
-            newItem = lastItemAtLevel[depth]->CreateNext(PdfString(data.title.c_str()), data.dest);
+            newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
-               // Update tracking systems
         lastItemAtLevel[depth]  = newItem;
         lastVectorAtLevel[depth] = data.levels;
 
-               // Clear deeper levels safely using explicit type iterators
-        std::map<int, PdfOutlineItem *>::iterator itBound = lastItemAtLevel.upper_bound(depth);
+        std::map<int, PoDoFo::PdfOutlineItem *>::iterator itBound = lastItemAtLevel.upper_bound(depth);
         lastItemAtLevel.erase(itBound, lastItemAtLevel.end());
 
         std::map<int, std::vector<int>>::iterator vitBound = lastVectorAtLevel.upper_bound(depth);
