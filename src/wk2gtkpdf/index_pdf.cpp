@@ -351,7 +351,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         }
 
         // TRACK LEVEL 1 ITEMS
-        if (newItem && depth > 1 && parent && parent != root) {
+        if (newItem && depth > 2 && parent && parent != root) {
             parentNodesToCollapse.push_back(parent);
         }
 
