@@ -11,7 +11,7 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
-// #define PODOFO_010
+#define PODOFO_010
 #ifdef PODOFO_010
         struct OutlineData {
                 std::string      title;
@@ -351,7 +351,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         }
 
         // TRACK LEVEL 1 ITEMS
-        if (newItem && depth > 2 && parent && parent != root) {
+        if (newItem && depth > 3 && parent && parent != root) {
             parentNodesToCollapse.push_back(parent);
         }
 
