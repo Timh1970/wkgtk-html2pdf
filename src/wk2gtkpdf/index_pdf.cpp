@@ -11,7 +11,7 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
-#define PODOFO_010
+// #define PODOFO_010
 #ifdef PODOFO_010
         struct OutlineData {
                 std::string      title;
@@ -307,8 +307,6 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
     };
     std::map<int, std::vector<int>> lastVectorAtLevel;
 
-        // std::vector<PoDoFo::PdfOutlineItem*> parentNodesToCollapse;
-
     for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
         const OutlineData &data = *itData;
 
@@ -343,24 +341,39 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
 
         PoDoFo::PdfOutlineItem *newItem = nullptr;
 
-               // If forced to root due to a major prefix shift, always drop down as a new top-level child
+        // If forced to root due to a major prefix shift, always drop down as a new top-level child
         if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr || parent == root) {
             newItem = parent->CreateChild(PoDoFo::PdfString(data.title.c_str()), data.dest);
         } else {
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
+        // ONLY EXPAND THE FIRST LEVEL OF THE INDEX
+        /**
+         * Count -1 = don't index
+         * A positive "Count" means the that the index should be displayed.
+         *
+         * It is supposed to be a count of the number of children beneath it, but
+         * setting it to 1 is sufficient to make it work.  In reality it should be
+         * the number the total number of links so if you have 1.1 and 1.1.1 and 1.2
+         * then the value should be 3. However I have not, as of yet, found the necessity
+         * for this and in reality the pdf readers seem to be able to work it out for
+         * themselves
+         *
+         * depth > 1 here means that all nodes other than the first level (content
+         * node being 0) are collapsed.
+         *
+         * If you ever wish to expse this through the ABI and make it setable then it
+         * is worth noting that changing the value chenges the depth of visible nodes.
+         * */
         if (newItem && depth > 1 && parent && parent != root) {
-
             PdfDictionary & dict = parent->GetObject().GetDictionary();
             dict.AddKey("Count", int64_t(-1));
-            // parentNodesToCollapse.push_back(parent);
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
                    << "Marking index for collapse: " << (std::string)parent->GetTitle()
                    << iclog::endl;
         } else {
             PdfDictionary & dict = parent->GetObject().GetDictionary();
-            // dict.AddKey("Count", int64_t(depth));
             dict.AddKey("Count", int64_t(1));
 
         }
