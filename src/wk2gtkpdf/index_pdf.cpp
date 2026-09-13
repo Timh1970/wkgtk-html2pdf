@@ -368,27 +368,18 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
 
-    // =========================================================================
-    // --- POST-PROCESSING PASS (Executes safely at the very end) ---
-    // =========================================================================
-    // Now that PoDoFo has finished allocating items and calculating layout values,
-    // we step in right before returning to safely flip the /Count keys to negative.
     for (PoDoFo::PdfOutlineItem* parentNode : parentNodesToCollapse) {
         if (parentNode) {
             PdfDictionary & dict = parentNode->GetObject().GetDictionary();
 
+                   // DO NOT check HasKey("Count") since PoDoFo hasn't built it yet!
+                   // Directly write -1. A negative number acts as a structural
+                   // flag telling PoDoFo's writer: "This parent starts collapsed."
+            dict.AddKey("Count", int64_t(-1));
+
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                   << "Checking if index has key \"Count\": (" << (std::string)parentNode->GetTitle() << ")"
+                   << "Forced /Count to -1 (Collapsed) for: " << (std::string)parentNode->GetTitle()
                    << iclog::endl;
-            if (dict.HasKey("Count")) {
-                int64_t count = dict.GetKeyAs<int64_t>("Count");
-                if (count > 0) {
-                    wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                           << "Collapsing index for count: " << count << "(" << (std::string)parentNode->GetTitle() << ")"
-                           << iclog::endl;
-                    dict.AddKey("Count", -count); // Negative flips it to collapsed!
-                }
-            }
         }
     }
 
