@@ -353,6 +353,9 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         // TRACK LEVEL 1 ITEMS
         if (newItem && depth > 3 && parent && parent != root) {
             parentNodesToCollapse.push_back(parent);
+            wkJlog << iclog::loglevel::debug << iclog::category::LIB
+                   << "Collapsing index for: " << parent->GetTitle()
+                   << iclog::endl;
         }
 
         lastItemAtLevel[depth]  = newItem;
@@ -372,7 +375,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
     // we step in right before returning to safely flip the /Count keys to negative.
     for (PoDoFo::PdfOutlineItem* parentNode : parentNodesToCollapse) {
         if (parentNode) {
-            auto& dict = parentNode->GetObject().GetDictionary();
+            PdfDictionary & dict = parentNode->GetObject().GetDictionary();
             if (dict.HasKey("Count")) {
                 int64_t count = dict.GetKeyAs<int64_t>("Count");
                 if (count > 0) {
