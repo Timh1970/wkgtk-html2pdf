@@ -11,7 +11,7 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
-// #define PODOFO_010
+#define PODOFO_010
 #ifdef PODOFO_010
         struct OutlineData {
                 std::string      title;
@@ -346,6 +346,17 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
             newItem = parent->CreateChild(PoDoFo::PdfString(data.title.c_str()), data.dest);
         } else {
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
+        }
+
+        // Collapse indexes above level 1
+        if (newItem && depth > 1) {
+            auto& dict = newItem->GetObject().GetDictionary();
+            if (dict.HasKey("Count")) {
+                int64_t count = dict.GetKeyAs<int64_t>("Count");
+                if (count > 0) {
+                    dict.AddKey("Count", -count); // Negative flips it to collapsed
+                }
+            }
         }
 
         lastItemAtLevel[depth]  = newItem;

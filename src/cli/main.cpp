@@ -258,7 +258,8 @@ int main(int argc, char *argv[]) {
     typedef enum {
         DO_INDEX = 256,
         OPT_VERSION,
-        OPT_CALIBRATE
+        OPT_CALIBRATE,
+        COMPOSE
 
     } longopt;
     static struct option long_options[] = {
@@ -272,6 +273,7 @@ int main(int argc, char *argv[]) {
         {"index",        required_argument, 0, longopt::DO_INDEX     },
         {"version",      no_argument,       0, longopt::OPT_VERSION  },
         {"calibrate",    required_argument, 0, longopt::OPT_CALIBRATE},
+        {"compose",    required_argument,   0, longopt::COMPOSE      },
         {NULL,           0,                 0, 0                     }
     };
     int  value        = 0;
@@ -350,6 +352,11 @@ int main(int argc, char *argv[]) {
                 std::cout << "Generating calibration PDF (150page " << pageSize << " ruled)" << std::endl;
                 doCalibrate = true;
                 break;
+            }
+
+            case longopt::COMPOSE: {
+
+
             }
             default:
                 break;
