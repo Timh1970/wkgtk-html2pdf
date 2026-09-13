@@ -274,95 +274,28 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 //     }
 // }
 
-// void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PoDoFo::PdfDestination> toc) {
-//     if (outlineData.empty())
-//         return;
-
-//     bool alphaFirst = false;
-//     std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](const OutlineData &a, const OutlineData &b) -> bool {
-//         size_t minSize = std::min(a.levels.size(), b.levels.size());
-//         for (size_t i = 0; i < minSize; ++i) {
-//             if (a.levels[i] != b.levels[i]) {
-//                 int valA = a.levels[i];
-//                 int valB = b.levels[i];
-//                 bool isAlphaA = (valA >= ALPHA_SHIFT);
-//                 bool isAlphaB = (valB >= ALPHA_SHIFT);
-
-//                 if (isAlphaA != isAlphaB) {
-//                     return alphaFirst ? isAlphaA : isAlphaB;
-//                 }
-//                 return valA < valB;
-//             }
-//         }
-//         return a.levels.size() < b.levels.size();
-//     });
-
-//     PoDoFo::PdfOutlineItem *root = outlines.CreateRoot(PoDoFo::PdfString("Contents"));
-//     if (toc) {
-//         root->SetDestination(toc);
-//     }
-
-//     std::map<int, PoDoFo::PdfOutlineItem *> lastItemAtLevel{
-//         {0, root}
-//     };
-//     std::map<int, std::vector<int>> lastVectorAtLevel;
-
-//     for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
-//         const OutlineData &data = *itData;
-
-//         if (data.levels.empty())
-//             continue;
-
-//         if (!data.dest || !data.dest->GetPage()) {
-//             continue;
-//         }
-
-//         int             depth  = data.levels.size();
-//         PoDoFo::PdfOutlineItem *parent = nullptr;
-
-//         if (depth == 1) {
-//             parent = root;
-//         } else {
-//             parent = lastItemAtLevel[depth - 1];
-
-//             // DYNAMIC PREFIX ALIGNMENT CHECK:
-//             // Ensure the active item shares the exact same base branch prefix (index 0)
-//             // as the active tracking parent chain.
-//             if (parent && parent != root) {
-//                 const std::vector<int> &parentLevels = lastVectorAtLevel[depth - 1];
-//                 if (!parentLevels.empty() && parentLevels[0] != data.levels[0]) {
-//                     // Mismatched major branch detected (e.g. comparing B to C)! Fall back to root.
-//                     parent = root;
-//                 }
-//             }
-//             if (!parent)
-//                 parent = root;
-//         }
-
-//         PoDoFo::PdfOutlineItem *newItem = nullptr;
-
-//                // If forced to root due to a major prefix shift, always drop down as a new top-level child
-//         if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr || parent == root) {
-//             newItem = parent->CreateChild(PoDoFo::PdfString(data.title.c_str()), data.dest);
-//         } else {
-//             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
-//         }
-
-//         lastItemAtLevel[depth]  = newItem;
-//         lastVectorAtLevel[depth] = data.levels;
-
-//         std::map<int, PoDoFo::PdfOutlineItem *>::iterator itBound = lastItemAtLevel.upper_bound(depth);
-//         lastItemAtLevel.erase(itBound, lastItemAtLevel.end());
-
-//         std::map<int, std::vector<int>>::iterator vitBound = lastVectorAtLevel.upper_bound(depth);
-//         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
-//     }
-
-// }
-
-
 void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PoDoFo::PdfDestination> toc) {
-    // ... Keep your existing sorting and initialization code exactly as it is ...
+    if (outlineData.empty())
+        return;
+
+    bool alphaFirst = false;
+    std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](const OutlineData &a, const OutlineData &b) -> bool {
+        size_t minSize = std::min(a.levels.size(), b.levels.size());
+        for (size_t i = 0; i < minSize; ++i) {
+            if (a.levels[i] != b.levels[i]) {
+                int valA = a.levels[i];
+                int valB = b.levels[i];
+                bool isAlphaA = (valA >= ALPHA_SHIFT);
+                bool isAlphaB = (valB >= ALPHA_SHIFT);
+
+                if (isAlphaA != isAlphaB) {
+                    return alphaFirst ? isAlphaA : isAlphaB;
+                }
+                return valA < valB;
+            }
+        }
+        return a.levels.size() < b.levels.size();
+    });
 
     PoDoFo::PdfOutlineItem *root = outlines.CreateRoot(PoDoFo::PdfString("Contents"));
     if (toc) {
@@ -374,27 +307,33 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
     };
     std::map<int, std::vector<int>> lastVectorAtLevel;
 
-           // =========================================================================
-           // --- 1. TRACK THE NUMBER OF CHILDREN PER PARENT ---
-           // =========================================================================
-    std::map<PoDoFo::PdfOutlineItem*, int64_t> childCounts;
+        // std::vector<PoDoFo::PdfOutlineItem*> parentNodesToCollapse;
 
     for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
         const OutlineData &data = *itData;
 
-        if (data.levels.empty() || !data.dest || !data.dest->GetPage())
+        if (data.levels.empty())
             continue;
 
-        int depth = data.levels.size();
+        if (!data.dest || !data.dest->GetPage()) {
+            continue;
+        }
+
+        int             depth  = data.levels.size();
         PoDoFo::PdfOutlineItem *parent = nullptr;
 
         if (depth == 1) {
             parent = root;
         } else {
             parent = lastItemAtLevel[depth - 1];
+
+            // DYNAMIC PREFIX ALIGNMENT CHECK:
+            // Ensure the active item shares the exact same base branch prefix (index 0)
+            // as the active tracking parent chain.
             if (parent && parent != root) {
                 const std::vector<int> &parentLevels = lastVectorAtLevel[depth - 1];
                 if (!parentLevels.empty() && parentLevels[0] != data.levels[0]) {
+                    // Mismatched major branch detected (e.g. comparing B to C)! Fall back to root.
                     parent = root;
                 }
             }
@@ -404,17 +343,25 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
 
         PoDoFo::PdfOutlineItem *newItem = nullptr;
 
+               // If forced to root due to a major prefix shift, always drop down as a new top-level child
         if (lastItemAtLevel.find(depth) == lastItemAtLevel.end() || lastItemAtLevel[depth] == nullptr || parent == root) {
             newItem = parent->CreateChild(PoDoFo::PdfString(data.title.c_str()), data.dest);
         } else {
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
-               // =====================================================================
-               // --- 2. INCREMENT THE CHILD COUNT FOR THIS PARENT ---
-               // =====================================================================
-        if (newItem && parent) {
-            childCounts[parent]++;
+        // TRACK LEVEL 1 ITEMS
+        if (newItem && depth > 1 && parent && parent != root) {
+
+            PdfDictionary & dict = parent->GetObject().GetDictionary();
+            dict.AddKey("Count", int64_t(-1));
+            // parentNodesToCollapse.push_back(parent);
+            wkJlog << iclog::loglevel::debug << iclog::category::LIB
+                   << "Marking index for collapse: " << (std::string)parent->GetTitle()
+                   << iclog::endl;
+        } else {
+            PdfDictionary & dict = parent->GetObject().GetDictionary();
+            dict.AddKey("Count", int64_t(depth));
         }
 
         lastItemAtLevel[depth]  = newItem;
@@ -427,28 +374,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
 
-           // =========================================================================
-           // --- 3. APPLY DISK OVERRIDES WITH DEPTH FILTER ---
-           // =========================================================================
-           // Now loop over the accumulated parents.
-    for (auto const& [parentNode, actualCount] : childCounts) {
-        if (parentNode && parentNode != root) {
-            // We only want to collapse items that are Level 2 or deeper.
-            // A Level 1 item (Chapter) has 'root' as its parent.
-            // Therefore, if parentNode's parent is NOT root, parentNode is Level 2+!
-            PoDoFo::PdfOutlineItem* grandParent = parentNode->GetParentOutline();
-
-            if (grandParent && grandParent != root) {
-                // This is a sub-section (Level 2+). Force write the negative count.
-                PdfDictionary &dict = parentNode->GetObject().GetDictionary();
-                dict.AddKey("Count", -actualCount);
-            }
-            // Level 1 items are completely ignored, meaning they get no /Count key
-            // and remain perfectly open by default.
-        }
-    }
 }
-
 
 void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
 
