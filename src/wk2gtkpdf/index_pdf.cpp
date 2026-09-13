@@ -350,7 +350,6 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
-        // TRACK LEVEL 1 ITEMS
         if (newItem && depth > 1 && parent && parent != root) {
 
             PdfDictionary & dict = parent->GetObject().GetDictionary();
@@ -361,7 +360,9 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
                    << iclog::endl;
         } else {
             PdfDictionary & dict = parent->GetObject().GetDictionary();
-            dict.AddKey("Count", int64_t(depth));
+            // dict.AddKey("Count", int64_t(depth));
+            dict.AddKey("Count", int64_t(1));
+
         }
 
         lastItemAtLevel[depth]  = newItem;
