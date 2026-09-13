@@ -354,7 +354,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         if (newItem && depth > 3 && parent && parent != root) {
             parentNodesToCollapse.push_back(parent);
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                   << "Collapsing index for: " << parent->GetTitle()
+                   << "Collapsing index for: " << (std::string)parent->GetTitle()
                    << iclog::endl;
         }
 
