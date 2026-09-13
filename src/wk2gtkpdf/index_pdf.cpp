@@ -11,6 +11,7 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
+// #define PODOFO_010
 #ifdef PODOFO_010
         struct OutlineData {
                 std::string      title;
@@ -306,6 +307,8 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
     };
     std::map<int, std::vector<int>> lastVectorAtLevel;
 
+        std::vector<PoDoFo::PdfOutlineItem*> parentNodesToCollapse;
+
     for (std::vector<OutlineData>::const_iterator itData = outlineData.begin(); itData != outlineData.end(); ++itData) {
         const OutlineData &data = *itData;
 
@@ -347,6 +350,11 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
+        // TRACK LEVEL 1 ITEMS
+        if (newItem && depth > 1 && parent && parent != root) {
+            parentNodesToCollapse.push_back(parent);
+        }
+
         lastItemAtLevel[depth]  = newItem;
         lastVectorAtLevel[depth] = data.levels;
 
@@ -355,6 +363,23 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
 
         std::map<int, std::vector<int>>::iterator vitBound = lastVectorAtLevel.upper_bound(depth);
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
+    }
+
+    // =========================================================================
+    // --- POST-PROCESSING PASS (Executes safely at the very end) ---
+    // =========================================================================
+    // Now that PoDoFo has finished allocating items and calculating layout values,
+    // we step in right before returning to safely flip the /Count keys to negative.
+    for (PoDoFo::PdfOutlineItem* parentNode : parentNodesToCollapse) {
+        if (parentNode) {
+            auto& dict = parentNode->GetObject().GetDictionary();
+            if (dict.HasKey("Count")) {
+                int64_t count = dict.GetKeyAs<int64_t>("Count");
+                if (count > 0) {
+                    dict.AddKey("Count", -count); // Negative flips it to collapsed!
+                }
+            }
+        }
     }
 
 
@@ -555,22 +580,6 @@ void index_pdf::create_anchors(const char *sourcePath, const char *destPath) {
     doc.Load(sourcePath);
     m_pimpl->do_annotation(doc);
     debug_check_annotations_and_streams(doc);
-
-    // TRY TO LIMIT INDEX EXPANSION
-    for (auto &data : m_pimpl->m_outlineData) {
-        // If it's a nested sub-level (depth > 1), we look at its PARENT.
-        // Standard PDF rules state a parent collapses if its own /Count is negative.
-        if (data.levels.size() > 1 && data.dest) {
-            // Go back down to the raw PDF data layer to force the negative count
-            auto& dict = data.dest->GetObject().GetDictionary();
-            if (dict.HasKey("Count")) {
-                int64_t count = dict.GetKeyAs<int64_t>("Count");
-                if (count > 0) {
-                    dict.AddKey("Count", -count); // Negative forces collapse
-                }
-            }
-        }
-    }
 
     wkJlog << iclog::loglevel::debug << iclog::category::LIB
            << "Saving page"
