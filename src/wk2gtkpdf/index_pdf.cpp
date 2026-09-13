@@ -348,7 +348,6 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
             newItem = lastItemAtLevel[depth]->CreateNext(PoDoFo::PdfString(data.title.c_str()), data.dest);
         }
 
-
         lastItemAtLevel[depth]  = newItem;
         lastVectorAtLevel[depth] = data.levels;
 
@@ -359,32 +358,6 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
 
-    //COLLAPSE INDEX LEVELS LOWER THAN 1
-    for (auto const& [depth, itemPtr] : lastItemAtLevel) {
-        // We only want to crawl nodes that actually have children.
-        // We look for any valid trackable item down the generated tree:
-        if (itemPtr) {
-            // Traverse up the tree or explicitly check items that have children
-            PoDoFo::PdfOutlineItem* current = itemPtr;
-            while (current && current != root) {
-                // Get the parent of this item to see what depth it lives at
-                PoDoFo::PdfOutlineItem* parentNode = current->GetParentOutline();
-
-                // If the parent node is NOT the root, it means 'current' is level 2 or deeper.
-                // We want its parent (Level 1+) to collapse its deep sub-items.
-                if (parentNode && parentNode != root) {
-                    auto& dict = parentNode->GetObject().GetDictionary();
-                    if (dict.HasKey("Count")) {
-                        int64_t count = dict.GetKeyAs<int64_t>("Count");
-                        if (count > 0) {
-                            dict.AddKey("Count", -count); // Negative flips it to collapsed!
-                        }
-                    }
-                }
-                current = parentNode;
-            }
-        }
-    }
 
 }
 
@@ -583,6 +556,22 @@ void index_pdf::create_anchors(const char *sourcePath, const char *destPath) {
     doc.Load(sourcePath);
     m_pimpl->do_annotation(doc);
     debug_check_annotations_and_streams(doc);
+
+    // TRY TO LIMIT INDEX EXPANSION
+    for (auto &data : m_pimpl->m_outlineData) {
+        // If it's a nested sub-level (depth > 1), we look at its PARENT.
+        // Standard PDF rules state a parent collapses if its own /Count is negative.
+        if (data.levels.size() > 1 && data.dest) {
+            // Go back down to the raw PDF data layer to force the negative count
+            auto& dict = data.dest->GetObject().GetDictionary();
+            if (dict.HasKey("Count")) {
+                int64_t count = dict.GetKeyAs<int64_t>("Count");
+                if (count > 0) {
+                    dict.AddKey("Count", -count); // Negative forces collapse
+                }
+            }
+        }
+    }
 
     wkJlog << iclog::loglevel::debug << iclog::category::LIB
            << "Saving page"
