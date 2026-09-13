@@ -351,12 +351,12 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         }
 
         // TRACK LEVEL 1 ITEMS
-        if (newItem && depth > 2 && parent && parent != root) {
-            parentNodesToCollapse.push_back(parent);
-            wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                   << "Marking index for collapse: " << (std::string)parent->GetTitle()
-                   << iclog::endl;
-        }
+        // if (newItem && depth > 2 && parent && parent != root) {
+        //     parentNodesToCollapse.push_back(parent);
+        //     wkJlog << iclog::loglevel::debug << iclog::category::LIB
+        //            << "Marking index for collapse: " << (std::string)parent->GetTitle()
+        //            << iclog::endl;
+        // }
 
         lastItemAtLevel[depth]  = newItem;
         lastVectorAtLevel[depth] = data.levels;
@@ -368,20 +368,20 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
 
-    for (PoDoFo::PdfOutlineItem* parentNode : parentNodesToCollapse) {
-        if (parentNode) {
-            PdfDictionary & dict = parentNode->GetObject().GetDictionary();
+    // for (PoDoFo::PdfOutlineItem* parentNode : parentNodesToCollapse) {
+    //     if (parentNode) {
+    //         PdfDictionary & dict = parentNode->GetObject().GetDictionary();
 
-                   // DO NOT check HasKey("Count") since PoDoFo hasn't built it yet!
-                   // Directly write -1. A negative number acts as a structural
-                   // flag telling PoDoFo's writer: "This parent starts collapsed."
-            dict.AddKey("Count", int64_t(-1));
+    //                // DO NOT check HasKey("Count") since PoDoFo hasn't built it yet!
+    //                // Directly write -1. A negative number acts as a structural
+    //                // flag telling PoDoFo's writer: "This parent starts collapsed."
+    //         dict.AddKey("Count", int64_t(-1));
 
-            wkJlog << iclog::loglevel::debug << iclog::category::LIB
-                   << "Forced /Count to -1 (Collapsed) for: " << (std::string)parentNode->GetTitle()
-                   << iclog::endl;
-        }
-    }
+    //         wkJlog << iclog::loglevel::debug << iclog::category::LIB
+    //                << "Forced /Count to -1 (Collapsed) for: " << (std::string)parentNode->GetTitle()
+    //                << iclog::endl;
+    //     }
+    // }
 
 
 }
