@@ -1118,17 +1118,12 @@ namespace phtml {
         //     /* clang-format on */
         // );
 
-        std::string o = (width_mm > height_mm) ? "landscape" : "portrait";
-        wkJlog << iclog::loglevel::debug << iclog::category::CORE
-               << "Setting Orientation: " << o
-               << iclog::endl;
         std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
-        if (o.compare("landscape")) {
-            szName = std::to_string(height_mm) + "x" + std::to_string(width_mm) + "mm";
-        }
 
         // REVISED AFTER DISCOVERY OF EDGE CASE GHOST PIXEL
         // (That was resolved in the template maker);
+        // Orientation was removed as it can work it out for iteslf and leaving it
+        // in causes a conflict.
         std::string printSettings(
             /* clang-format off */
             "[Print Settings]\n"
@@ -1146,7 +1141,6 @@ namespace phtml {
             "MarginBottom=0\n"
             "MarginLeft=0\n"
             "MarginRight=0\n"
-            "Orientation=" + o + "\n"
             /* clang-format on */
         );
 

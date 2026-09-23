@@ -4,7 +4,7 @@
 #include <iostream>
 #include <math.h>
 #include <stdio.h>
-#include <systemd/sd-journal.h>
+// #include <systemd/sd-journal.h>
 #include <unistd.h>
 #include <wk2gtkpdf/ichtmltopdf++.h>
 #include <wk2gtkpdf/iclog.h>
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     std::string TestCss = "link rel=\"stylesheet\" href=\"" + std::filesystem::current_path().string() + "/A0-portrait.css\"";
     LOG_LEVEL           = LOG_WARNING;
     // REDIRECT WEBKIT LOGGING TO SYSLOG
-    dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
+    // dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
     setlogmask(LOG_UPTO(LOG_LEVEL));
     setlocale(LC_CTYPE, "en_GB.UTF-8");
     icGTK::init();
@@ -99,12 +99,12 @@ int main(int argc, char *argv[]) {
          * Precision Layout Engine by Inplico (v1.3)
          * -----------------------------------------------------------------------
          * PAGE LAYOUT:
-         *          * Page Size - 256.0000 (255.8521)mm x 180.0000 (179.9167)mm
-         * Margin H  - 5.0000mm
-         * Margin V  - 5.0000mm
+         *          * Page Size - 430.0000 (430.2125)mm x 307.0000 (306.9167)mm
+         * Margin H  - 10.0000mm
+         * Margin V  - 10.0000mm
          * -----------------------------------------------------------------------
          * This CSS is mathematically quantized for 0-drift PDF generation.
-         * Generated on: 2026-08-05 | License: Standard Attribution
+         * Generated on: 2026-09-23 | License: Standard Attribution
          *          * NOTICE: This header must remain intact for free commercial use.
          * To obtain a Private Label license (white-label / header removal),
          * please visit: https://inplico.uk
@@ -118,29 +118,31 @@ int main(int argc, char *argv[]) {
         "        margin: 0;\n"
         "        padding: 0;\n"
         "            line-height: 18.0000pt;\n"
-        "            font-family: 'Liberation Sans', sans-serif;\n"
+        "            font-family: 'Roboto', sans-serif;\n"
         "            font-size: 12.0000pt;\n"
+        "            text-rendering: geometricPrecision;\n"
+        "            -webkit-font-smoothing: antialiased;\n"
         "        }\n"
         "        \n"
         "        @page {\n"
-        "            size: 726.0000pt 510.0000pt;\n"
+        "            size: 1219.5000pt 870.0000pt;\n"
         "            margin: 0;\n"
         "        }\n"
         "        \n"
         "        html, body {\n"
-        "            width: 726.0000pt;\n"
+        "            width: 1219.5000pt;\n"
         "            margin: 0;\n"
         "            padding: 0;\n"
         "                background-color: transparent !important;\n"
         "        }\n"
         "            \n"
         "            .page {\n"
-        "                width: 726.0000pt;\n"
-        "                height: 510.0000pt;\n"
+        "                width: 1219.5000pt;\n"
+        "                height: 870.0000pt;\n"
         "                    background-color: white !important;\n"
         "                display: grid;\n"
-        "                    grid-template-columns: 13.5000pt 699.00pt 13.5000pt;\n"
-        "                    grid-template-rows: 13.5000pt 483.0000pt 13.5000pt;\n"
+        "                    grid-template-columns: 27.7500pt 1164.0000pt 27.7500pt;\n"
+        "                    grid-template-rows: 27.7500pt 814.5000pt 27.7500pt;\n"
         "                    break-after: page;\n"
         "                position: relative;\n"
         "                overflow: hidden;\n"
@@ -150,8 +152,10 @@ int main(int argc, char *argv[]) {
         "            \n"
         "            .subpage {\n"
         "                grid-area: 2 / 2 / 3 / 3;\n"
-        "            display: grid;\n"
-        "            position: absolute; top: 0; left: 0; width: 699pt; height: 483pt;\n"
+        "            display: block;\n"
+        "            width: 1164.0000pt;\n"
+        "            height: 814.5000pt;\n"
+        "            position: absolute;\n"
         "            overflow: hidden;\n"
         "            outline: .75pt solid blue;\n"
         "            }\n"
@@ -196,7 +200,7 @@ int main(int argc, char *argv[]) {
     for (int p = 0; p != 100; ++p) {
         html_tree *page = body->new_node("div class=\"page\"")->new_node("div class=\"subpage\"");
         page->new_node("div class=\"top-marker\"");
-        for (int i = 0; i != 19; ++i) {
+        for (int i = 0; i != 28; ++i) {
             page->new_node_f("div class=\"grid-line\" style=\"top: %.2fpt\"", (i + 1) * 28.25)->set_node_content_f("%dmm", (i + 1) * 10);
         }
         page->new_node("div class=\"page-number\"")->set_node_content_f("page %d", p + 1);
@@ -205,14 +209,14 @@ int main(int argc, char *argv[]) {
     process_nodes(&dom);
 
     const char   *html = dom.get_html();
-    std::ofstream file(std::filesystem::current_path().string() + "/187x105.html");
+    std::ofstream file(std::filesystem::current_path().string() + "/430x307.html");
     if (file) {
         file << html;
         file.close();
     }
 
-    int w = 105;
-    int h = 187;
+    int w = 430;
+    int h = 307;
 
     std::string printSettings(
         /* clang-format off */
@@ -225,16 +229,15 @@ int main(int argc, char *argv[]) {
         "[Page Setup]\n"
         // "Name="+std::to_string(w)+"x"+std::to_string(h)+"\n"
         "Name=inplico_custom\n"
-        "DisplayName=inplico105x187mm\n"
+        "DisplayName=inplico430x307mm\n"
         // "Width="+std::to_string(w+evaluate_dimensions(w,h))+"\n"
         // "Height="+std::to_string(h+evaluate_dimensions(w,h))+"\n"
-        "Width=256\n"
-        "Height=180\n"
+        "Width=430\n"
+        "Height=307\n"
         "MarginTop=0\n"
         "MarginBottom=0\n"
         "MarginLeft=0\n"
         "MarginRight=0\n"
-        "Orientation=portrait\n"
         /* clang-format on */
     );
 
@@ -244,7 +247,7 @@ int main(int argc, char *argv[]) {
     pdf.set_param(
         html,
         printSettings.c_str(),
-        (std::filesystem::current_path().string() + "/187x105.pdf").c_str()
+        (std::filesystem::current_path().string() + "/430x307.pdf").c_str()
     );
 
     pdf.make_pdf();
