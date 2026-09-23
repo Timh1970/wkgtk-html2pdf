@@ -1122,8 +1122,10 @@ namespace phtml {
         wkJlog << iclog::loglevel::debug << iclog::category::CORE
                << "Setting Orientation: " << o
                << iclog::endl;
-
         std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
+        if (o.compare("landscape")) {
+            szName = std::to_string(height_mm) + "x" + std::to_string(width_mm) + "mm";
+        }
 
         // REVISED AFTER DISCOVERY OF EDGE CASE GHOST PIXEL
         // (That was resolved in the template maker);
@@ -1136,7 +1138,7 @@ namespace phtml {
             "printer=Print to File\n"
             "page-set=all\n"
             "[Page Setup]\n"
-            "Name=inplico" + std::string(szName) + "\n"
+            "Name=" + std::string(szName) + "\n"
             "DisplayName=inplico" + std::string(szName) + "\n"
             "Width=" + std::to_string(width_mm) + "\n"
             "Height=" + std::to_string(height_mm) + "\n"
