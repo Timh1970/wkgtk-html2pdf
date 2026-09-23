@@ -1088,28 +1088,55 @@ namespace phtml {
     }
 
     void PDFprinter::layout(double width_mm, double height_mm) {
+        // std::string o = (width_mm > height_mm) ? "landscape" : "portrait";
+
+        // std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
+
+        // double corrected_h = std::floor(height_mm * (72.0 / 25.4)) / (72.0 / 25.4);
+        // double corrected_w = std::floor(width_mm * (72.0 / 25.4)) / (72.0 / 25.4);
+
+        // // We use a generic PPDName for custom sizes;
+        // // Cairo/WebKit just needs the raw dimensions.
+        // std::string printSettings(
+        //     /* clang-format off */
+        //     "[Print Settings]\n"
+        //     "quality=high\n"
+        //     "resolution=300\n"
+        //     "output-file-format=pdf\n"
+        //     "printer=Print to File\n"
+        //     "page-set=all\n"
+        //     "[Page Setup]\n"
+        //     "PPDName=" + std::string(szName) + "\n"
+        //     "DisplayName=" + std::string(szName) + "\n"
+        //     "Width=" + std::to_string(corrected_w) + "\n"
+        //     "Height=" + std::to_string(corrected_h) + "\n"
+        //     "MarginTop=0\n"
+        //     "MarginBottom=0\n"
+        //     "MarginLeft=0\n"
+        //     "MarginRight=0\n"
+        //     "Orientation=" + o + "\n"
+        //     /* clang-format on */
+        // );
+
         std::string o = (width_mm > height_mm) ? "landscape" : "portrait";
 
         std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
 
-        double corrected_h = std::floor(height_mm * (72.0 / 25.4)) / (72.0 / 25.4);
-        double corrected_w = std::floor(width_mm * (72.0 / 25.4)) / (72.0 / 25.4);
-
-        // We use a generic PPDName for custom sizes;
-        // Cairo/WebKit just needs the raw dimensions.
+        // REVISED AFTER DISCOVERY OF EDGE CASE GHOST PIXEL
+        // (That was resolved in the template maker);
         std::string printSettings(
             /* clang-format off */
             "[Print Settings]\n"
             "quality=high\n"
-            "resolution=300\n"
+            "resolution=96\n"
             "output-file-format=pdf\n"
             "printer=Print to File\n"
             "page-set=all\n"
             "[Page Setup]\n"
-            "PPDName=" + std::string(szName) + "\n"
-            "DisplayName=" + std::string(szName) + "\n"
-            "Width=" + std::to_string(corrected_w) + "\n"
-            "Height=" + std::to_string(corrected_h) + "\n"
+            "Name=inplico" + std::string(szName) + "\n"
+            "DisplayName=inplico" + std::string(szName) + "\n"
+            "Width=" + std::to_string(width_mm) + "\n"
+            "Height=" + std::to_string(height_mm) + "\n"
             "MarginTop=0\n"
             "MarginBottom=0\n"
             "MarginLeft=0\n"

@@ -223,6 +223,8 @@ void help() {
     printf("*    -O  --orientation                \"portrait\" or \"landscape\"           *\n");
     printf("*        --index                      create anchor points                *\n");
     printf("*                                       \"classic\" or \"enhanced\"           *\n");
+    printf("*    -W  --width XXX                  Width in mm                         *\n");
+    printf("*    -H  --height XXX                 Height in mm                        *\n");
     printf("*    -r  --relative-uri               look for assets in current folder   *\n");
     printf("*        --version                    show the version                    *\n");
     printf("*                                                                         *\n");
@@ -254,6 +256,8 @@ int main(int argc, char *argv[]) {
     string     pageSize    = "A4";
     index_mode idxMode     = index_mode::OFF;
     string     baseURI     = "file:///";
+    double     Width       = 0.0;
+    double     Height      = 0.0;
 
     typedef enum {
         DO_INDEX = 256,
@@ -270,10 +274,12 @@ int main(int argc, char *argv[]) {
         {"relative-uri", no_argument,       0, 'r'                   },
         {"size",         required_argument, 0, 's'                   },
         {"verbose",      required_argument, 0, 'v'                   },
+        {"width",        required_argument, 0, 'W'                   },
+        {"height",       required_argument, 0, 'H'                   },
         {"index",        required_argument, 0, longopt::DO_INDEX     },
         {"version",      no_argument,       0, longopt::OPT_VERSION  },
         {"calibrate",    required_argument, 0, longopt::OPT_CALIBRATE},
-        {"compose",    required_argument,   0, longopt::COMPOSE      },
+        {"compose",      required_argument, 0, longopt::COMPOSE      },
         {NULL,           0,                 0, 0                     }
     };
     int  value        = 0;
@@ -286,7 +292,7 @@ int main(int argc, char *argv[]) {
     while ((value = getopt_long(
                 argc,
                 argv,
-                "i:O:o:s:v:rh",
+                "i:O:W:H:o:s:v:rh",
                 long_options,
                 &option_index
             ))
@@ -309,6 +315,16 @@ int main(int argc, char *argv[]) {
             case 'O': { /**< Orientation (invalid defaults to portrait) */
                 if (optarg)
                     orientation = string(optarg);
+                break;
+            }
+            case 'W': { /**< Width in mm */
+                if (optarg)
+                    Width = atoi(optarg);
+                break;
+            }
+            case 'H': { /**< Height in mm */
+                if (optarg)
+                    Height = atoi(optarg);
                 break;
             }
             case 'r': { /**< Relative path */
@@ -355,8 +371,6 @@ int main(int argc, char *argv[]) {
             }
 
             case longopt::COMPOSE: {
-
-
             }
             default:
                 break;
@@ -419,10 +433,6 @@ int main(int argc, char *argv[]) {
         _exit(0);
     }
 
-    std::cout << "\nProcessing HTML: " << infile
-              << "\nOrientation: " << orientation << "\nSize: " << pageSize
-              << std::endl;
-
     wkJlog << iclog::loglevel::debug << iclog::category::CLI
            << "\nProcessing HTML: " << infile << "\nOrientation: " << orientation
            << "\nSize: " << pageSize << iclog::endl;
@@ -442,15 +452,26 @@ int main(int argc, char *argv[]) {
     // pdf.set_param(PDFprinter::read_file(infile), outfile, idxMode);
     pdf.set_param_from_file(infile.c_str(), outfile.c_str(), idxMode);
 
-    /**
-     * If the pageSize and orintation are empty or invalid
-     * default A4 portrait is used.
-     *
-     * This method must be called if you are not pasing a
-     * printer settings configuration sting using OPTION 1
-     * above.
-     */
-    pdf.layout(pageSize.c_str(), orientation.c_str());
+    if (Width && Height) {
+        std::cout << "\nProcessing HTML: " << infile
+                  << "\nExplicit size: " << Width << "x" << Height
+                  << std::endl;
+        pdf.layout(Width, Height);
+    } else {
+        std::cout << "\nProcessing HTML: " << infile
+                  << "\nOrientation: " << orientation << "\nSize: " << pageSize
+                  << std::endl;
+
+        /**
+         * If the pageSize and orintation are empty or invalid
+         * default A4 portrait is used.
+         *
+         * This method must be called if you are not pasing a
+         * printer settings configuration sting using OPTION 1
+         * above.
+         */
+        pdf.layout(pageSize.c_str(), orientation.c_str());
+    }
     pdf.make_pdf();
 
     return (0);
