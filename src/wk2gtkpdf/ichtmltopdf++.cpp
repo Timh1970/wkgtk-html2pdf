@@ -1119,6 +1119,9 @@ namespace phtml {
         // );
 
         std::string o = (width_mm > height_mm) ? "landscape" : "portrait";
+        wkJlog << iclog::loglevel::debug << iclog::category::CORE
+               << "Setting Orientation: " << o
+               << iclog::endl;
 
         std::string szName = std::to_string(width_mm) + "x" + std::to_string(height_mm) + "mm";
 
