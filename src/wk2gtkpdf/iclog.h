@@ -61,15 +61,6 @@ namespace iclog {
     class logstream;
     typedef logstream &(*logstreamManipulator)(logstream &);
 
-    class logstream_initializer {
-        public:
-            logstream_initializer();
-            ~logstream_initializer();
-    };
-
-    // Every file that includes this header gets an instance of the initializer
-    static logstream_initializer wkJlog_init;
-
     class ICLOG_API logstream {
         public:
             logstream();

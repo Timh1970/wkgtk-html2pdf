@@ -19,14 +19,6 @@ uint64_t LOG_IGNORE = 0;
 
 namespace iclog {
 
-    struct TrackedThreadBuffer {
-            std::string buffer;
-            bool        is_alive = true;
-
-            // Set flag to false when the thread officially tears down this object
-            ~TrackedThreadBuffer() { is_alive = false; }
-    };
-
     class log_manager {
         private:
             // Primitive integer FD: Zero memory overhead, zero stream buffer traps
@@ -146,37 +138,27 @@ namespace iclog {
         return unknown;
     }
 
+    // 2. The Internal Engine (Hidden from Header)
     // class streambuf_internal : public std::streambuf {
     //     public:
-    //         int      m_level    = LOG_INFO;
-    //         uint64_t m_category = CORE;
-
-    //     private:
-    //         inline static thread_local std::string tl_buffer;
+    //         std::string m_buf;
+    //         int         m_level    = LOG_INFO;
+    //         uint64_t    m_category = CORE;
 
     //     protected:
     //         int sync() override {
-    //             if (!tl_buffer.empty()) {
+    //             if (!m_buf.empty()) {
     //                 if (!(LOG_IGNORE & m_category)) {
-
-    //                     log_manager &manager = log_manager::get_instance();
-
-    //                     if (manager.has_active_file()) {
-    //                         // Path A: Pure file writing via the hot kernel descriptor
-    //                         manager.write_to_file(tl_buffer);
-    //                     } else {
-    //                         // Path B: Fallback to your classic universal POSIX syslog channel
-    //                         syslog(m_level, "%s", tl_buffer.c_str());
-    //                     }
+    //                     syslog(m_level, "%s", m_buf.c_str());
     //                 }
-    //                 tl_buffer.clear();
+    //                 m_buf.clear();
     //             }
     //             return 0;
     //         }
 
     //         int_type overflow(int_type c) override {
     //             if (c != traits_type::eof()) {
-    //                 tl_buffer += static_cast<char>(c);
+    //                 m_buf += static_cast<char>(c);
     //             }
     //             return c;
     //         }
@@ -188,25 +170,20 @@ namespace iclog {
             uint64_t m_category = CORE;
 
         private:
-            // Use the managed wrapper instead of a raw std::string
-            inline static thread_local TrackedThreadBuffer tl_managed_buffer;
+            inline static thread_local std::string tl_buffer;
 
         protected:
             int sync() override {
-                // If the thread-local string has already been destructed,
-                // bail out immediately to prevent a heap-use-after-free.
-                if (!tl_managed_buffer.is_alive) {
-                    return 0;
-                }
-
-                std::string &tl_buffer = tl_managed_buffer.buffer;
                 if (!tl_buffer.empty()) {
                     if (!(LOG_IGNORE & m_category)) {
+
                         log_manager &manager = log_manager::get_instance();
 
                         if (manager.has_active_file()) {
+                            // Path A: Pure file writing via the hot kernel descriptor
                             manager.write_to_file(tl_buffer);
                         } else {
+                            // Path B: Fallback to your classic universal POSIX syslog channel
                             syslog(m_level, "%s", tl_buffer.c_str());
                         }
                     }
@@ -217,10 +194,7 @@ namespace iclog {
 
             int_type overflow(int_type c) override {
                 if (c != traits_type::eof()) {
-                    // Only append if the thread-local allocator is still active
-                    if (tl_managed_buffer.is_alive) {
-                        tl_managed_buffer.buffer += static_cast<char>(c);
-                    }
+                    tl_buffer += static_cast<char>(c);
                 }
                 return c;
             }
@@ -303,28 +277,26 @@ namespace iclog {
     // Explicitly instantiate for std::string to keep the linker happy
     // template logstream &logstream::operator<<(const std::string &);
 
-    alignas(logstream) static char logstream_buffer[sizeof(logstream)];
+    static logstream *get_internal_logger() {
+        static logstream *instance = nullptr;
+        if (!instance) {
+            instance = new logstream();
 
-    // The reference counter that tracks how many files are currently using the header
-    static int init_count = 0;
-
-    logstream_initializer::logstream_initializer() {
-        if (init_count++ == 0) {
-            // Placement new: Construct the real logstream explicitly inside our raw buffer
-            new (&wkJlog) logstream();
+            // Register a clean C-style shutdown hook.
+            // This runs exactly at exit(), ensuring the logger is cleanly
+            // destroyed and freed for Valgrind, but stays alive long enough
+            // for icGTK::~icGTK() to use it safely!
+            std::atexit([]() {
+                delete instance;
+                instance = nullptr;
+            });
         }
-    }
-
-    logstream_initializer::~logstream_initializer() {
-        if (--init_count == 0) {
-            // Explicitly call the destructor on the very last teardown phase of exit()
-            wkJlog.~logstream();
-        }
+        return instance;
     }
 
 } // namespace iclog
 
-ICLOG_API iclog::logstream &wkJlog = reinterpret_cast<iclog::logstream &>(iclog::logstream_buffer);
+ICLOG_API iclog::logstream &wkJlog = *iclog::get_internal_logger();
 
 namespace iclog {
     // Force the compiler to generate the binary code for these types
