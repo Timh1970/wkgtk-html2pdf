@@ -209,11 +209,34 @@ namespace iclog {
                 : stream(&buf) {}
     };
 
-    // 4. logstream Method Implementations
-    logstream::logstream()
-        : m_pimpl(new ostream_impl()) {}
+    // A clean, internal function to hold the stream backbone memory safely.
+    // Because it returns a reference to a function-static pointer, it is guaranteed
+    // to outlive any standard global destructors like icGTK.
+    static ostream_impl *&get_shared_pimpl() {
+        static ostream_impl *pimpl = new ostream_impl();
+        return pimpl;
+    }
 
-    logstream::~logstream() { delete m_pimpl; }
+    static void register_cleanup() {
+        static bool registered = false;
+        if (!registered) {
+            std::atexit([]() {
+                delete get_shared_pimpl();
+                get_shared_pimpl() = nullptr;
+            });
+            registered = true;
+        }
+    }
+
+    // 4. logstream Method Implementations
+    // logstream::logstream()
+    //     : m_pimpl(new ostream_impl()) {}
+    logstream::logstream() {
+        m_pimpl = get_shared_pimpl();
+        register_cleanup();
+    }
+
+    logstream::~logstream() { /*delete m_pimpl;*/ }
 
     logstream &logstream::operator<<(const char *s) {
         if (s)
@@ -277,26 +300,9 @@ namespace iclog {
     // Explicitly instantiate for std::string to keep the linker happy
     // template logstream &logstream::operator<<(const std::string &);
 
-    static logstream *get_internal_logger() {
-        static logstream *instance = nullptr;
-        if (!instance) {
-            instance = new logstream();
-
-            // Register a clean C-style shutdown hook.
-            // This runs exactly at exit(), ensuring the logger is cleanly
-            // destroyed and freed for Valgrind, but stays alive long enough
-            // for icGTK::~icGTK() to use it safely!
-            std::atexit([]() {
-                delete instance;
-                instance = nullptr;
-            });
-        }
-        return instance;
-    }
-
 } // namespace iclog
 
-ICLOG_API iclog::logstream &wkJlog = *iclog::get_internal_logger();
+ICLOG_API iclog::logstream wkJlog;
 
 namespace iclog {
     // Force the compiler to generate the binary code for these types

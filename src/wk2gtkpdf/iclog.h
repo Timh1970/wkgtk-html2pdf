@@ -102,6 +102,6 @@ namespace iclog {
 } // namespace iclog
 
 // The global logger instance
-extern ICLOG_API iclog::logstream &wkJlog;
+extern ICLOG_API iclog::logstream wkJlog;
 
 #endif // NC_ERRLOG_H
