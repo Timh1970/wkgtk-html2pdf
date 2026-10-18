@@ -303,9 +303,28 @@ namespace iclog {
     // Explicitly instantiate for std::string to keep the linker happy
     // template logstream &logstream::operator<<(const std::string &);
 
+    alignas(logstream) static char logstream_buffer[sizeof(logstream)];
+
+    // The reference counter that tracks how many files are currently using the header
+    static int init_count = 0;
+
+    logstream_initializer::logstream_initializer() {
+        if (init_count++ == 0) {
+            // Placement new: Construct the real logstream explicitly inside our raw buffer
+            new (&wkJlog) logstream();
+        }
+    }
+
+    logstream_initializer::~logstream_initializer() {
+        if (--init_count == 0) {
+            // Explicitly call the destructor on the very last teardown phase of exit()
+            wkJlog.~logstream();
+        }
+    }
+
 } // namespace iclog
 
-ICLOG_API iclog::logstream wkJlog;
+ICLOG_API iclog::logstream &wkJlog = reinterpret_cast<iclog::logstream &>(iclog::logstream_buffer);
 
 namespace iclog {
     // Force the compiler to generate the binary code for these types
