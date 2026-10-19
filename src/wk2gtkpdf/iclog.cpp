@@ -49,8 +49,9 @@ namespace iclog {
 
     // The Lightweight Pimpl Layer (0% Ostream buffer dependencies)
     struct ostream_impl {
-            // High-performance thread-safe accumulation buffer
-            inline static thread_local std::string tl_buffer;
+            // Change this from thread_local to a plain static string that survives thread teardown:
+            inline static std::string tl_buffer;
+            inline static std::mutex  tl_mutex; // Protects against multi-threaded webkit writes
 
             int          m_level    = LOG_INFO;
             uint64_t     m_category = CORE;
@@ -59,11 +60,14 @@ namespace iclog {
             ~ostream_impl() { delete target; }
 
             void append(const char *str) {
-                if (str)
+                if (str) {
+                    std::lock_guard<std::mutex> lock(tl_mutex);
                     tl_buffer += str;
+                }
             }
 
             void commit_and_flush() {
+                std::lock_guard<std::mutex> lock(tl_mutex);
                 if (!tl_buffer.empty()) {
                     if (!(LOG_IGNORE & m_category)) {
                         if (target && target->get_fd() >= 0) {
