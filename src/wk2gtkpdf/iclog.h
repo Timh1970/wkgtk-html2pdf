@@ -80,6 +80,11 @@ namespace iclog {
             void                        category(unsigned long long cat);
             friend ICLOG_API logstream &endl(logstream &os);
 
+            // COMPILER FRIEND INJECTIONS:
+            // Explicitly declare without the API export macro inside the class body
+            friend bool init_file_logging(const char *filepath);
+            friend int  log_file_fd();
+
             template <typename T>
             logstream &operator<<(T &(*f)(T &));
 
@@ -96,11 +101,8 @@ namespace iclog {
     ICLOG_API logstream &operator<<(logstream &os, loglevel lev);
     ICLOG_API logstream &operator<<(logstream &os, category cat);
 
-    ICLOG_API bool init_file_logging(const char *filepath);
-    ICLOG_API int  log_file_fd();
-
-    class log_manager;
-    ICLOG_API log_manager &get_instance();
+    // ICLOG_API bool init_file_logging(const char *filepath);
+    // ICLOG_API int  log_file_fd();
 
 } // namespace iclog
 

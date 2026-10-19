@@ -24,7 +24,7 @@ endif
 CXX = g++
 
 CXXFLAGS +=
-CXXFLAGS += -std=c++20 -fPIC -O2 -g
+CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden -g
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 CXXFLAGS += $(SYS_CXXFLAGS)
 
