@@ -24,6 +24,8 @@
 
 WKGTKRunMode phtml::WKGTK_run_mode = WKGTKRunMode::UNSET;
 
+iclog::log_manager *logInstance = nullptr;
+
 /**************************************/
 /*                                    */
 /*                                    */
@@ -135,8 +137,10 @@ icGTK &icGTK::init(const char *logPath) {
 
 icGTK::icGTK(const char *logPath, WKGTKRunMode runMode)
     : m_pimpl(new icGTK_impl()) {
-    if (logPath)
+    if (logPath) {
         iclog::init_file_logging(logPath);
+        logInstance = &iclog::get_instance();
+    }
     m_pimpl->tk           = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
     phtml::WKGTK_run_mode = runMode;
 }
