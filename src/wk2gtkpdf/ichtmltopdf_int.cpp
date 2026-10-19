@@ -91,8 +91,8 @@ WKGTK_init::~WKGTK_init() {
     // 5. Delete the Brain LAST
     delete m_pimpl;
     m_pimpl = nullptr;
-    // wkJlog << iclog::loglevel::info << iclog::category::CORE
-    //        << "GTK Global loop exiting." << iclog::endl;
+    wkJlog << iclog::loglevel::info << iclog::category::CORE
+           << "GTK Global loop exiting." << iclog::endl;
 }
 
 /**************************************/
@@ -121,25 +121,8 @@ struct icGTK_impl {
  * @return
  * avoid linker errors.
  */
-icGTK &icGTK::init(WKGTKRunMode runMode) {
-    return init(nullptr, runMode);
-}
-
 icGTK &icGTK::init() {
     return icGTK::init(WKGTKRunMode::KEEP_RUNNING);
-}
-
-icGTK &icGTK::init(const char *logPath) {
-    return icGTK::init(logPath, WKGTKRunMode::KEEP_RUNNING);
-}
-
-icGTK::icGTK(const char *logPath, WKGTKRunMode runMode)
-    : m_pimpl(new icGTK_impl()) {
-    if (logPath) {
-        iclog::init_file_logging(logPath);
-    }
-    m_pimpl->tk           = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
-    phtml::WKGTK_run_mode = runMode;
 }
 
 /**
@@ -152,11 +135,11 @@ icGTK::icGTK(const char *logPath, WKGTKRunMode runMode)
  * @note START_STOP run mode is primarily used for testing.
  *
  */
-// icGTK::icGTK(WKGTKRunMode runMode)
-//     : m_pimpl(new icGTK_impl()) {
-//     m_pimpl->tk           = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
-//     phtml::WKGTK_run_mode = runMode;
-// }
+icGTK::icGTK(WKGTKRunMode runMode)
+    : m_pimpl(new icGTK_impl()) {
+    m_pimpl->tk           = new WKGTK_init(m_pimpl->handle_xvfb_daemon());
+    phtml::WKGTK_run_mode = runMode;
+}
 
 WKGTK_init::WKGTK_init(WKGTK_init &&other) noexcept
     : m_pimpl(other.m_pimpl) {
@@ -183,16 +166,15 @@ icGTK::~icGTK() {
 }
 
 /**
- * @brief icGTK::init
- * @param logPath
+ * @brief icGTK_init::getInstance
  * @param runMode
- * @return
+ * @return single instance
  *
  * This uses the Myers singleton approach to ensure we can only call
  * the class once.  It is genius, but I cannot claim credit for it.
  */
-icGTK &icGTK::init(const char *logPath, WKGTKRunMode runMode) {
-    static icGTK instance(logPath, runMode);
+icGTK &icGTK::init(WKGTKRunMode runMode) {
+    static icGTK instance(runMode);
     return instance;
 }
 

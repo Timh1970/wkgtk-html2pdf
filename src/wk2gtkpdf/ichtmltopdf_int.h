@@ -48,16 +48,12 @@ class PDF_INIT_API icGTK {
     public:
         static icGTK &init();
         static icGTK &init(WKGTKRunMode runMode);
-        static icGTK &init(const char *logPath);
-        static icGTK &init(const char *logPath, WKGTKRunMode runMode);
 
         icGTK(const icGTK &)            = delete;
         icGTK &operator=(const icGTK &) = delete;
 
     private:
-        // icGTK(WKGTKRunMode runMode);
-        icGTK(const char *logPath, WKGTKRunMode runMode);
-
+        icGTK(WKGTKRunMode runMode);
         ~icGTK();
         icGTK_impl *m_pimpl;
 };
