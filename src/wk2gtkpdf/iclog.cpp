@@ -32,7 +32,8 @@ namespace iclog {
             ostream_impl *m_parent   = nullptr; // Pointer back to our layout holder
 
         private:
-            inline static thread_local std::string tl_buffer;
+            inline static std::string tl_buffer;
+            inline static std::mutex  tl_mutex;
 
         protected:
             int sync() override;

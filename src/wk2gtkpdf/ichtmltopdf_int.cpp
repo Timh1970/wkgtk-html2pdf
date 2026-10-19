@@ -91,8 +91,8 @@ WKGTK_init::~WKGTK_init() {
     // 5. Delete the Brain LAST
     delete m_pimpl;
     m_pimpl = nullptr;
-    wkJlog << iclog::loglevel::info << iclog::category::CORE
-           << "GTK Global loop exiting." << iclog::endl;
+    // wkJlog << iclog::loglevel::info << iclog::category::CORE
+    //        << "GTK Global loop exiting." << iclog::endl;
 }
 
 /**************************************/
