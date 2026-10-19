@@ -209,34 +209,11 @@ namespace iclog {
                 : stream(&buf) {}
     };
 
-    // A clean, internal function to hold the stream backbone memory safely.
-    // Because it returns a reference to a function-static pointer, it is guaranteed
-    // to outlive any standard global destructors like icGTK.
-    static ostream_impl *&get_shared_pimpl() {
-        static ostream_impl *pimpl = new ostream_impl();
-        return pimpl;
-    }
-
-    static void register_cleanup() {
-        static bool registered = false;
-        if (!registered) {
-            std::atexit([]() {
-                delete get_shared_pimpl();
-                get_shared_pimpl() = nullptr;
-            });
-            registered = true;
-        }
-    }
-
     // 4. logstream Method Implementations
-    // logstream::logstream()
-    //     : m_pimpl(new ostream_impl()) {}
-    logstream::logstream() {
-        m_pimpl = get_shared_pimpl();
-        register_cleanup();
-    }
+    logstream::logstream()
+        : m_pimpl(new ostream_impl()) {}
 
-    logstream::~logstream() { /*delete m_pimpl;*/ }
+    logstream::~logstream() { delete m_pimpl; }
 
     logstream &logstream::operator<<(const char *s) {
         if (s)
