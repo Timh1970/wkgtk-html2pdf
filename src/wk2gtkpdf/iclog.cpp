@@ -5,13 +5,11 @@
 #include "iclog.h"
 
 #include <fcntl.h>
-#include <iostream>
 #include <mutex>
 #include <string>
 #include <syslog.h>
 #include <unistd.h>
 
-// 1. Global Externs (C-Linkage)
 extern "C" {
 uint32_t LOG_LEVEL  = LOG_DEBUG;
 uint64_t LOG_IGNORE = 0;
@@ -27,35 +25,122 @@ namespace iclog {
         public:
             file_target() = default;
 
-            // Clean manual cleanup
             ~file_target() {
-                if (m_fd >= 0) {
+                if (m_fd >= 0)
                     ::close(m_fd);
-                }
             }
 
             bool open_path(const char *filepath) {
                 std::lock_guard<std::mutex> lock(m_mutex);
-                if (m_fd >= 0) {
+                if (m_fd >= 0)
                     ::close(m_fd);
-                }
                 m_fd = ::open(filepath, O_WRONLY | O_CREAT | O_APPEND, 0666);
                 return (m_fd >= 0);
             }
 
             void write_data(const std::string &data) {
                 std::lock_guard<std::mutex> lock(m_mutex);
-                if (m_fd >= 0) {
+                if (m_fd >= 0)
                     ::write(m_fd, data.c_str(), data.size());
-                }
             }
 
-            int get_fd() {
-                std::lock_guard<std::mutex> lock(m_mutex);
-                return m_fd;
+            int get_fd() { return m_fd; }
+    };
+
+    // The Lightweight Pimpl Layer (0% Ostream buffer dependencies)
+    struct ostream_impl {
+            // High-performance thread-safe accumulation buffer
+            inline static thread_local std::string tl_buffer;
+
+            int          m_level    = LOG_INFO;
+            uint64_t     m_category = CORE;
+            file_target *target     = nullptr;
+
+            ~ostream_impl() { delete target; }
+
+            void append(const char *str) {
+                if (str)
+                    tl_buffer += str;
+            }
+
+            void commit_and_flush() {
+                if (!tl_buffer.empty()) {
+                    if (!(LOG_IGNORE & m_category)) {
+                        if (target && target->get_fd() >= 0) {
+                            target->write_data(tl_buffer);
+                        } else {
+                            syslog(m_level, "%s", tl_buffer.c_str());
+                        }
+                    }
+                    tl_buffer.clear();
+                }
             }
     };
 
+    // logstream Core Lifecycle Management
+    logstream::logstream()
+        : m_pimpl(new ostream_impl()) {}
+
+    logstream::~logstream() { delete m_pimpl; }
+
+    logstream &logstream::operator<<(const char *s) {
+        m_pimpl->append(s);
+        return *this;
+    }
+
+    logstream &logstream::operator<<(char *s) {
+        m_pimpl->append(s);
+        return *this;
+    }
+
+    logstream &logstream::operator<<(int i) {
+        m_pimpl->append(std::to_string(i).c_str());
+        return *this;
+    }
+
+    logstream &logstream::operator<<(double d) {
+        m_pimpl->append(std::to_string(d).c_str());
+        return *this;
+    }
+
+    // Concrete safe extractor preserves cross-compilation parameters
+    logstream &logstream::operator<<(const std::string &s) {
+        m_pimpl->append(s.c_str());
+        return *this;
+    }
+
+    void logstream::flush() { m_pimpl->commit_and_flush(); }
+
+    void logstream::level(loglevel lev) { m_pimpl->m_level = static_cast<int>(lev); }
+
+    void logstream::category(unsigned long long cat) { m_pimpl->m_category = cat; }
+
+    logstream &endl(logstream &os) {
+        os.m_pimpl->append("\n");
+        os.m_pimpl->commit_and_flush();
+        return os;
+    }
+
+    template <typename T>
+    logstream &logstream::operator<<(const T &value) {
+        m_pimpl->append(std::to_string(value).c_str());
+        return *this;
+    }
+
+    // Manual Runtime Setup Endpoints
+    bool init_file_logging(const char *filepath) {
+        if (!filepath || filepath[0] == '\0')
+            return false;
+        if (!wkJlog.m_pimpl->target)
+            wkJlog.m_pimpl->target = new file_target();
+        return wkJlog.m_pimpl->target->open_path(filepath);
+    }
+
+    int log_file_fd() {
+        return (wkJlog.m_pimpl && wkJlog.m_pimpl->target) ? wkJlog.m_pimpl->target->get_fd() : -1;
+    }
+
+    // Look-Up Tables
     const std::pair<category, std::string> catLUT[]{
         {SQL_SEL,     "(SQL SELECT) "            },
         {SQL_UPD,     "(SQL UPDATE) "            },
@@ -104,124 +189,6 @@ namespace iclog {
         return unknown;
     }
 
-    // 2. The Internal Engine (Hidden from Header)
-    // class streambuf_internal : public std::streambuf {
-    //     public:
-    //         std::string m_buf;
-    //         int         m_level    = LOG_INFO;
-    //         uint64_t    m_category = CORE;
-
-    //     protected:
-    //         int sync() override {
-    //             if (!m_buf.empty()) {
-    //                 if (!(LOG_IGNORE & m_category)) {
-    //                     syslog(m_level, "%s", m_buf.c_str());
-    //                 }
-    //                 m_buf.clear();
-    //             }
-    //             return 0;
-    //         }
-
-    //         int_type overflow(int_type c) override {
-    //             if (c != traits_type::eof()) {
-    //                 m_buf += static_cast<char>(c);
-    //             }
-    //             return c;
-    //         }
-    // };
-
-    class streambuf_internal : public std::streambuf {
-        public:
-            int           m_level    = LOG_INFO;
-            uint64_t      m_category = CORE;
-            ostream_impl *m_parent   = nullptr;
-
-        private:
-            inline static thread_local std::string tl_buffer;
-
-        protected:
-            int sync() override;
-
-            int_type overflow(int_type c) override {
-                if (c != traits_type::eof()) {
-                    tl_buffer += static_cast<char>(c);
-                }
-                return c;
-            }
-    };
-
-    // 3. The Pimpl Container
-    struct ostream_impl {
-            streambuf_internal buf;
-            std::ostream       stream;
-            file_target       *target = nullptr;
-
-            ostream_impl()
-                : stream(&buf) {
-                buf.m_parent = this;
-            }
-
-            ~ostream_impl() {
-                delete target;
-            }
-    };
-
-    int streambuf_internal::sync() {
-        if (!tl_buffer.empty()) {
-            if (!(LOG_IGNORE & m_category)) {
-
-                // Safe access: compiler knows exactly what members are inside m_parent
-                if (m_parent && m_parent->target && m_parent->target->get_fd() >= 0) {
-                    m_parent->target->write_data(tl_buffer);
-                } else {
-                    syslog(m_level, "%s", tl_buffer.c_str());
-                }
-            }
-            tl_buffer.clear();
-        }
-        return 0;
-    }
-
-    // 4. logstream Method Implementations
-    logstream::logstream()
-        : m_pimpl(new ostream_impl()) {}
-
-    logstream::~logstream() { delete m_pimpl; }
-
-    logstream &logstream::operator<<(const char *s) {
-        if (s)
-            m_pimpl->stream << s;
-        return *this;
-    }
-
-    logstream &logstream::operator<<(int i) {
-        m_pimpl->stream << i;
-        return *this;
-    }
-
-    logstream &logstream::operator<<(double d) {
-        m_pimpl->stream << d;
-        return *this;
-    }
-
-    void logstream::flush() {
-        m_pimpl->stream.flush();
-    }
-
-    void logstream::level(loglevel lev) {
-        m_pimpl->buf.m_level = static_cast<int>(lev);
-    }
-
-    void logstream::category(unsigned long long cat) {
-        m_pimpl->buf.m_category = cat;
-    }
-
-    logstream &endl(logstream &os) {
-        os.m_pimpl->stream << std::endl;
-        return os;
-    }
-
-    // 6. Enum Operators (Found via ADL)
     logstream &operator<<(logstream &os, category cat) {
         os << get_category_name(cat).c_str();
         os.category(static_cast<unsigned long long>(cat));
@@ -234,52 +201,12 @@ namespace iclog {
         return os;
     }
 
-    template <>
-    logstream &logstream::operator<<(std::ostream &(*f)(std::ostream &)) {
-        m_pimpl->stream << f;
-        return *this;
-    }
-
-    // This handles the "Standard" types that the header doesn't know about
-    template <typename T>
-    logstream &logstream::operator<<(const T &value) {
-        m_pimpl->stream << value;
-        return *this;
-    }
-
-    // Explicitly instantiate for std::string to keep the linker happy
-    // template logstream &logstream::operator<<(const std::string &);
-
-    bool init_file_logging(const char *filepath) {
-        if (!filepath || filepath[0] == '\0')
-            return false;
-
-        // Directly access the private pointer via the friend permission
-        ostream_impl *pimpl = wkJlog.m_pimpl;
-        if (!pimpl)
-            return false;
-
-        // Lazily allocate the tracking object onto the heap only when requested
-        if (!pimpl->target) {
-            pimpl->target = new file_target();
-        }
-
-        return pimpl->target->open_path(filepath);
-    }
-
-    int log_file_fd() {
-        ostream_impl *pimpl = wkJlog.m_pimpl;
-        return (pimpl && pimpl->target) ? pimpl->target->get_fd() : -1;
-    }
-
 } // namespace iclog
 
 ICLOG_API iclog::logstream wkJlog;
 
 namespace iclog {
-    // Force the compiler to generate the binary code for these types
-    template ICLOG_API logstream &logstream::operator<<(const std::string &);
-    template ICLOG_API logstream &logstream::operator<<(char *const &);
+    // Explicit compilation mappings for primitive lookup variants
     template ICLOG_API logstream &logstream::operator<<(const unsigned int &);
     template ICLOG_API logstream &logstream::operator<<(const unsigned long &);
     template ICLOG_API logstream &logstream::operator<<(const unsigned short &);
