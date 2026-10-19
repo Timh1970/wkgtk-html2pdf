@@ -99,6 +99,9 @@ namespace iclog {
     ICLOG_API bool init_file_logging(const char *filepath);
     ICLOG_API int  log_file_fd();
 
+    class log_manager;
+    ICLOG_API log_manager &get_instance();
+
 } // namespace iclog
 
 // The global logger instance
