@@ -490,7 +490,7 @@ bool icGTK_impl::stop_service(sd_bus *bus) {
     sd_bus_error_free(&error);
     return (r < 0 ? EXIT_FAILURE : EXIT_SUCCESS);
 }
-#endif
+#else
 
 /**************************************/
 /*                                    */
@@ -645,3 +645,4 @@ std::string icGTK_impl::dinit_start_xvfb() {
 
     return final_state;
 }
+#endif
