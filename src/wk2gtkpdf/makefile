@@ -17,7 +17,9 @@ ifeq ($(INIT_SYS),systemd)
     SYS_LIBS = $(shell pkg-config --libs libsystemd)
 else
     SYS_CXXFLAGS =
-    SYS_LIBS =
+    ifeq ($(INIT_SYS),dinit)
+	SYS_LIBS = += $(shell pkg-config --libs libdinitctl)
+    endif
 endif
 
 
@@ -30,7 +32,6 @@ CXXFLAGS += $(SYS_CXXFLAGS)
 
 CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)
-CPPFLAGS += $(shell pkg-config --cflags libdinitctl)
 
 LDFLAGS += -Wl,--version-script=libwk2gtkpdf.map
 
@@ -38,7 +39,6 @@ LDLIBS += $(shell pkg-config --libs libpodofo )
 LDLIBS += $(shell pkg-config --libs json-c)
 LDLIBS += $(shell pkg-config --libs x11)
 LDLIBS += $(shell pkg-config --libs wayland-client)
-LDLIBS += $(shell pkg-config --libs libdinitctl)
 
 LDLIBS += $(SYS_LIBS)
 
