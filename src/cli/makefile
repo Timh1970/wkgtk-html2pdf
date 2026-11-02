@@ -31,8 +31,9 @@ ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
         # Standard production path: include libsystemd queries
         PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
         PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
-	override CXXFLAGS += -DUSE_SYSTEMD
+	SYS_CXXFLAGS = -DUSE_SYSTEMD
     else
+        SYS_CXXFLAGS =
         ifeq ($(INIT_SYS),dinit)
             PKG_CPP := $(shell pkg-config --cflags $(PC_NAME))
             PKG_LIB := $(shell pkg-config --libs $(PC_NAME))
@@ -49,10 +50,10 @@ PREFIX ?= /usr
 BINDIR = $(PREFIX)/bin
 
 wkgtk-html2pdf: $(OBJECTS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CXX) $(CXXFLAGS) $(SYS_CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $<
+	$(CXX) $(CXXFLAGS) $(SYS_CXXFLAGS) $(CPPFLAGS) -c $<
 
 clean:
 	rm -f $(OBJECTS) wkgtk-html2pdf

@@ -13,8 +13,8 @@ HEADERS = $(wildcard *.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
 ifeq ($(INIT_SYS),systemd)
-    override CXXFLAGS += -DUSE_SYSTEMD
     SYS_LIBS = $(shell pkg-config --libs libsystemd)
+    SYS_CXXFLAGS = -DUSE_SYSTEMD
 else
     ifeq ($(INIT_SYS),dinit)
 	SYS_LIBS = $(shell pkg-config --libs libdinitctl)
@@ -64,7 +64,7 @@ $(FULLNAME): $(OBJECTS)
 	ln -sfT $(SONAME) $(APPLICATION)
 
 %.o: %.cpp $(HEADERS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(SYS_CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 .PHONY: install
 install:
