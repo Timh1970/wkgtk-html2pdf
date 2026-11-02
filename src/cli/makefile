@@ -29,8 +29,8 @@ ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
 
     ifeq ($(INIT_SYS),systemd)
         # Standard production path: include libsystemd queries
-        PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) glib-2.0 libsystemd)
-        PKG_LIB := $(shell pkg-config --libs $(PC_NAME) glib-2.0 libsystemd)
+        PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
+        PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
 	SYS_CXXFLAGS = -DUSE_SYSTEMD
     else
         ifeq ($(INIT_SYS),dinit)

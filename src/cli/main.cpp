@@ -5,7 +5,6 @@
 #include <getopt.h>
 #include <iostream>
 #ifdef USE_SYSTEMD
-#include <glib.h>
 #include <systemd/sd-journal.h>
 #else
 #include <fcntl.h>
@@ -382,8 +381,6 @@ int main(int argc, char *argv[]) {
     // REDIRECT WEBKIT LOGGING TO SYSLOG
 #ifdef USE_SYSTEMD
     dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
-    g_log_set_writer_func(g_log_writer_journald, NULL, NULL);
-
 #else
     string logPath = "/var/log/wkgtk-html2pdf/wkgtk-html2pdf.log";
     iclog::init_file_logging(logPath.c_str());
