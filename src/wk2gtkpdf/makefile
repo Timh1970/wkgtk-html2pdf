@@ -13,10 +13,9 @@ HEADERS = $(wildcard *.h)
 OBJECTS = $(SOURCES:.cpp=.o)
 
 ifeq ($(INIT_SYS),systemd)
-    SYS_CXXFLAGS = -DUSE_SYSTEMD
+    override CXXFLAGS += -DUSE_SYSTEMD
     SYS_LIBS = $(shell pkg-config --libs libsystemd)
 else
-    SYS_CXXFLAGS =
     ifeq ($(INIT_SYS),dinit)
 	SYS_LIBS = $(shell pkg-config --libs libdinitctl)
     endif
@@ -28,7 +27,6 @@ CXX = g++
 CXXFLAGS +=
 CXXFLAGS += -std=c++20 -fPIC -O2 -fvisibility=hidden -g
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
-CXXFLAGS += $(SYS_CXXFLAGS)
 
 CPPFLAGS +=
 CPPFLAGS += $(shell pkg-config --cflags libpodofo)

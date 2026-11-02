@@ -31,7 +31,7 @@ ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
         # Standard production path: include libsystemd queries
         PKG_CPP := $(shell pkg-config --cflags $(PC_NAME) libsystemd)
         PKG_LIB := $(shell pkg-config --libs $(PC_NAME) libsystemd)
-	SYS_CXXFLAGS = -DUSE_SYSTEMD
+	override CXXFLAGS += -DUSE_SYSTEMD
     else
         ifeq ($(INIT_SYS),dinit)
             PKG_CPP := $(shell pkg-config --cflags $(PC_NAME))
@@ -40,7 +40,6 @@ ifeq (,$(filter clean distclean uninstall,$(MAKECMDGOALS)))
     endif
 
     CPPFLAGS += $(USER_INCDIR) $(PKG_CPP)
-    CXXFLAGS += $(SYS_CXXFLAGS)
     LDLIBS   += $(USER_LIBDIR) $(PKG_LIB)
 
 endif
