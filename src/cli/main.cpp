@@ -380,7 +380,9 @@ int main(int argc, char *argv[]) {
 
     // REDIRECT WEBKIT LOGGING TO SYSLOG
 #ifdef USE_SYSTEMD
-    dup2(sd_journal_stream_fd(argv[0], LOG_LEVEL, 1), STDERR_FILENO);
+    wkJlog << iclog::loglevel::error << iclog::category::CORE
+           << "Logging to the systemd journal " << iclog::endl;
+    dup2(sd_journal_stream_fd(argv[0], LOG_DEBUG, 1), STDERR_FILENO);
 #else
     string logPath = "/var/log/wkgtk-html2pdf/wkgtk-html2pdf.log";
     iclog::init_file_logging(logPath.c_str());

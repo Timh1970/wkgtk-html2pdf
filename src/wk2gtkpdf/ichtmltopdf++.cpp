@@ -652,9 +652,6 @@ namespace phtml {
         // 2. Create the ephemeral session
         WebKitNetworkSession *session = webkit_network_session_new_ephemeral();
 
-        // 2a. ADDED TO DEBUG
-        webkit_network_session_set_proxy_settings(session, WEBKIT_NETWORK_PROXY_MODE_NO_PROXY, NULL);
-
         // 3. Create the WebView with BOTH the Session AND the Settings in one go
         // This is the only way to ensure the child process starts "quietly"
         impl->m_web_view = WEBKIT_WEB_VIEW(

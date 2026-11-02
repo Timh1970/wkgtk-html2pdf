@@ -331,8 +331,6 @@ WKGTK_init icGTK_impl::handle_xvfb_daemon() {
     // }
 
     // GTK4: No arguments, returns boolean
-    g_setenv("GTK_A11Y", "none", 1);
-
     if (gtk_init_check()) {
         wkJlog << iclog::loglevel::info << "WEBKIT 6 (GTK4) Initialised." << iclog::endl;
     } else {
