@@ -18,7 +18,7 @@ ifeq ($(INIT_SYS),systemd)
 else
     SYS_CXXFLAGS =
     ifeq ($(INIT_SYS),dinit)
-	SYS_LIBS = += $(shell pkg-config --libs libdinitctl)
+	SYS_LIBS = $(shell pkg-config --libs libdinitctl)
     endif
 endif
 
