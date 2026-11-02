@@ -4,7 +4,7 @@ MAJOR := $(major)
 MINOR := $(minor)
 PATCH := $(patch)
 VERSION := $(MAJOR).$(MINOR).$(PATCH)
-INIT_SYS ?= systemd
+INIT_SYS := $(shell if [ -d /run/systemd/system ]; then echo systemd; else echo dinit; fi)
 LOGFILE = /var/log/wkgtk-html2pdf.log
 
 

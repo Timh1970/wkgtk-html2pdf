@@ -11,7 +11,7 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 USER_INCDIR ?= -I/usr/include/wk2gtkpdf
 USER_LIBDIR ?=
-INIT_SYS ?= systemd
+INIT_SYS := $(shell if [ -d /run/systemd/system ]; then echo systemd; else echo dinit; fi)
 
 CXXFLAGS += -DAPP_VERSION=\"$(VERSION)\"
 
