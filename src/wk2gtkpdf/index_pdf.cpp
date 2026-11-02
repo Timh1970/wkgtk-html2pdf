@@ -11,21 +11,32 @@ using namespace PoDoFo;
 
 struct index_pdf_impl {
 
-// #define PODOFO_010
-#ifdef PODOFO_010
-        struct OutlineData {
-                std::string      title;
-                std::shared_ptr<PoDoFo::PdfDestination> dest;
-                std::vector<int> levels;
-        };
+        // #define PODOFO_010
+        // #ifdef PODOFO_010
+        //         struct OutlineData {
+        //                 std::string                             title;
+        //                 std::shared_ptr<PoDoFo::PdfDestination> dest;
+        //                 std::vector<int>                        levels;
+        //         };
 
-#else
+        // #else
+        //         struct OutlineData {
+        //                 std::string      title;
+        //                 std::vector<int> levels;
+        //         };
+
+        //         PoDoFo::PdfDestination *dest;
+        // #endif
+
         struct OutlineData {
                 std::string      title;
                 std::vector<int> levels;
-        };
+#ifdef PODOFO_010
+                std::shared_ptr<PoDoFo::PdfDestination> dest;
+#else
                 PoDoFo::PdfDestination *dest;
 #endif
+        };
 
         int                      m_tocPage;
         bool                     m_debug;
@@ -153,14 +164,14 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     // REMOVED $: The pattern now strictly matches the START of the string.
     // Group 1: 1 to 3 standalone letters followed by an optional dot/space/dash separator boundary
     // Group 2, 3, 4: Composite alphanumeric patterns (e.g., AA1.1)
-    std::regex       numberPattern(R"(^([A-Za-z]{1,3})(?:[\s\.\-]+(?:[A-Za-z]{4,}.*|$))|^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
-    std::smatch      match;
+    std::regex  numberPattern(R"(^([A-Za-z]{1,3})(?:[\s\.\-]+(?:[A-Za-z]{4,}.*|$))|^([A-Za-z]+)?(\d+)((?:\.\d+)*))");
+    std::smatch match;
 
     if (std::regex_search(title, match, numberPattern)) {
         // 1. Standalone Prefix Match Caught (e.g., "A", "A - First Aid", "BA. Safeguarding")
         if (match[1].matched) {
-            std::string pureAlpha = match[1].str();
-            int letterValue = 0;
+            std::string pureAlpha   = match[1].str();
+            int         letterValue = 0;
             for (size_t i = 0; i < pureAlpha.length(); ++i) {
                 char letter = std::toupper(static_cast<unsigned char>(pureAlpha[i]));
                 int  val    = letter - 'A' + 1;
@@ -192,7 +203,8 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
                 std::stringstream ss(trailingDot);
                 std::string       token;
                 while (std::getline(ss, token, '.')) {
-                    if (token.empty()) continue;
+                    if (token.empty())
+                        continue;
                     levels.push_back(std::stoi(token));
                 }
             }
@@ -200,7 +212,6 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
     }
     return levels;
 }
-
 
 #ifdef PODOFO_010
 // 08/09/2026
@@ -219,7 +230,6 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 //         }
 //         return a.levels.size() < b.levels.size();
 //     });
-
 
 //     PdfOutlineItem *root = outlines.CreateRoot(PdfString("Contents"));
 //     if (toc) {
@@ -283,8 +293,8 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         size_t minSize = std::min(a.levels.size(), b.levels.size());
         for (size_t i = 0; i < minSize; ++i) {
             if (a.levels[i] != b.levels[i]) {
-                int valA = a.levels[i];
-                int valB = b.levels[i];
+                int  valA     = a.levels[i];
+                int  valB     = b.levels[i];
                 bool isAlphaA = (valA >= ALPHA_SHIFT);
                 bool isAlphaB = (valB >= ALPHA_SHIFT);
 
@@ -317,7 +327,7 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
             continue;
         }
 
-        int             depth  = data.levels.size();
+        int                     depth  = data.levels.size();
         PoDoFo::PdfOutlineItem *parent = nullptr;
 
         if (depth == 1) {
@@ -367,18 +377,17 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
          * is worth noting that changing the value chenges the depth of visible nodes.
          * */
         if (newItem && depth > 1 && parent && parent != root) {
-            PdfDictionary & dict = parent->GetObject().GetDictionary();
+            PdfDictionary &dict = parent->GetObject().GetDictionary();
             dict.AddKey("Count", int64_t(-1));
             wkJlog << iclog::loglevel::debug << iclog::category::LIB
                    << "Marking index for collapse: " << (std::string)parent->GetTitle()
                    << iclog::endl;
         } else {
-            PdfDictionary & dict = parent->GetObject().GetDictionary();
+            PdfDictionary &dict = parent->GetObject().GetDictionary();
             dict.AddKey("Count", int64_t(1));
-
         }
 
-        lastItemAtLevel[depth]  = newItem;
+        lastItemAtLevel[depth]   = newItem;
         lastVectorAtLevel[depth] = data.levels;
 
         std::map<int, PoDoFo::PdfOutlineItem *>::iterator itBound = lastItemAtLevel.upper_bound(depth);
@@ -387,7 +396,6 @@ void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vec
         std::map<int, std::vector<int>>::iterator vitBound = lastVectorAtLevel.upper_bound(depth);
         lastVectorAtLevel.erase(vitBound, lastVectorAtLevel.end());
     }
-
 }
 
 void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
@@ -596,7 +604,6 @@ void index_pdf::create_anchors(const char *sourcePath, const char *destPath) {
 }
 
 #else
-
 void index_pdf::create_anchors(const char *sourcePath, const char *destPath) { // 0.9.x: Loading is done via the constructor or Load()
     PdfMemDocument doc;
     try {
