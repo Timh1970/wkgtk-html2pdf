@@ -284,7 +284,12 @@ std::vector<int> index_pdf_impl::parseNumbering(const std::string &title) {
 //     }
 // }
 
-void index_pdf_impl::buildNestedOutlines(PoDoFo::PdfOutlines &outlines, std::vector<OutlineData> &outlineData, std::shared_ptr<PoDoFo::PdfDestination> toc) {
+void index_pdf_impl::buildNestedOutlines(
+    PoDoFo::PdfOutlines                    &outlines,
+    std::vector<OutlineData>               &outlineData,
+    std::shared_ptr<PoDoFo::PdfDestination> toc
+) {
+
     if (outlineData.empty())
         return;
 
@@ -632,16 +637,40 @@ void index_pdf::create_anchors(const char *sourcePath, const char *destPath) { /
     }
 }
 
-void index_pdf_impl::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<OutlineData> &outlineData, PdfDestination *pTocDest) {
+void index_pdf_impl::buildNestedOutlines(
+    PdfOutlines              *pOutlines,
+    std::vector<OutlineData> &outlineData,
+    PdfDestination           *pTocDest
+) {
+
     if (outlineData.empty() || !pOutlines)
         return;
 
     // Sorting logic remains identical to your 0.10 code
-    std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+    // std::sort(outlineData.begin(), outlineData.end(), [](OutlineData &a, OutlineData &b) {
+    //     size_t minSize = std::min(a.levels.size(), b.levels.size());
+    //     for (size_t i = 0; i < minSize; ++i) {
+    //         if (a.levels[i] != b.levels[i])
+    //             return a.levels[i] < b.levels[i];
+    //     }
+    //     return a.levels.size() < b.levels.size();
+    // });
+
+    bool alphaFirst = false;
+    std::sort(outlineData.begin(), outlineData.end(), [alphaFirst](const OutlineData &a, const OutlineData &b) -> bool {
         size_t minSize = std::min(a.levels.size(), b.levels.size());
         for (size_t i = 0; i < minSize; ++i) {
-            if (a.levels[i] != b.levels[i])
-                return a.levels[i] < b.levels[i];
+            if (a.levels[i] != b.levels[i]) {
+                int  valA     = a.levels[i];
+                int  valB     = b.levels[i];
+                bool isAlphaA = (valA >= ALPHA_SHIFT);
+                bool isAlphaB = (valB >= ALPHA_SHIFT);
+
+                if (isAlphaA != isAlphaB) {
+                    return alphaFirst ? isAlphaA : isAlphaB;
+                }
+                return valA < valB;
+            }
         }
         return a.levels.size() < b.levels.size();
     });
@@ -684,9 +713,6 @@ void index_pdf_impl::buildNestedOutlines(PdfOutlines *pOutlines, std::vector<Out
     }
 }
 
-///////////////////////////
-
-#ifndef PODOFO_010
 void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
     // 0.9.x: Outlines are accessed directly from the document
     PdfOutlines *pOutlines = pdfDoc.GetOutlines();
@@ -766,5 +792,4 @@ void index_pdf_impl::do_annotation(PdfMemDocument &pdfDoc) {
     if (pTocDest)
         delete pTocDest;
 }
-#endif
 #endif

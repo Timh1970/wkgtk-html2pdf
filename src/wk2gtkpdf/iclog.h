@@ -68,7 +68,10 @@ namespace iclog {
             logstream &operator<<(int i);
             logstream &operator<<(double d);
 
-            // Concrete member operator protects ABI stability across dynamic link rules
+            // Concrete member operator protects ABI stability across dynamic link rules.
+            // Deliberate compromise: this exports a std::__cxx11-mangled symbol. Keep it
+            // out-of-line here; do NOT inline it or add more std::string overloads without
+            // revisiting the ABI implications. See note.
             logstream &operator<<(const std::string &s);
 
             logstream &operator<<(logstreamManipulator manip) {
